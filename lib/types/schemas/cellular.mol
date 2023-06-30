@@ -1,0 +1,41 @@
+array U8 [byte; 1];
+array U128 [byte; 16];
+array USize [byte; 4];
+array Bytes32 [byte; 32];
+
+vector Bytes <byte>;
+vector BytesVec <Bytes>;
+
+array Bool [byte; 1];
+option BoolOpt (Bool);
+option BytesOpt (Bytes);
+
+table Script {
+    code_hash: Bytes32,
+    hash_type: U8,
+    args: Bytes,
+}
+
+struct ScriptId {
+    code_hash: Bytes32,
+    hash_type: U8,
+}
+
+option ScriptIdOpt (ScriptId);
+
+option ScriptOpt (Script);
+
+table CellularData {
+    content_type: Bytes,
+    content: Bytes,
+    dormant: BoolOpt,
+    immortal: BoolOpt,
+    series: BytesOpt,
+    ext_data: BytesOpt,
+}
+
+table CellularSeriesData {
+    name: Bytes,
+    description: Bytes,
+}
+

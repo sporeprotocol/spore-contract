@@ -1,0 +1,11 @@
+# Rust
+target
+.cache/.cargo/*
+
+# C
+contracts/c/build/*
+
+# others
+build/*
+!.gitkeep
+.tmp/

@@ -1,0 +1,3 @@
+[submodule "contracts/lua/deps/ckb-lua"]
+	path = contracts/lua/deps/ckb-lua
+	url = https://github.com/nervosnetwork/ckb-lua.git

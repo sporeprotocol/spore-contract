@@ -1,0 +1,21 @@
+# [rust]
+# # path of rust contracts workspace directory,
+# # a `Cargo.toml` file is expected under the directory.
+# workspace_dir = "."
+
+# capsule version
+version = "0.10.1 04d03e8"
+# path of deployment config file
+deployment = "deployment.toml"
+
+[[contracts]]
+name = "always-success"
+template_type = "Rust"
+
+[[contracts]]
+name = "cellular"
+template_type = "Rust"
+
+[[contracts]]
+name = "cellular-series"
+template_type = "Rust"
