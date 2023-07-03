@@ -24,6 +24,7 @@ use cellular_types::generated::cellular_types::NFTData;
 use cellular_utils::{count_cells_by_type, load_index_by_type};
 
 use crate::error::Error;
+use crate::error::Error::InvalidCellularData;
 
 pub enum CellularAction {
     Creation,
@@ -192,13 +193,32 @@ fn process_input(index: usize, source: Source, mut cnft_in_outputs: &BTreeMap<&[
         {
             return Err(Error::InvalidContentType);
         }
-        
+
     }
 
     Ok(())
 }
 
 fn process_creation(index: usize, source: Source) -> Result<(), Error> {
+    let raw_data = load_cell_data(index, source)?;
+    let nft_data = match NFTData::from_slice(&raw_data) {
+        Ok(data) => data,
+        _ => return Err(InvalidCellularData),
+    };
+
+    if nft_data.group().is_some() { // need to check if group cell in deps
+        let group = nft_data.group().to_opt().unwrap();
+        let group_pos = QueryIter::new(load_cell_type,Source::CellDep)
+            .position(|type_script| type_script.map_or(false, |type_script| type_script.args().as_slice() == series.as_slice()));
+
+        if group_pos.is_none() {
+            return Err(Error::SeriesNotInDep)
+        }
+
+        // check ownership
+
+    }
+
     Ok(())
 }
 
