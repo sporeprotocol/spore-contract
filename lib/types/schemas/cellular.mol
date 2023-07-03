@@ -25,16 +25,14 @@ option ScriptIdOpt (ScriptId);
 
 option ScriptOpt (Script);
 
-table CellularData {
+table NFTData {
     content_type: Bytes,
     content: Bytes,
-    dormant: BoolOpt,
-    immortal: BoolOpt,
-    series: BytesOpt,
+    group: BytesOpt,
     ext_data: BytesOpt,
 }
 
-table CellularSeriesData {
+table GroupData {
     name: Bytes,
     description: Bytes,
 }
