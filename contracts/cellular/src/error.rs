@@ -9,6 +9,7 @@ pub enum Error {
     Encoding,
     InvalidCell, // not a valid cellular cell
     InvalidCellularData,
+    InvalidContentType, // failed to parse content-type
     DestroyImmortalCellular, // cannot destroy an immortal cellular cell
     ConflictDualOperation, // try to create and destroy cellular cell at the same time
     InsufficientCapacity, // no enough capacity as input

@@ -5,19 +5,21 @@ use core::result::Result;
 // https://doc.rust-lang.org/alloc/index.html
 use alloc::{vec, vec::Vec};
 use alloc::collections::BTreeMap;
-use core::iter::Map;
+use core::{ iter::Map, str};
 
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::{
     ckb_constants::Source,
+
     ckb_types::{bytes::Bytes, packed::Script, prelude::*},
     debug,
     high_level::{load_cell_data, load_script, load_tx_hash, load_cell_type, QueryIter},
 };
-use ckb_std::high_level::{load_cell_capacity, load_cell_lock, load_cell_type_hash};
+use ckb_std::error::SysError;
+use ckb_std::high_level::{load_cell_capacity, load_cell_lock, load_cell_type_hash, load_script_hash};
 
-use cellular_types::generated::cellular_types::CellularData;
+use cellular_types::generated::cellular_types::NFTData;
 
 use cellular_utils::{count_cells_by_type, load_index_by_type};
 
@@ -77,7 +79,7 @@ fn handle_creation(cellular_type: &Script) -> Result<(), Error> {
 
 
     get_cellulars_data(Source::Output, cellular_type).into_iter().try_for_each(|(_, raw_data)|{
-        let cellular_data = CellularData::from_slice(raw_data.as_slice());
+        let cellular_data = NFTData::from_slice(raw_data.as_slice());
         if cellular_data.is_err() {
             return Err(Error::InvalidCellularData);
         }
@@ -113,7 +115,7 @@ fn handle_destruction(cellular_type: &Script) -> Result<(), Error> {
     }
 
     input_cell_data.into_iter().try_for_each(|(index, raw_data)| {
-        let cellular_data = CellularData::from_slice(raw_data.as_slice());
+        let cellular_data = NFTData::from_slice(raw_data.as_slice());
         if cellular_data.is_err() {
             return Err(Error::InvalidCellularData);
         }
@@ -157,14 +159,100 @@ fn handle_update(cellular_type: &Script) -> Result<(), Error> {
     Ok(())
 }
 
+fn process_input(index: usize, source: Source, mut cnft_in_outputs: &BTreeMap<&[u8], usize>) -> Result<(), Error> {
+    let cnft_id = load_cell_type(index, source)?.unwrap_or_default().args().as_slice();
+
+    if cnft_in_outputs.contains_key(cnft_id) {
+        // transfer
+
+        cnft_in_outputs.remove_entry(cnft_id);
+
+    } else {
+        //destruction
+        let raw_data = load_cell_data(index, source)?;
+        let nft_data = NFTData::from_slice(&raw_data);
+        if nft_data.is_err() {
+            return Err(Error::InvalidCellularData);
+        }
+
+        let nft_data = nft_data.unwrap();
+
+        let content_type = match str::from_utf8(nft_data.content_type().as_slice()) {
+            Ok(x) => x,
+            _ => return Err(Error::InvalidContentType),
+        };
+
+        let slash_pos =  match content_type.find('/') {
+            Ok(pos) => pos,
+            _ => return Err(Error::InvalidContentType),
+        };
+
+        if slash_pos == content_type.len() || // empty subtype
+            slash_pos == 0 // empty type
+        {
+            return Err(Error::InvalidContentType);
+        }
+        
+    }
+
+    Ok(())
+}
+
+fn process_creation(index: usize, source: Source) -> Result<(), Error> {
+    Ok(())
+}
+
 
 pub fn main() -> Result<(), Error> {
-    let cellular_type = load_script()?;
+    let cellular_type = load_script_hash()?;
 
-    match match_cellular_action(&cellular_type)? {
-        CellularAction::Creation => { handle_creation(&cellular_type) },
-        CellularAction::Destruction => { handle_destruction(&cellular_type) },
-        CellularAction::Update => { handle_update(&cellular_type) },
+    let mut cnft_in_outputs: BTreeMap<&[u8], usize> = BTreeMap::new(); // cnft ids
+    for i in 0.. {
+        let script_hash = match load_cell_type_hash(i, Source::GroupOutput) {
+            Ok(script_hash) => script_hash,
+            Err(SysError::IndexOutOfBound) => break,
+            Err(err) => return Err(err.into()),
+        };
+
+        if script_hash.unwrap_or_default() != cellular_type {
+            continue;
+        }
+
+        let script: Script = load_cell_script(i, Source::GroupOutput)?;
+
+        cnft_in_outputs.insert(script.args().as_slice(), i);
     }
+
+    // go through inputs
+
+    for i in 0.. {
+        let script_hash = match load_cell_type_hash(i, Source::GroupInput) {
+            Ok(script_hash) => script_hash,
+            Err(SysError::IndexOutOfBound) => break,
+            Err(err) => return Err(err.into()),
+        };
+
+        if script_hash.unwrap_or_default() != cellular_type {
+            continue;
+        }
+
+        // process input
+
+        process_input(i, Source::GroupInput, &mut cnft_in_outputs)?;
+
+    }
+
+
+    // check if any cnft cell left in outputs
+
+    if !cnft_in_outputs.is_empty() {
+        // process creation
+        cnft_in_outputs.into_values().for_each(|index| {
+            process_creation(index, Source::GroupOutput)?
+        })
+    }
+
+    Ok(())
+
 }
 
