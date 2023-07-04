@@ -9,13 +9,9 @@ version = "0.10.1 04d03e8"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "always-success"
-template_type = "Rust"
-
-[[contracts]]
 name = "cellular"
 template_type = "Rust"
 
 [[contracts]]
-name = "cellular-series"
+name = "group"
 template_type = "Rust"

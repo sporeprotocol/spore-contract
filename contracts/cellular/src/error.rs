@@ -7,15 +7,14 @@ pub enum Error {
     ItemMissing,
     LengthNotEnough,
     Encoding,
-    InvalidCell, // not a valid cellular cell
-    InvalidCellularData,
-    DestroyImmortalCellular, // cannot destroy an immortal cellular cell
-    ConflictDualOperation, // try to create and destroy cellular cell at the same time
-    InsufficientCapacity, // no enough capacity as input
+    ModifyPermanentField,
+    InvalidNFTData,
+    InvalidNFTID,
+    InvalidContentType, // failed to parse content-type
+    DestroyImmortalNFT, // cannot destroy an immortal cellular cell
     EmptyContent, // content is empty
-    SeriesNotInDep,
-    LockedNFT,
-    InvalidUpdate,
+    GroupCellNotInDep,
+    GroupCellCanNotUnlock,
 }
 
 impl From<SysError> for Error {
@@ -26,13 +25,6 @@ impl From<SysError> for Error {
             ItemMissing => Self::ItemMissing,
             LengthNotEnough(_) => Self::LengthNotEnough,
             Encoding => Self::Encoding,
-            InvalidCell => Self::InvalidCell,
-            InvalidCellularData => Self::InvalidCellularData,
-            DestroyImmortalCellular => Self::DestroyImmortalCellular,
-            ConflictDualOperation => Self::ConflictDualOperation,
-            EmptyContent => Self::EmptyContent,
-            SeriesNotInDep => Self::SeriesNotInDep,
-            LockedNFT => Self::LockedNFT,
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
     }
