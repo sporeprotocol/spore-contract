@@ -7,10 +7,11 @@ pub enum Error {
     ItemMissing,
     LengthNotEnough,
     Encoding,
-    InvalidTypesArg,
-    InvalidSeriesData,
-    SeriesCellCountError,
-    EmptyName, // name can not be empty
+    ModifyPermanentField,
+    EmptyName,
+    InvalidGroupID,
+    InvalidOperation,
+    InvalidGroupData,
 }
 
 impl From<SysError> for Error {
@@ -21,9 +22,6 @@ impl From<SysError> for Error {
             ItemMissing => Self::ItemMissing,
             LengthNotEnough(_) => Self::LengthNotEnough,
             Encoding => Self::Encoding,
-            InvalidTypesArg => Self::InvalidTypesArg,
-            SeriesCellCountError => Self::SeriesCellCountError,
-            EmptyName => Self::EmptyName,
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
     }

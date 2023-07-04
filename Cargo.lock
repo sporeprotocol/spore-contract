@@ -3,13 +3,6 @@
 version = 3
 
 [[package]]
-name = "always-success"
-version = "0.1.0"
-dependencies = [
- "ckb-std",
-]
-
-[[package]]
 name = "blake2b-ref"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -37,15 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cellular-series"
-version = "0.1.0"
-dependencies = [
- "cellular-types",
- "cellular-utils",
- "ckb-std",
-]
-
-[[package]]
 name = "cellular-types"
 version = "0.1.0"
 dependencies = [
@@ -56,6 +40,7 @@ dependencies = [
 name = "cellular-utils"
 version = "0.1.0"
 dependencies = [
+ "cellular-types",
  "ckb-std",
 ]
 
@@ -85,6 +70,15 @@ dependencies = [
  "buddy-alloc",
  "cc",
  "ckb-standalone-types",
+]
+
+[[package]]
+name = "group"
+version = "0.1.0"
+dependencies = [
+ "cellular-types",
+ "cellular-utils",
+ "ckb-std",
 ]
 
 [[package]]

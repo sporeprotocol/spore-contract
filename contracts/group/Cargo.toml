@@ -1,5 +1,5 @@
 [package]
-name = "always-success"
+name = "group"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 ckb-std = "0.14.0"
+cellular-types = { path = "../../lib/types" }
+cellular-utils = { path = "../../lib/utils" }

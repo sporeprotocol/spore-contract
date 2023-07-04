@@ -1,232 +1,154 @@
-// Import from `core` instead of from `std` since we are in no-std mode
+use alloc::{ string::ToString, vec::Vec };
 use core::result::Result;
-
-// Import heap related library from `alloc`
-// https://doc.rust-lang.org/alloc/index.html
-use alloc::{vec, vec::Vec};
-use alloc::collections::BTreeMap;
-use core::{ iter::Map, str};
-
-// Import CKB syscalls and structures
-// https://docs.rs/ckb-std/
 use ckb_std::{
     ckb_constants::Source,
-
-    ckb_types::{bytes::Bytes, packed::Script, prelude::*},
-    debug,
-    high_level::{load_cell_data, load_script, load_tx_hash, load_cell_type, QueryIter},
+    ckb_types::{prelude::*, util::hash::Blake2bBuilder},
+    high_level::{load_cell_data, load_cell_type, load_cell_lock_hash, load_cell_type_hash, load_script_hash, QueryIter},
+    error::SysError,
 };
-use ckb_std::error::SysError;
-use ckb_std::high_level::{load_cell_capacity, load_cell_lock, load_cell_type_hash, load_script_hash};
 
-use cellular_types::generated::cellular_types::NFTData;
-
-use cellular_utils::{count_cells_by_type, load_index_by_type};
+use cellular_types::generated::cellular_types::{Bytes, NFTData};
 
 use crate::error::Error;
-use crate::error::Error::InvalidCellularData;
+use cellular_utils::{MIME, verify_type_id};
 
-pub enum CellularAction {
-    Creation,
-    Destruction,
-    Update, // Can be transfer or other extensional updates
+fn load_nft_data(index: usize, source: Source) -> Result<NFTData, Error> {
+    let raw_data = load_cell_data(index, source)?;
+    let nft_data = NFTData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
+    Ok(nft_data)
 }
 
-
-fn get_cellulars_data(source: Source, cellular_type: &Script) -> Vec<(usize, Vec<u8>)> {
-    QueryIter::new(load_cell_type, source)
-        .enumerate()
-        .filter(|(_, cell_type)| cell_type.clone().unwrap_or_default().code_hash().as_slice() == cellular_type.code_hash().as_slice())
-        .map(|(index, _)| (index, load_cell_data(index, source).map_or_else(|_| Vec::new(), |data| data))).collect()
-}
-
-fn get_cellulars_script(source: Source, cellular_type: &Script) -> Vec<(usize, Script)> {
-    QueryIter::new(load_cell_type, source)
-        .enumerate()
-        .filter(|(_, cell_type)| cell_type.clone().unwrap_or_default().code_hash().as_slice() == cellular_type.code_hash().as_slice())
-        .map(|(index, script)| (index, script.unwrap_or_default())).collect()
-}
-
-fn match_cellular_action(cellular_type: &Script) -> Result<CellularAction, Error> {
-    let count_cells = |source| {
-        count_cells_by_type(source, &|type_: &Script| {
-            type_.as_slice() == cellular_type.as_slice()
+fn get_position_by_type_args(args: &Bytes, source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_type, source).position(|type_script| {
+        type_script.map_or(false, |type_script| {
+            type_script.args().as_slice()[..] == args.as_slice()[..]
         })
+    })
+}
+
+fn process_input(
+    index: usize,
+    input_source: Source,
+    cnft_in_outputs: &mut Vec<usize>,
+    output_source: Source,
+) -> Result<(), Error> {
+    let cnft_id = load_cell_type(index, input_source)?
+        .unwrap_or_default()
+        .args();
+
+    for i in 0..cnft_in_outputs.len() {
+        let output_index = cnft_in_outputs.get(i).unwrap();
+        let output_cnft_id = load_cell_type(*output_index, output_source)?
+            .unwrap_or_default()
+            .args();
+        if cnft_id.as_slice()[..] == output_cnft_id.as_slice()[..] {
+            // found same NFT in output, this is a transfer
+
+            // check no field was modified
+
+            let nft_data = load_nft_data(index, input_source)?;
+            let output_nft_data = load_nft_data(i, output_source)?;
+
+            if nft_data.content_type().as_slice()[..]
+                != output_nft_data.content_type().as_slice()[..]
+                || nft_data.content().as_slice()[..]
+                    != output_nft_data.content_type().as_slice()[..]
+                || nft_data.group().as_slice()[..] != output_nft_data.group().as_slice()[..]
+            {
+                return Err(Error::ModifyPermanentField);
+            }
+
+            cnft_in_outputs.remove(i);
+            return Ok(());
+        }
+    }
+
+    //destruction
+    let nft_data = load_nft_data(index, input_source)?;
+
+    let mime = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?;
+
+    let immortal = if mime.params().contains_key("immortal") {
+        mime.params()
+            .get("immortal")
+            .unwrap_or(&"".to_string())
+            .trim()
+            .to_ascii_lowercase()
+            == "true"
+    } else {
+        false
     };
 
-    let (input_count, output_count) = (count_cells(Source::Input), count_cells(Source::Output));
-
-    if input_count == 0 && output_count > 0 {
-        Ok(CellularAction::Creation)
-    } else if input_count > output_count {
-        Ok(CellularAction::Destruction)
-    } else if input_count == output_count {
-        Ok(CellularAction::Update)
-    } else {
-        Err(Error::ConflictDualOperation)
-    }
-}
-
-fn handle_creation(cellular_type: &Script) -> Result<(), Error> {
-    // do capacity check
-    let input_capacity = QueryIter::new(load_cell_capacity, Source::Input)
-        .map(|capacity| capacity).sum::<u64>();
-    let output_capacity = QueryIter::new(load_cell_capacity, Source::Output)
-        .map(|capacity| capacity).sum::<u64>();
-
-    if input_capacity < output_capacity {
-        return Err(Error::InsufficientCapacity);
-    }
-
-
-    get_cellulars_data(Source::Output, cellular_type).into_iter().try_for_each(|(_, raw_data)|{
-        let cellular_data = NFTData::from_slice(raw_data.as_slice());
-        if cellular_data.is_err() {
-            return Err(Error::InvalidCellularData);
-        }
-        let cellular_data = cellular_data.unwrap_or_default();
-        if cellular_data.content_type().is_empty() { // content cannot be empty while creation
-            return Err(Error::EmptyContent)
-        }
-
-        // validate series cell in dep is series set
-        if cellular_data.series().is_some() {
-            let series = cellular_data.series().to_opt().unwrap();
-            let series_pos = QueryIter::new(load_cell_type,Source::CellDep)
-                .position(|type_script| type_script.map_or(false, |type_script| type_script.args().as_slice() == series.as_slice()));
-
-            if series_pos.is_none() {
-                return Err(Error::SeriesNotInDep)
-            }
-        }
-
-        Ok(())
-    })?;
-
-    Ok(())
-}
-
-fn handle_destruction(cellular_type: &Script) -> Result<(), Error> {
-    let input_cell_data = get_cellulars_data(Source::Input, cellular_type);
-
-    let output_cell_data = get_cellulars_data(Source::Output, cellular_type);
-
-    if !output_cell_data.is_empty() {
-        return Err(Error::ConflictDualOperation); // can not do creation/update/destruction at a same time
-    }
-
-    input_cell_data.into_iter().try_for_each(|(index, raw_data)| {
-        let cellular_data = NFTData::from_slice(raw_data.as_slice());
-        if cellular_data.is_err() {
-            return Err(Error::InvalidCellularData);
-        }
-        let cellular_data = cellular_data.unwrap_or_default();
-        if bool::from(cellular_data.immortal()) { // try to destroy a immortal cellular
-            return Err(Error::DestroyImmortalCellular)
-        } else {
-            Ok(())
-        }
-    })?;
-    Ok(())
-}
-
-fn handle_update(cellular_type: &Script) -> Result<(), Error> {
-
-    let mut input_ids: Vec<Vec<u8>> = Vec::new();
-    let input_scripts = get_cellulars_script(Source::Input, cellular_type);
-    let output_scripts = get_cellulars_script(Source::Output, cellular_type);
-    input_scripts.into_iter().for_each(|(index, script)| {
-        let cnft_id = script.args().as_slice().to_vec();
-        input_ids.push(cnft_id);
-    });
-
-    output_scripts.into_iter().for_each(|(_, script)| {
-        let cnft_id = script.args().as_slice().to_vec();
-        if input_ids.contains(&cnft_id) {
-            input_ids.retain(|x| x != &cnft_id)
-        }
-    });
-
-    if !input_ids.is_empty() {
-        return Err(Error::InvalidUpdate);
-    }
-
-
-    let input_lock = load_cell_lock(0, Source::GroupInput)?;
-    let output_lock = load_cell_lock(0, Source::GroupOutput)?;
-    if input_lock.as_slice() != output_lock.as_slice() {
-        return Err(Error::LockedNFT);
-    }
-    Ok(())
-}
-
-fn process_input(index: usize, source: Source, mut cnft_in_outputs: &BTreeMap<&[u8], usize>) -> Result<(), Error> {
-    let cnft_id = load_cell_type(index, source)?.unwrap_or_default().args().as_slice();
-
-    if cnft_in_outputs.contains_key(cnft_id) {
-        // transfer
-
-        cnft_in_outputs.remove_entry(cnft_id);
-
-    } else {
-        //destruction
-        let raw_data = load_cell_data(index, source)?;
-        let nft_data = NFTData::from_slice(&raw_data);
-        if nft_data.is_err() {
-            return Err(Error::InvalidCellularData);
-        }
-
-        let nft_data = nft_data.unwrap();
-
-        let content_type = match str::from_utf8(nft_data.content_type().as_slice()) {
-            Ok(x) => x,
-            _ => return Err(Error::InvalidContentType),
-        };
-
-        let slash_pos =  match content_type.find('/') {
-            Ok(pos) => pos,
-            _ => return Err(Error::InvalidContentType),
-        };
-
-        if slash_pos == content_type.len() || // empty subtype
-            slash_pos == 0 // empty type
-        {
-            return Err(Error::InvalidContentType);
-        }
-
+    if immortal {
+        // true destroy a immortal nft
+        return Err(Error::DestroyImmortalNFT);
     }
 
     Ok(())
 }
 
 fn process_creation(index: usize, source: Source) -> Result<(), Error> {
-    let raw_data = load_cell_data(index, source)?;
-    let nft_data = match NFTData::from_slice(&raw_data) {
-        Ok(data) => data,
-        _ => return Err(InvalidCellularData),
-    };
+    let nft_data = load_nft_data(index, source)?;
 
-    if nft_data.group().is_some() { // need to check if group cell in deps
-        let group = nft_data.group().to_opt().unwrap();
-        let group_pos = QueryIter::new(load_cell_type,Source::CellDep)
-            .position(|type_script| type_script.map_or(false, |type_script| type_script.args().as_slice() == series.as_slice()));
+    if nft_data.content().is_empty() {
+        return Err(Error::EmptyContent);
+    }
 
-        if group_pos.is_none() {
-            return Err(Error::SeriesNotInDep)
+    if nft_data.content_type().is_empty() {
+        return Err(Error::InvalidContentType);
+    }
+
+    // verify NFT ID
+    if !verify_type_id(index, source) {
+        return Err(Error::InvalidNFTID);
+    }
+
+
+    MIME::parse(nft_data.content_type()).map_err(|_|Error::InvalidContentType)?; // content_type validation
+
+    if nft_data.group().is_some() {
+        // need to check if group cell in deps
+        let group_id = nft_data.group().to_opt().unwrap();
+        let group_cell_pos = get_position_by_type_args(&group_id, Source::CellDep);
+
+        if group_cell_pos.is_none() {
+            return Err(Error::GroupCellNotInDep);
         }
 
-        // check ownership
+        let group_cell_pos = group_cell_pos.unwrap();
 
+        // check ownership
+        let lock_hash = load_cell_lock_hash(group_cell_pos, Source::CellDep)?;
+
+        verify_group_cell(&lock_hash, group_id, Source::GroupInput)?;
     }
 
     Ok(())
 }
 
+fn verify_group_cell(lock_hash: &[u8; 32], group_id: Bytes, source: Source) -> Result<(), Error> {
+    for i in 0.. {
+        let cell_lock_hash = match load_cell_lock_hash(i, source) {
+            Ok(cell_lock_hash) => cell_lock_hash,
+            Err(SysError::IndexOutOfBound) => break,
+            Err(err) => return Err(err.into()),
+        };
+
+        if cell_lock_hash[..] == lock_hash[..] {
+            match get_position_by_type_args(&group_id, Source::GroupOutput) {
+                Some(_) => return Ok(()),
+                None => {},
+            };
+        }
+    }
+
+    Err(Error::GroupCellCanNotUnlock)
+}
 
 pub fn main() -> Result<(), Error> {
     let cellular_type = load_script_hash()?;
 
-    let mut cnft_in_outputs: BTreeMap<&[u8], usize> = BTreeMap::new(); // cnft ids
+    let mut cnft_in_outputs: Vec<usize> = Vec::new(); // cnft ids
     for i in 0.. {
         let script_hash = match load_cell_type_hash(i, Source::GroupOutput) {
             Ok(script_hash) => script_hash,
@@ -238,9 +160,7 @@ pub fn main() -> Result<(), Error> {
             continue;
         }
 
-        let script: Script = load_cell_script(i, Source::GroupOutput)?;
-
-        cnft_in_outputs.insert(script.args().as_slice(), i);
+        cnft_in_outputs.push(i);
     }
 
     // go through inputs
@@ -256,23 +176,23 @@ pub fn main() -> Result<(), Error> {
             continue;
         }
 
-        // process input
-
-        process_input(i, Source::GroupInput, &mut cnft_in_outputs)?;
-
+        // process input(transfer, destruction)
+        process_input(
+            i,
+            Source::GroupInput,
+            &mut cnft_in_outputs,
+            Source::GroupOutput,
+        )?;
     }
-
 
     // check if any cnft cell left in outputs
 
     if !cnft_in_outputs.is_empty() {
         // process creation
-        cnft_in_outputs.into_values().for_each(|index| {
-            process_creation(index, Source::GroupOutput)?
-        })
+        for index in cnft_in_outputs {
+            process_creation(index, Source::GroupOutput)?;
+        }
     }
 
     Ok(())
-
 }
-
