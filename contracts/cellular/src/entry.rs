@@ -6,6 +6,7 @@ use ckb_std::{
     high_level::{load_cell_data, load_cell_type, load_cell_lock_hash, load_cell_type_hash, load_script_hash, QueryIter},
     error::SysError,
 };
+use ckb_std::ckb_types::core::ScriptHashType;
 
 use cellular_types::generated::cellular_types::{Bytes, NFTData};
 
@@ -150,6 +151,17 @@ pub fn main() -> Result<(), Error> {
 
     let mut cnft_in_outputs: Vec<usize> = Vec::new(); // cnft ids
     for i in 0.. {
+        match load_cell_type(i, Source::GroupOutput)?{
+            Some(script) => {
+                if script.hash_type() != ScriptHashType::Data1 {
+                    continue
+                }
+            },
+            None => continue,
+            Err(SysError::IndexOutOfBound) => break,
+            Err(err) => return Err(err.into()),
+        };
+
         let script_hash = match load_cell_type_hash(i, Source::GroupOutput) {
             Ok(script_hash) => script_hash,
             Err(SysError::IndexOutOfBound) => break,
