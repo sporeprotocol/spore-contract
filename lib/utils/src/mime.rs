@@ -1,8 +1,9 @@
 #![no_std]
 
+use alloc::borrow::ToOwned;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
-use ckb_std::ckb_types::prelude::Entity;
+use ckb_std::ckb_types::prelude::{Builder, Entity, Pack, PackVec};
 use ckb_std::error::SysError;
 use cellular_types::generated::cellular_types::{NFTData, Bytes};
 
@@ -22,6 +23,11 @@ impl MIME {
             _ => return Err(SysError::Encoding),
         };
 
+        Self::str_parse(content_type)
+    }
+
+    pub fn str_parse(content_type: String) -> Result<Self, SysError> {
+
         let slash_pos =  content_type.find('/');
 
         let slash_pos = if slash_pos.is_none() {
@@ -30,13 +36,17 @@ impl MIME {
             slash_pos.unwrap()
         };
 
+        if slash_pos + 1 == content_type.len() {
+            return Err(SysError::Encoding);
+        }
+
         let param_start_pos = content_type.find(';');
 
         if param_start_pos.is_some() && param_start_pos.unwrap() == 0 {
             return Err(SysError::Encoding);
         }
 
-        let has_param_part = param_start_pos.is_some() && param_start_pos.unwrap_or_default() != content_type.len();
+        let mut has_param_part = param_start_pos.is_some() && (param_start_pos.unwrap_or_default() != content_type.len());
 
         if slash_pos == content_type.len() || // empty subtype
             slash_pos == 0 || // empty type
@@ -66,7 +76,7 @@ impl MIME {
         };
 
         if has_param_part {
-            let param_part = param_part.unwrap();
+            let param_part = param_part.unwrap().trim_start_matches(';');
             for param in param_part.split(';') {
                 let mut param_parts = param.splitn(2, '=');
                 let key = param_parts.next();
@@ -93,4 +103,15 @@ impl MIME {
     pub fn mut_params(&mut self) -> &mut BTreeMap<String, String> {
         &mut self.params
     }
+}
+
+#[test]
+fn test_basic() {
+    assert!(MIME::str_parse(String::from("image/png")).is_ok());
+    assert!(MIME::str_parse(String::from("image/png;immortal=true")).is_ok());
+    assert!(MIME::str_parse(String::from("image/")).is_err());
+    assert!(MIME::str_parse(String::from("image/;")).is_err());
+    assert!(MIME::str_parse(String::from("/;")).is_err());
+    assert!(MIME::str_parse(String::from(";")).is_err());
+    assert!(MIME::str_parse(String::from("")).is_err());
 }
