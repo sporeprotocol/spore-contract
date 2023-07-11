@@ -4,17 +4,17 @@ use ckb_std::error::SysError;
 #[repr(i8)]
 pub enum Error {
     IndexOutOfBound = 1,
-    ItemMissing,
-    LengthNotEnough,
-    Encoding,
-    ModifyPermanentField,
-    InvalidNFTData,
-    InvalidNFTID,
-    InvalidContentType, // failed to parse content-type
-    DestroyImmortalNFT, // cannot destroy an immortal cellular cell
-    EmptyContent, // content is empty
-    GroupCellNotInDep,
-    GroupCellCanNotUnlock,
+    ItemMissing = 2,
+    LengthNotEnough = 3,
+    Encoding = 4,
+    ModifyPermanentField = 5,
+    InvalidNFTData = 6,
+    InvalidNFTID = 7,
+    InvalidContentType = 8, // failed to parse content-type
+    DestroyImmortalNFT = 9, // cannot destroy an immortal cellular cell
+    EmptyContent = 10, // content is empty
+    GroupCellNotInDep = 11,
+    GroupCellCanNotUnlock = 12,
 }
 
 impl From<SysError> for Error {

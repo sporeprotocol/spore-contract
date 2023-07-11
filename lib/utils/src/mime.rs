@@ -15,10 +15,8 @@ pub struct MIME {
 }
 
 impl MIME {
-    pub fn parse(raw_data: Bytes) -> Result<Self, SysError> {
-
-        let nft_data = NFTData::from_slice(raw_data.as_slice()).map_err(|_| SysError::Encoding)?;
-        let content_type = match String::from_utf8(nft_data.content_type().as_slice().to_vec()) {
+    pub fn parse(raw_content_type: Bytes) -> Result<Self, SysError> {
+        let content_type = match String::from_utf8(raw_content_type.as_slice().to_vec()) {
             Ok(x) => x,
             _ => return Err(SysError::Encoding),
         };
