@@ -151,13 +151,13 @@ pub fn main() -> Result<(), Error> {
 
     let mut cnft_in_outputs: Vec<usize> = Vec::new(); // cnft ids
     for i in 0.. {
-        match load_cell_type(i, Source::GroupOutput)?{
-            Some(script) => {
-                if script.hash_type() != ScriptHashType::Data1 {
+        match load_cell_type(i, Source::GroupOutput){
+            Ok(Some(script)) => {
+                if script.hash_type() != ScriptHashType::Data1.into() {
                     continue
                 }
             },
-            None => continue,
+            Ok(None) => continue,
             Err(SysError::IndexOutOfBound) => break,
             Err(err) => return Err(err.into()),
         };
