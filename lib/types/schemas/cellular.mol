@@ -29,7 +29,6 @@ table NFTData {
     content_type: Bytes,
     content: Bytes,
     group: BytesOpt,
-    ext_data: BytesOpt,
 }
 
 table GroupData {
