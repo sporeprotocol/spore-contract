@@ -9,9 +9,9 @@ version = "0.10.1 04d03e8"
 deployment = "deployment.toml"
 
 [[contracts]]
-name = "cellular"
+name = "spore"
 template_type = "Rust"
 
 [[contracts]]
-name = "group"
+name = "cluster"
 template_type = "Rust"

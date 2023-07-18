@@ -16,8 +16,8 @@ use ckb_std::{
 
 use crate::error::Error;
 
-use cellular_types::generated::cellular_types::GroupData;
-use cellular_utils::verify_type_id;
+use spore_types::generated::spore_types::ClusterData;
+use spore_utils::verify_type_id;
 
 fn process_input(
     index: usize,
@@ -53,9 +53,9 @@ fn process_input(
     Err(Error::InvalidOperation)
 }
 
-fn load_group_data(index: usize, source: Source) -> Result<GroupData, Error> {
+fn load_group_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
-    let group_data = GroupData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidGroupData)?;
+    let group_data = ClusterData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidGroupData)?;
     Ok(group_data)
 }
 

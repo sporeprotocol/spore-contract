@@ -1,5 +1,5 @@
 [workspace]
-members = ["contracts/cellular", "lib/types", "lib/utils", "contracts/group"]
+members = ["contracts/spore", "lib/types", "lib/utils", "contracts/cluster"]
 exclude = ["tests"]
 
 [profile.release]

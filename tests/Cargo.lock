@@ -102,21 +102,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
 
 [[package]]
-name = "cellular-types"
-version = "0.1.0"
-dependencies = [
- "molecule",
-]
-
-[[package]]
-name = "cellular-utils"
-version = "0.1.0"
-dependencies = [
- "cellular-types",
- "ckb-std",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1159,6 +1144,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb4feee49fdd9f707ef802e22365a35de4b7b299de4763d44bfea899442ff9"
 
 [[package]]
+name = "spore-types"
+version = "0.1.0"
+dependencies = [
+ "molecule",
+]
+
+[[package]]
+name = "spore-utils"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-types",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1184,9 +1184,9 @@ dependencies = [
 name = "tests"
 version = "0.1.0"
 dependencies = [
- "cellular-types",
- "cellular-utils",
  "ckb-testtool",
+ "spore-types",
+ "spore-utils",
 ]
 
 [[package]]

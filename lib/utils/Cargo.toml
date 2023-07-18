@@ -1,5 +1,5 @@
 [package]
-name = "cellular-utils"
+name = "spore-utils"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 ckb-std = "0.14.0"
-cellular-types = { path = "../types" }
+spore-types = { path = "../types" }

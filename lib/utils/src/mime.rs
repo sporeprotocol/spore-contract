@@ -5,7 +5,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use ckb_std::ckb_types::prelude::{Builder, Entity, Pack, PackVec};
 use ckb_std::error::SysError;
-use cellular_types::generated::cellular_types::{NFTData, Bytes};
+use spore_types::generated::spore_types::{SporeData, Bytes};
 
 
 pub struct MIME {

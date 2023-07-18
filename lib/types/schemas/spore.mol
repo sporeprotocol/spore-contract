@@ -10,28 +10,13 @@ array Bool [byte; 1];
 option BoolOpt (Bool);
 option BytesOpt (Bytes);
 
-table Script {
-    code_hash: Bytes32,
-    hash_type: U8,
-    args: Bytes,
-}
-
-struct ScriptId {
-    code_hash: Bytes32,
-    hash_type: U8,
-}
-
-option ScriptIdOpt (ScriptId);
-
-option ScriptOpt (Script);
-
-table NFTData {
+table SporeData {
     content_type: Bytes,
     content: Bytes,
-    group: BytesOpt,
+    cluster: BytesOpt,
 }
 
-table GroupData {
+table ClusterData {
     name: Bytes,
     description: Bytes,
 }

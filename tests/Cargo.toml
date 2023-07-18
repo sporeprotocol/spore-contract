@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 ckb-testtool = "0.9.1"
-cellular-types = { path = "../lib/types" }
-cellular-utils = { path = "../lib/utils" }
+spore-types = { path = "../lib/types" }
+spore-utils = { path = "../lib/utils" }

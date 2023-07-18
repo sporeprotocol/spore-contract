@@ -4,7 +4,7 @@ extern crate alloc;
 use molecule::prelude::{ Entity, Builder };
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::generated::cellular_types::{Bytes, BytesOpt, Bool, NFTData};
+use crate::generated::spore_types::{Bytes, BytesOpt, Bool, SporeData};
 
 pub mod generated;
 
@@ -31,29 +31,29 @@ impl Into<BytesOpt> for &[u8] {
 #[derive(Debug)]
 pub struct NativeNFTData {
     pub content_type: String,
-    pub content: String,
-    pub group: Option<String>,
+    pub content: Vec<u8>,
+    pub cluster: Option<String>,
 }
 
-impl From<NativeNFTData> for generated::cellular_types::NFTData {
+impl From<NativeNFTData> for generated::spore_types::SporeData {
     fn from(data: NativeNFTData) -> Self {
-        let content: Bytes = data.content.as_bytes().into();
+        let content: Bytes = data.content.as_slice().into();
         let content_type: Bytes = data.content_type.as_bytes().into();
-        let group = match data.group {
+        let group = match data.cluster {
             Some(group) => group.as_bytes().into(),
             None => BytesOpt::default(),
         };
-         NFTData::new_builder()
+         SporeData::new_builder()
             .content(content)
             .content_type(content_type)
-            .group(group)
+            .cluster(group)
             .build()
     }
 }
 
 
-impl From::<generated::cellular_types::Bool> for bool {
-    fn from(value: generated::cellular_types::Bool) -> bool {
+impl From::<generated::spore_types::Bool> for bool {
+    fn from(value: generated::spore_types::Bool) -> bool {
          match value.as_slice().first().unwrap_or(&0) {
              0 => false,
              1 => true,
@@ -63,8 +63,8 @@ impl From::<generated::cellular_types::Bool> for bool {
 }
 
 
-impl From::<generated::cellular_types::BoolOpt> for bool {
-    fn from(value: generated::cellular_types::BoolOpt) -> bool {
+impl From::<generated::spore_types::BoolOpt> for bool {
+    fn from(value: generated::spore_types::BoolOpt) -> bool {
         if value.is_none() {
             return false
         }

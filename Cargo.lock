@@ -21,30 +21,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
 
 [[package]]
-name = "cellular"
-version = "0.1.0"
-dependencies = [
- "cellular-types",
- "cellular-utils",
- "ckb-std",
-]
-
-[[package]]
-name = "cellular-types"
-version = "0.1.0"
-dependencies = [
- "molecule",
-]
-
-[[package]]
-name = "cellular-utils"
-version = "0.1.0"
-dependencies = [
- "cellular-types",
- "ckb-std",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -73,12 +49,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "group"
+name = "cluster"
 version = "0.1.0"
 dependencies = [
- "cellular-types",
- "cellular-utils",
  "ckb-std",
+ "spore-types",
+ "spore-utils",
 ]
 
 [[package]]
@@ -88,4 +64,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4fd9767ab5e5f2ea40f71ff4c8bdb633c50509052e093c2fdd0e390a749dfa3"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "spore"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-types",
+ "spore-utils",
+]
+
+[[package]]
+name = "spore-types"
+version = "0.1.0"
+dependencies = [
+ "molecule",
+]
+
+[[package]]
+name = "spore-utils"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-types",
 ]

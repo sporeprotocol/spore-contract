@@ -9,14 +9,14 @@ use ckb_std::{
 };
 use ckb_std::ckb_types::core::ScriptHashType;
 
-use cellular_types::generated::cellular_types::{Bytes, NFTData};
+use spore_types::generated::spore_types::{Bytes, SporeData};
 
 use crate::error::Error;
-use cellular_utils::{MIME, verify_type_id};
+use spore_utils::{MIME, verify_type_id};
 
-fn load_nft_data(index: usize, source: Source) -> Result<NFTData, Error> {
+fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
-    let nft_data = NFTData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
+    let nft_data = SporeData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
     Ok(nft_data)
 }
 
@@ -55,7 +55,7 @@ fn process_input(
                 != output_nft_data.content_type().as_slice()[..]
                 || nft_data.content().as_slice()[..]
                     != output_nft_data.content_type().as_slice()[..]
-                || nft_data.group().as_slice()[..] != output_nft_data.group().as_slice()[..]
+                || nft_data.cluster().as_slice()[..] != output_nft_data.cluster().as_slice()[..]
             {
                 return Err(Error::ModifyPermanentField);
             }
@@ -108,9 +108,9 @@ fn process_creation(index: usize, source: Source) -> Result<(), Error> {
 
     MIME::parse(nft_data.content_type()).map_err(|_|Error::InvalidContentType)?; // content_type validation
 
-    if nft_data.group().is_some() {
+    if nft_data.cluster().is_some() {
         // need to check if group cell in deps
-        let group_id = nft_data.group().to_opt().unwrap();
+        let group_id = nft_data.cluster().to_opt().unwrap();
         let group_cell_pos = get_position_by_type_args(&group_id, Source::CellDep);
 
         if group_cell_pos.is_none() {
