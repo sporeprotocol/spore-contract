@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::io::Read;
 use std::num::ParseIntError;
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use super::*;
@@ -7,8 +6,6 @@ use ckb_testtool::context::Context;
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed::*, packed, prelude::*};
 use ckb_testtool::ckb_error::Error;
 use ckb_testtool::ckb_hash::Blake2bBuilder;
-use ckb_testtool::ckb_jsonrpc_types::Capacity;
-use ckb_testtool::ckb_types::core::cell::ResolvedDep::Cell;
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use spore_types::{NativeNFTData};
 use spore_types::generated::spore_types::{ClusterData, SporeData};
@@ -42,10 +39,12 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
 
     let dummy_cluster_name = "Spore Cluster!";
     let dummy_cluster_description = "Spore Description!";
+    let serialized_cluster_id = cluster_id.as_bytes().pack().as_bytes();
+
 
     let cluster_data = ClusterData::new_builder()
-        .name(dummy_cluster_name.as_bytes().into())
-        .description(dummy_cluster_description.as_bytes().into())
+        .name(dummy_cluster_name.pack().as_slice().into())
+        .description(dummy_cluster_description.pack().as_slice().into())
         .build();
 
     let serialized = SporeData::from(nft_data);
@@ -83,23 +82,26 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
         .build_script_with_hash_type(
             &cluster_out_point,
             ScriptHashType::Data1,
-            cluster_id.into()
+            serialized_cluster_id
         )
         .expect("cluster script");
+
 
     let cluster_out_point = context.create_cell(
         CellOutput::new_builder()
             .capacity((cluster_data.total_size() as u64).pack())
             .lock(lock_script.clone())
             .type_(Some(cluster_script.clone()).pack())
-            .build(), Bytes::new()
+            .build(), Bytes::copy_from_slice(cluster_data.as_slice())
     );
 
     let cluster_dep =  CellDep::new_builder()
         .out_point(cluster_out_point.clone())
         .build();
 
-    let cluster_input = CellInput::new_builder().previous_output(cluster_out_point).build();
+    let cluster_input = CellInput::new_builder()
+        .previous_output(cluster_out_point)
+        .build();
 
 
     let input = CellInput::new_builder().previous_output(input_out_point).build();
@@ -123,11 +125,6 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
 
     let nft_script_dep = CellDep::new_builder().out_point(nft_out_point).build();
 
-    let mut cell_deps = Vec::new();
-
-    for dep in [lock_script_dep, cluster_script_dep, nft_script_dep, cluster_dep] {
-        cell_deps.push(dep)
-    }
 
     let output = CellOutput::new_builder()
         .capacity((output_ckb + cluster_data.total_size() as u64).pack())
@@ -144,10 +141,8 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
     let tx = TransactionBuilder::default()
         .inputs(vec![input, cluster_input])
         .outputs(vec![output, cluster_output])
-        .output_data(serialized.as_slice().pack())
-        .output_data(cluster_data.as_slice().pack())
-
-        .set_cell_deps(cell_deps)
+        .outputs_data(vec![serialized.as_slice().pack(), cluster_data.as_slice().pack()])
+        .cell_deps(vec![lock_script_dep, cluster_script_dep, nft_script_dep, cluster_dep])
         .build();
 
     println!("data: {:?}", hex::encode(serialized.as_slice()));
@@ -250,9 +245,9 @@ fn test_simple() {
 fn test_simple_with_cluster() {
     let (mut context, tx) =
         build_create_context_with_cluster(
-            "".as_bytes().to_vec(),
+            "THIS IS A SIMPLE SPORE".as_bytes().to_vec(),
             "plain/text".to_string(),
-            "0x15561186".to_string()
+            "0x123456789".to_string()
         );
 
     let tx = context.complete_tx(tx);
@@ -275,7 +270,7 @@ fn test_empty_content() {
 
     // run
     context
-        .verify_tx(&tx, MAX_CYCLES).expect("Empty Content");
+        .verify_tx(&tx, MAX_CYCLES).expect_err("Empty Content");
 }
 
 #[test]
@@ -355,7 +350,7 @@ fn test_error_type() {
         let tx = context.complete_tx(tx);
 
         let result = context
-            .verify_tx(&tx, MAX_CYCLES).expect("Error type");
+            .verify_tx(&tx, MAX_CYCLES).expect_err("Error type");
     }
 
 }

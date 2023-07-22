@@ -11,6 +11,7 @@ use ckb_std::ckb_types::{packed::Script, prelude::*};
 use ckb_std::error::SysError;
 use ckb_std::high_level::{load_cell_type, load_input};
 use core::result::Result;
+use ckb_std::debug;
 pub use mime::MIME;
 use spore_types::generated::spore_types::SporeData;
 use spore_types::NativeNFTData;
@@ -36,13 +37,11 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
 }
 
 pub fn type_hash_filter_builder(
-    type_hash: [u8; 32],
-    data_type: ScriptHashType,
-) -> impl Fn(&Option<Script>) -> bool {
-    move |script: &Option<Script>| match script {
-        Some(script) => {
-            script.hash_type() == ScriptHashType::Data1.into()
-                && script.code_hash().as_slice()[..] == type_hash[..]
+    type_hash: [u8; 32]
+) -> impl Fn(&Option<[u8; 32]>) -> bool {
+    move |script_hash: &Option<[u8; 32]>| match script_hash {
+        Some(script_hash) => {
+            script_hash[..] == type_hash[..]
         }
         _ => false,
     }

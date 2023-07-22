@@ -7,12 +7,8 @@ use core::result::Result;
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::ckb_types::core::ScriptHashType;
-use ckb_std::high_level::QueryIter;
-use ckb_std::{
-    ckb_constants::Source,
-    ckb_types::prelude::*,
-    high_level::{load_cell_data, load_cell_type, load_script_hash},
-};
+use ckb_std::high_level::{load_cell_type_hash, QueryIter};
+use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug, high_level::{load_cell_data, load_cell_type, load_script_hash}};
 
 use spore_types::generated::spore_types::ClusterData;
 use spore_utils::{type_hash_filter_builder, verify_type_id};
@@ -54,9 +50,9 @@ fn process_input(
 
 fn load_group_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
-    let group_data =
+    let cluster_data =
         ClusterData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidClusterData)?;
-    Ok(group_data)
+    Ok(cluster_data)
 }
 
 fn process_creation(index: usize, source: Source) -> Result<(), Error> {
@@ -76,19 +72,19 @@ fn process_creation(index: usize, source: Source) -> Result<(), Error> {
 pub fn main() -> Result<(), Error> {
     let cluster_hash = load_script_hash()?;
 
-    let filter_for_cluster_type = type_hash_filter_builder(cluster_hash, ScriptHashType::Data1);
+    let hash_filter = type_hash_filter_builder(cluster_hash);
 
-    let mut group_cell_in_outputs = QueryIter::new(load_cell_type, Source::GroupOutput)
+    let mut group_cell_in_outputs = QueryIter::new(load_cell_type_hash, Source::GroupOutput)
         .enumerate()
-        .filter(|(_, script_hash)| filter_for_cluster_type(script_hash))
+        .filter(|(_, script_hash)| hash_filter(script_hash) )
         .map(|(pos, _)| pos)
         .collect();
 
     // go through inputs, looking for cell matched with code hash
 
-    QueryIter::new(load_cell_type, Source::GroupInput)
+    QueryIter::new(load_cell_type_hash, Source::GroupInput)
         .enumerate()
-        .filter(|(_, script)| filter_for_cluster_type(script))
+        .filter(|(_, script_hash)| hash_filter(script_hash) )
         .map(|(index, _)| index)
         .try_for_each(|index|
             // process every cluster input
@@ -99,7 +95,7 @@ pub fn main() -> Result<(), Error> {
         // creation
         for index in group_cell_in_outputs {
             // process matched cluster creation cells in output
-            process_creation(index, Source::GroupOutput)?;
+            process_creation(index, Source::GroupOutput)?
         }
     }
 
