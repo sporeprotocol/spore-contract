@@ -9,3 +9,4 @@ edition = "2021"
 ckb-testtool = "0.9.1"
 spore-types = { path = "../lib/types" }
 spore-utils = { path = "../lib/utils" }
+hex = { version = "0.4.3" }

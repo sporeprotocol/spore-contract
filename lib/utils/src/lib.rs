@@ -5,10 +5,15 @@ mod mime;
 
 use core::result::Result;
 use ckb_std::ckb_constants::Source;
-use ckb_std::ckb_types::prelude::*;
+use ckb_std::ckb_types::{prelude::*, packed::Script};
+use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
+use ckb_std::error::SysError;
 use ckb_std::high_level::{load_cell_type, load_input};
 pub use mime::MIME;
+use alloc::string::String;
+use spore_types::generated::spore_types::SporeData;
+use spore_types::NativeNFTData;
 
 pub fn verify_type_id(index: usize, source: Source) -> bool {
     let first_input = match load_input(0, Source::Input) {
@@ -28,4 +33,16 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
         Err(_) => return false,
     };
     nft_id[..] == verify_id[..]
+}
+
+pub fn type_hash_filter_builder(type_hash: [u8; 32], data_type: ScriptHashType) -> impl Fn(&Option<Script>) -> bool {
+    move |script: &Option<Script>| {
+        match script {
+            Some(script) => {
+                script.hash_type() == ScriptHashType::Data1.into()
+                    && script.code_hash().as_slice()[..] == type_hash[..]
+            }
+            _ => false
+        }
+    }
 }

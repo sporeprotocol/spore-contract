@@ -13,8 +13,8 @@ pub enum Error {
     InvalidContentType = 8, // failed to parse content-type
     DestroyImmortalNFT = 9, // cannot destroy an immortal cellular cell
     EmptyContent = 10, // content is empty
-    GroupCellNotInDep = 11,
-    GroupCellCanNotUnlock = 12,
+    ClusterCellNotInDep = 11,
+    ClusterCellCanNotUnlock = 12,
 }
 
 impl From<SysError> for Error {

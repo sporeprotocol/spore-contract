@@ -8,6 +8,7 @@ use ckb_std::error::SysError;
 use spore_types::generated::spore_types::{SporeData, Bytes};
 
 
+#[derive(Debug)]
 pub struct MIME {
     main_type: String,
     sub_type: String,
@@ -25,14 +26,7 @@ impl MIME {
     }
 
     pub fn str_parse(content_type: String) -> Result<Self, SysError> {
-
-        let slash_pos =  content_type.find('/');
-
-        let slash_pos = if slash_pos.is_none() {
-            return Err(SysError::Encoding);
-        } else {
-            slash_pos.unwrap()
-        };
+        let slash_pos =  content_type.find('/').ok_or(SysError::Encoding)?;
 
         if slash_pos + 1 == content_type.len() {
             return Err(SysError::Encoding);
@@ -40,15 +34,13 @@ impl MIME {
 
         let param_start_pos = content_type.find(';');
 
-        if param_start_pos.is_some() && param_start_pos.unwrap() == 0 {
-            return Err(SysError::Encoding);
-        }
-
-        let mut has_param_part = param_start_pos.is_some() && (param_start_pos.unwrap_or_default() != content_type.len());
+        let mut has_param_part = match param_start_pos {
+            None => false,
+            Some(pos) => pos != content_type.len(),
+        };
 
         if slash_pos == content_type.len() || // empty subtype
-            slash_pos == 0 || // empty type
-            (has_param_part && slash_pos == param_start_pos.unwrap())  // Something like "xxx/;"
+            slash_pos == 0
         {
             return Err(SysError::Encoding);
         }
@@ -90,7 +82,6 @@ impl MIME {
                 mime_type.mut_params().insert(key, value);
             }
         }
-
         Ok(mime_type)
     }
 

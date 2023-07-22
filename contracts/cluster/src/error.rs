@@ -4,14 +4,14 @@ use ckb_std::error::SysError;
 #[repr(i8)]
 pub enum Error {
     IndexOutOfBound = 1,
-    ItemMissing,
-    LengthNotEnough,
-    Encoding,
-    ModifyPermanentField,
-    EmptyName,
-    InvalidGroupID,
-    InvalidOperation,
-    InvalidGroupData,
+    ItemMissing = 2,
+    LengthNotEnough = 3,
+    Encoding = 4,
+    ModifyPermanentField = 5,
+    EmptyName = 6,
+    InvalidClusterID = 7,
+    InvalidOperation = 8,
+    InvalidClusterData = 11,
 }
 
 impl From<SysError> for Error {
@@ -22,6 +22,11 @@ impl From<SysError> for Error {
             ItemMissing => Self::ItemMissing,
             LengthNotEnough(_) => Self::LengthNotEnough,
             Encoding => Self::Encoding,
+            ModifyPermanentField => Self::ModifyPermanentField,
+            EmptyName => Self::EmptyName,
+            InvalidClusterID => Self::InvalidClusterID,
+            InvalidOperation => Self::InvalidOperation,
+            InvalidClusterData => Self::InvalidClusterData,
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
         }
     }

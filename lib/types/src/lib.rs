@@ -39,14 +39,14 @@ impl From<NativeNFTData> for generated::spore_types::SporeData {
     fn from(data: NativeNFTData) -> Self {
         let content: Bytes = data.content.as_slice().into();
         let content_type: Bytes = data.content_type.as_bytes().into();
-        let group = match data.cluster {
-            Some(group) => group.as_bytes().into(),
+        let cluster = match data.cluster {
+            Some(cluster) => cluster.as_bytes().into(),
             None => BytesOpt::default(),
         };
          SporeData::new_builder()
             .content(content)
             .content_type(content_type)
-            .cluster(group)
+            .cluster(cluster)
             .build()
     }
 }
@@ -61,7 +61,6 @@ impl From::<generated::spore_types::Bool> for bool {
          }
     }
 }
-
 
 impl From::<generated::spore_types::BoolOpt> for bool {
     fn from(value: generated::spore_types::BoolOpt) -> bool {

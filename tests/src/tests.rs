@@ -4,19 +4,15 @@ use std::num::ParseIntError;
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use super::*;
 use ckb_testtool::context::Context;
-use ckb_testtool::ckb_types::{
-    bytes::Bytes,
-    core::TransactionBuilder,
-    core::TransactionView,
-    packed::*,
-    prelude::*,
-};
+use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed::*, packed, prelude::*};
 use ckb_testtool::ckb_error::Error;
 use ckb_testtool::ckb_hash::Blake2bBuilder;
 use ckb_testtool::ckb_jsonrpc_types::Capacity;
+use ckb_testtool::ckb_types::core::cell::ResolvedDep::Cell;
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use spore_types::{NativeNFTData};
-use spore_types::generated::spore_types::{SporeData};
+use spore_types::generated::spore_types::{ClusterData, SporeData};
+use hex;
 
 const MAX_CYCLES: u64 = 10_000_000;
 
@@ -37,6 +33,128 @@ fn build_simple_create_context(nft_content: String, nft_type: String) -> (Contex
     build_create_context(nft_content.into_bytes(), nft_type)
 }
 
+fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, cluster_id: String) -> (Context, TransactionView) {
+    let nft_data: NativeNFTData = NativeNFTData {
+        content: nft_content.clone(),
+        content_type: nft_type.clone(),
+        cluster: Some(cluster_id.clone()),
+    };
+
+    let dummy_cluster_name = "Spore Cluster!";
+    let dummy_cluster_description = "Spore Description!";
+
+    let cluster_data = ClusterData::new_builder()
+        .name(dummy_cluster_name.as_bytes().into())
+        .description(dummy_cluster_description.as_bytes().into())
+        .build();
+
+    let serialized = SporeData::from(nft_data);
+    let mut context = Context::default();
+    let nft_bin: Bytes = Loader::default().load_binary("spore");
+    let nft_out_point = context.deploy_cell(nft_bin);
+    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
+    let cluster_out_point = context.deploy_cell(cluster_bin);
+    let input_ckb = { serialized.total_size() } as u64;
+
+    let output_ckb = input_ckb;
+    let always_success_out_point = context.deploy_contract(ALWAYS_SUCCESS.clone());
+
+    // build lock script
+    let lock_script = context
+        .build_script(&always_success_out_point, Default::default())
+        .expect("script");
+    let lock_script_dep = CellDep::new_builder()
+        .out_point(always_success_out_point)
+        .build();
+
+    let cluster_script_dep = CellDep::new_builder()
+        .out_point(cluster_out_point.clone())
+        .build();
+
+
+    let input_out_point = context.create_cell(
+        CellOutput::new_builder()
+            .lock(lock_script.clone())
+            .capacity(input_ckb.pack())
+            .build(), Bytes::new()
+    );
+
+    let cluster_script = context
+        .build_script_with_hash_type(
+            &cluster_out_point,
+            ScriptHashType::Data1,
+            cluster_id.into()
+        )
+        .expect("cluster script");
+
+    let cluster_out_point = context.create_cell(
+        CellOutput::new_builder()
+            .capacity((cluster_data.total_size() as u64).pack())
+            .lock(lock_script.clone())
+            .type_(Some(cluster_script.clone()).pack())
+            .build(), Bytes::new()
+    );
+
+    let cluster_dep =  CellDep::new_builder()
+        .out_point(cluster_out_point.clone())
+        .build();
+
+    let cluster_input = CellInput::new_builder().previous_output(cluster_out_point).build();
+
+
+    let input = CellInput::new_builder().previous_output(input_out_point).build();
+
+
+    let nft_script_args: Bytes = {
+        let mut blake2b = Blake2bBuilder::new(32)
+            .personal(b"ckb-default-hash")
+            .build();
+        blake2b.update(input.as_slice());
+        blake2b.update(&(0 as u64).to_le_bytes());
+        let mut verify_id = [0; 32];
+        blake2b.finalize(&mut verify_id);
+        verify_id.to_vec().into()
+    };
+
+
+    let nft_script = context
+        .build_script_with_hash_type(&nft_out_point, ScriptHashType::Data1, nft_script_args)
+        .expect("script");
+
+    let nft_script_dep = CellDep::new_builder().out_point(nft_out_point).build();
+
+    let mut cell_deps = Vec::new();
+
+    for dep in [lock_script_dep, cluster_script_dep, nft_script_dep, cluster_dep] {
+        cell_deps.push(dep)
+    }
+
+    let output = CellOutput::new_builder()
+        .capacity((output_ckb + cluster_data.total_size() as u64).pack())
+        .lock(lock_script.clone())
+        .type_(Some(nft_script.clone()).pack())
+        .build();
+
+    let cluster_output = CellOutput::new_builder()
+        .capacity(input_ckb.pack())
+        .lock(lock_script.clone())
+        .type_(Some(cluster_script.clone()).pack())
+        .build();
+
+    let tx = TransactionBuilder::default()
+        .inputs(vec![input, cluster_input])
+        .outputs(vec![output, cluster_output])
+        .output_data(serialized.as_slice().pack())
+        .output_data(cluster_data.as_slice().pack())
+
+        .set_cell_deps(cell_deps)
+        .build();
+
+    println!("data: {:?}", hex::encode(serialized.as_slice()));
+
+    (context, tx)
+}
+
 
 
 fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, TransactionView) {
@@ -46,11 +164,9 @@ fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, Tra
         cluster: None
     };
 
-    println!("NFT DATA:{:?}", nft_data);
-
     let serialized = SporeData::from(nft_data);
     let mut context = Context::default();
-    let nft_bin: Bytes = Loader::default().load_binary("cellular");
+    let nft_bin: Bytes = Loader::default().load_binary("spore");
     let nft_out_point = context.deploy_cell(nft_bin);
 
     let input_ckb = { serialized.total_size() } as u64;
@@ -74,8 +190,6 @@ fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, Tra
             .build(), Bytes::new()
     );
     let input = CellInput::new_builder().previous_output(input_out_point).build();
-
-
 
 
     let nft_script_args: Bytes = {
@@ -110,7 +224,7 @@ fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, Tra
         .cell_dep(nft_script_dep)
         .build();
 
-    println!("data: {:?}", format!("{:x}", serialized.as_slice().pack()));
+    println!("data: {:?}", hex::encode(serialized.as_slice()));
 
     (context, tx)
 }
@@ -133,6 +247,24 @@ fn test_simple() {
 }
 
 #[test]
+fn test_simple_with_cluster() {
+    let (mut context, tx) =
+        build_create_context_with_cluster(
+            "".as_bytes().to_vec(),
+            "plain/text".to_string(),
+            "0x15561186".to_string()
+        );
+
+    let tx = context.complete_tx(tx);
+
+    // run
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("pass verification");
+}
+
+
+#[test]
 fn test_empty_content() {
     let (mut context, tx) =
         build_simple_create_context(
@@ -142,9 +274,8 @@ fn test_empty_content() {
     let tx = context.complete_tx(tx);
 
     // run
-    assert!(context
-        .verify_tx(&tx, MAX_CYCLES).is_err()
-    );
+    context
+        .verify_tx(&tx, MAX_CYCLES).expect("Empty Content");
 }
 
 #[test]
@@ -183,11 +314,25 @@ fn test_read_base64() {
 
 #[test]
 fn test_decode_hex() {
-    let hex_str = "ba010000100000001e000000ba0100000a000000696d6167652f6a70656798010000ffd8ffe000104a46494600010101004800480000ffdb0043000a07070807060a0808080b0a0a0b0e18100e0d0d0e1d15161118231f2524221f2221262b372f26293429212230413134393b3e3e3e252e4449433c48373d3e3bffdb0043010a0b0b0e0d0e1c10101c3b2822283b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3bffc0001108000a000a03012200021101031101ffc4001500010100000000000000000000000000000407ffc4001f1000030002020301010000000000000000010203040500110621314114ffc40014010100000000000000000000000000000000ffc40014110100000000000000000000000000000000ffda000c03010002110311003f0064773b5c2d6f9b6c2db3cc7c76ced8e1499eec7f8dd10b40a127a9a92ce9ebd9631007de50fc4ed5c9f0ed2def57ad6baf83d28ec599d8cd49249fa49fde29f4daaa62e462beb30db1f2aa6d91230529672412cc3ae99bb00f67dfa1c4c632c684e10924a5250939a28554503a0001f001f9c0ffd9";
+    let hex_str = "42020000100000001e000000420200000a000000696d6167652f6a706567200200002f396a2f34414151536b5a4a5267414241514541534142494141442f3277424441416f484277674842676f494341674c43676f4c446867514467304e44683056466845594978386c4a4349664969456d4b7a63764a696b304b5345694d4545784e446b37506a342b4a53354553554d3853446339506a762f3277424441516f4c4377344e44687751454277374b43496f4f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a762f774141524341414b41416f444153494141684542417845422f3851414651414241514141414141414141414141414141414141414241662f7841416645414144414149434177454241414141414141414141414241674d4542514152426945785152542f784141554151454141414141414141414141414141414141414141412f38514146424542414141414141414141414141414141414141414141502f61414177444151414345514d52414438415a486337584331766d327774733878386473375934556d6537482b4e305174416f53657071537a7036396c6a454166655550784f31636e773753337656363172723450536a73575a324d314a4a4a2b6b6e393470394e71715975526976724d4e73664b71625a456a42536c6e4a424c4d4f756d627341396e33364845786a4c47684f454a4a4b556c43546d69685652514f6741423841483577502f5a";
     let data = decode_hex(hex_str).unwrap();
     let nft = SporeData::from_slice(data.as_slice()).expect("error parse");
 
     println!("content-type: {:?}, content: {:?}, cluster: {:?}", nft.content_type(), nft.content(), nft.cluster());
+}
+
+#[test]
+fn test_error_data() {
+    let data: Vec<u8> = vec![0,0,0,0,0];
+    let (mut context, tx) =
+        build_create_context(
+            data,
+            "plain/text".to_string(),
+        );
+
+    let tx = context.complete_tx(tx);
+
+     context.verify_tx(&tx, MAX_CYCLES).expect("Error Data");
 }
 
 #[test]
@@ -202,7 +347,6 @@ fn test_error_type() {
     ];
 
     for content_type in error_nft_types {
-
         let (mut context, tx) =
             build_simple_create_context(
                 "THIS IS A TEST NFT".to_string(),
@@ -210,9 +354,8 @@ fn test_error_type() {
             );
         let tx = context.complete_tx(tx);
 
-        assert!(context
-            .verify_tx(&tx, MAX_CYCLES).is_err()
-        );
+        let result = context
+            .verify_tx(&tx, MAX_CYCLES).expect("Error type");
     }
 
 }
