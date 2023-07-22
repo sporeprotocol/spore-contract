@@ -5,8 +5,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
 use ckb_std::ckb_types::prelude::{Builder, Entity, Pack, PackVec};
 use ckb_std::error::SysError;
-use spore_types::generated::spore_types::{SporeData, Bytes};
-
+use spore_types::generated::spore_types::{Bytes, SporeData};
 
 #[derive(Debug)]
 pub struct MIME {
@@ -26,7 +25,7 @@ impl MIME {
     }
 
     pub fn str_parse(content_type: String) -> Result<Self, SysError> {
-        let slash_pos =  content_type.find('/').ok_or(SysError::Encoding)?;
+        let slash_pos = content_type.find('/').ok_or(SysError::Encoding)?;
 
         if slash_pos + 1 == content_type.len() {
             return Err(SysError::Encoding);
@@ -46,7 +45,10 @@ impl MIME {
         }
 
         let type_part = if has_param_part {
-            content_type.split_at(param_start_pos.unwrap()).0.to_string()
+            content_type
+                .split_at(param_start_pos.unwrap())
+                .0
+                .to_string()
         } else {
             content_type.clone()
         };
@@ -71,7 +73,7 @@ impl MIME {
                 let mut param_parts = param.splitn(2, '=');
                 let key = param_parts.next();
                 if key.is_none() {
-                    break
+                    break;
                 }
                 let key = key.unwrap().trim().to_string();
                 let value = param_parts.next();

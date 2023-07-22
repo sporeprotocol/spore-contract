@@ -1,10 +1,10 @@
 #![no_std]
 
 extern crate alloc;
-use molecule::prelude::{ Entity, Builder };
+use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
-use crate::generated::spore_types::{Bytes, BytesOpt, Bool, SporeData};
+use molecule::prelude::{Builder, Entity};
 
 pub mod generated;
 
@@ -43,7 +43,7 @@ impl From<NativeNFTData> for generated::spore_types::SporeData {
             Some(cluster) => cluster.as_bytes().into(),
             None => BytesOpt::default(),
         };
-         SporeData::new_builder()
+        SporeData::new_builder()
             .content(content)
             .content_type(content_type)
             .cluster(cluster)
@@ -51,21 +51,20 @@ impl From<NativeNFTData> for generated::spore_types::SporeData {
     }
 }
 
-
-impl From::<generated::spore_types::Bool> for bool {
+impl From<generated::spore_types::Bool> for bool {
     fn from(value: generated::spore_types::Bool) -> bool {
-         match value.as_slice().first().unwrap_or(&0) {
-             0 => false,
-             1 => true,
-             _ => false,
-         }
+        match value.as_slice().first().unwrap_or(&0) {
+            0 => false,
+            1 => true,
+            _ => false,
+        }
     }
 }
 
-impl From::<generated::spore_types::BoolOpt> for bool {
+impl From<generated::spore_types::BoolOpt> for bool {
     fn from(value: generated::spore_types::BoolOpt) -> bool {
         if value.is_none() {
-            return false
+            return false;
         }
 
         bool::from(Bool::from_slice(value.as_slice()).unwrap())

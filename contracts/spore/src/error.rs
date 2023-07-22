@@ -12,7 +12,7 @@ pub enum Error {
     InvalidNFTID = 7,
     InvalidContentType = 8, // failed to parse content-type
     DestroyImmortalNFT = 9, // cannot destroy an immortal cellular cell
-    EmptyContent = 10, // content is empty
+    EmptyContent = 10,      // content is empty
     ClusterCellNotInDep = 11,
     ClusterCellCanNotUnlock = 12,
 }

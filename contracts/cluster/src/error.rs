@@ -31,4 +31,3 @@ impl From<SysError> for Error {
         }
     }
 }
-
