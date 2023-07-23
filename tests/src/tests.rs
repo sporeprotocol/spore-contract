@@ -7,6 +7,7 @@ use ckb_testtool::context::Context;
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, H256, packed::*, packed, prelude::*};
 use ckb_testtool::ckb_error::Error;
 use ckb_testtool::ckb_hash::Blake2bBuilder;
+use ckb_testtool::ckb_types::core::cell::ResolvedDep::Cell;
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use spore_types::{NativeNFTData};
 use spore_types::generated::spore_types::{ClusterData, SporeData};
@@ -108,6 +109,14 @@ fn build_create_context_with_cluster_raw(nft_data: SporeData, cluster_id: String
         .previous_output(cluster_out_point)
         .build();
 
+    let normal_input = CellInput::new_builder()
+        .previous_output(
+            context.create_cell(CellOutput::new_builder()
+                                    .capacity((1000000 as u64).pack())
+                                    .lock(lock_script.clone())
+                                    .build(),Bytes::new())
+        ).build();
+
 
     let input = CellInput::new_builder().previous_output(input_out_point).build();
 
@@ -143,10 +152,15 @@ fn build_create_context_with_cluster_raw(nft_data: SporeData, cluster_id: String
         .type_(Some(cluster_script.clone()).pack())
         .build();
 
+    let normal_output = CellOutput::new_builder()
+        .capacity(9999u64.pack())
+        .lock(lock_script.clone())
+        .build();
+
     let tx = TransactionBuilder::default()
-        .inputs(vec![input, cluster_input])
-        .outputs(vec![output, cluster_output])
-        .outputs_data(vec![nft_data.as_slice().pack(), cluster_data.as_slice().pack()])
+        .inputs(vec![input, normal_input, cluster_input])
+        .outputs(vec![normal_output, output, cluster_output])
+        .outputs_data(vec![packed::Bytes::default(),nft_data.as_slice().pack(), cluster_data.as_slice().pack()])
         .cell_deps(vec![lock_script_dep, cluster_script_dep, nft_script_dep, cluster_dep])
         .build();
 
@@ -167,26 +181,38 @@ fn test_type_id() {
             "174d49d39754b2147bed7b09375b4c746436ee66261de012ecb34ca88a8841a3",
             0x0,
             0x1
-        )
+        ),
+        (
+            "bfb080af1de0c066318766ca76433a2abcffbd5dfb6d8d9c79fe9e87dbdadb90",
+            0x1,
+            0x2
+            ),
+        (
+            "0da1d47084fda2eb66ebf744c8afa916c9a633df9b0a5a6ebe600400f8c58311",
+            0x1,
+            0x0
+            )
     ];
 
     let type_id_should_be = vec![
         "9b922def4aa6fb86836673896b4b59bd7ee2bb703cfde42ea1326d662a524bf7",
-        "a8a85678062badbca7580732b77b117337ce3944f5ea09d35d281ea4c6ff2fc2"
+        "a8a85678062badbca7580732b77b117337ce3944f5ea09d35d281ea4c6ff2fc2",
+        "6143e89162ff5eb2a4d4272e35afd05ade4ed625a22686d2a87f9bc323ac1c2a",
+        "47a9baeffda95b95fe3c413308ad34af41ab4cbeecf7c6b3db1af91d8c5c6156"
     ];
 
 
     tx_input_outputs.into_iter().enumerate().for_each(
         |(index ,(tx_hash,
             in_output_index, out_index))| {
-            let hash_raw = H256::from_trimmed_str(
+            let hash_raw = hex::decode(
                 tx_hash.trim_end()
             ).expect("Failed to parse tx hash string!");
             let packed_data = CellInput::new_builder()
                 .since(Uint64::default())
                 .previous_output(
                     OutPoint::new_builder()
-                        .tx_hash(hash_raw.pack())
+                        .tx_hash(Byte32::from_slice(hash_raw.as_slice()).expect("Parse to byte32"))
                         .index(in_output_index.pack())
                         .build()
                 )

@@ -82,20 +82,20 @@ pub fn main() -> Result<(), Error> {
 
     // go through inputs, looking for cell matched with code hash
 
-    QueryIter::new(load_cell_type_hash, Source::Input)
+    QueryIter::new(load_cell_type_hash, Source::GroupInput)
         .enumerate()
         .filter(|(_, script_hash)| hash_filter(script_hash) )
         .map(|(index, _)| index)
         .try_for_each(|index|
             // process every cluster input
-            process_input(index, Source::Input, &mut group_cell_in_outputs, Source::GroupOutput)
+            process_input(index, Source::GroupInput, &mut group_cell_in_outputs, Source::GroupOutput)
         )?;
 
     if !group_cell_in_outputs.is_empty() {
         // creation
         for index in group_cell_in_outputs {
             // process matched cluster creation cells in output
-            process_creation(index, Source::Output)?
+            process_creation(index, Source::GroupOutput)?
         }
     }
 
