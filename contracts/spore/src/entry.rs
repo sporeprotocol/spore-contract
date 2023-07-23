@@ -1,12 +1,13 @@
 use alloc::{string::ToString, vec::Vec};
+use alloc::string::String;
+use core::char::decode_utf16;
 use core::result::Result;
 
-use ckb_std::ckb_types::core::ScriptHashType;
-use ckb_std::high_level::{load_cell, load_cell_lock, load_cell_type_hash};
+use ckb_std::high_level::{decode_hex, load_cell_type_hash};
 use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug, high_level::{load_cell_data, load_cell_type, load_script_hash, QueryIter}};
 
 use spore_types::generated::spore_types::{Bytes, BytesBuilder, BytesOpt, BytesOptBuilder, SporeData};
-use spore_utils::{type_hash_filter_builder, verify_type_id, MIME};
+use spore_utils::{verify_type_id, MIME};
 
 use crate::error::Error;
 
@@ -16,11 +17,11 @@ fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
     Ok(nft_data)
 }
 
-fn get_position_by_type_args(args: &Bytes, source: Source) -> Option<usize> {
+fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type, source)
         .position(|x| {
-            let lhs_args: Vec<u8> = x.unwrap_or_default().args().unpack();
-            lhs_args.as_slice()[..] == args.as_slice()[..]
+            let lhs_args= x.unwrap_or_default().args();
+            lhs_args.as_slice()[..] == args[..]
         })
 }
 
@@ -100,7 +101,10 @@ fn process_creation(index: usize, source: Source) -> Result<(), Error> {
 
     if nft_data.cluster().to_opt().is_some() {
         // need to check if group cell in deps
-        let group_id = nft_data.cluster().to_opt().unwrap_or_default().as_reader().to_entity();
+        let group_id = nft_data.cluster().to_opt().unwrap_or_default();
+        let group_id = group_id.as_slice();
+
+
         get_position_by_type_args(&group_id, Source::CellDep).ok_or(Error::ClusterCellNotInDep)?;
         get_position_by_type_args(&group_id, Source::Input).ok_or(Error::ClusterCellCanNotUnlock)?;
         get_position_by_type_args(&group_id, Source::Output).ok_or(Error::ClusterCellCanNotUnlock)?;
@@ -119,20 +123,20 @@ pub fn main() -> Result<(), Error> {
 
     // go through inputs, looking for cell matched with code hash
 
-    QueryIter::new(load_cell_type_hash, Source::GroupInput)
+    QueryIter::new(load_cell_type_hash, Source::Input)
         .enumerate()
         .filter(|(_, type_hash)| spore_type[..] == type_hash.unwrap_or_default()[..])
         .try_for_each(|(pos, _)|
             // process every matched spore cell in input
             process_input(pos,
-                          Source::GroupInput,
+                          Source::Input,
                           &mut cnft_in_outputs,
-                          Source::GroupOutput))?;
+                          Source::Output))?;
 
     if !cnft_in_outputs.is_empty() {
         for index in cnft_in_outputs {
             // process matched spore creation cells in output
-            process_creation(index, Source::GroupOutput)?
+            process_creation(index, Source::Output)?
         }
     }
 

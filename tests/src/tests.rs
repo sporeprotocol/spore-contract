@@ -1,15 +1,17 @@
 use std::any::Any;
 use std::num::ParseIntError;
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
+use ckb_testtool::bytes;
 use super::*;
 use ckb_testtool::context::Context;
-use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed::*, packed, prelude::*};
+use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, H256, packed::*, packed, prelude::*};
 use ckb_testtool::ckb_error::Error;
 use ckb_testtool::ckb_hash::Blake2bBuilder;
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use spore_types::{NativeNFTData};
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use hex;
+use spore_utils::{calc_type_id, verify_type_id};
 
 const MAX_CYCLES: u64 = 10_000_000;
 
@@ -30,30 +32,31 @@ fn build_simple_create_context(nft_content: String, nft_type: String) -> (Contex
     build_create_context(nft_content.into_bytes(), nft_type)
 }
 
-fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, cluster_id: String) -> (Context, TransactionView) {
+fn build_simple_create_context_with_cluster(nft_content: String, nft_type: String, cluster_id: String) -> (Context, TransactionView) {
     let nft_data: NativeNFTData = NativeNFTData {
-        content: nft_content.clone(),
+        content: nft_content.clone().into_bytes(),
         content_type: nft_type.clone(),
-        cluster: Some(cluster_id.clone()),
+        cluster:  Some(H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x")).expect("parse cluster id").as_bytes().to_vec()),
     };
+    let serialized = SporeData::from(nft_data);
+    build_create_context_with_cluster_raw(serialized, cluster_id)
+}
 
+fn build_create_context_with_cluster_raw(nft_data: SporeData, cluster_id: String) -> (Context, TransactionView) {
     let dummy_cluster_name = "Spore Cluster!";
     let dummy_cluster_description = "Spore Description!";
-    let serialized_cluster_id = cluster_id.as_bytes().pack().as_bytes();
 
 
     let cluster_data = ClusterData::new_builder()
         .name(dummy_cluster_name.pack().as_slice().into())
         .description(dummy_cluster_description.pack().as_slice().into())
         .build();
-
-    let serialized = SporeData::from(nft_data);
     let mut context = Context::default();
     let nft_bin: Bytes = Loader::default().load_binary("spore");
     let nft_out_point = context.deploy_cell(nft_bin);
     let cluster_bin: Bytes = Loader::default().load_binary("cluster");
     let cluster_out_point = context.deploy_cell(cluster_bin);
-    let input_ckb = { serialized.total_size() } as u64;
+    let input_ckb = { nft_data.total_size() } as u64;
 
     let output_ckb = input_ckb;
     let always_success_out_point = context.deploy_contract(ALWAYS_SUCCESS.clone());
@@ -78,11 +81,13 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
             .build(), Bytes::new()
     );
 
+    let cluster_id = H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x")).expect("parse cluster id").pack();
+
     let cluster_script = context
         .build_script_with_hash_type(
             &cluster_out_point,
             ScriptHashType::Data1,
-            serialized_cluster_id
+            cluster_id.raw_data()
         )
         .expect("cluster script");
 
@@ -141,16 +146,58 @@ fn build_create_context_with_cluster(nft_content: Vec<u8>, nft_type: String, clu
     let tx = TransactionBuilder::default()
         .inputs(vec![input, cluster_input])
         .outputs(vec![output, cluster_output])
-        .outputs_data(vec![serialized.as_slice().pack(), cluster_data.as_slice().pack()])
+        .outputs_data(vec![nft_data.as_slice().pack(), cluster_data.as_slice().pack()])
         .cell_deps(vec![lock_script_dep, cluster_script_dep, nft_script_dep, cluster_dep])
         .build();
 
-    println!("data: {:?}", hex::encode(serialized.as_slice()));
+    println!("data: {:?}", hex::encode(nft_data.as_slice()));
 
     (context, tx)
 }
 
+#[test]
+fn test_type_id() {
+    let tx_input_outputs: Vec<(&str, usize, usize)> = vec![
+        (
+            "3000eab35317a9571da21522113ee60fdafbb70eaf833d6e5278047441aa3a39",
+            0x1,
+            0x0
+        ),
+        (
+            "174d49d39754b2147bed7b09375b4c746436ee66261de012ecb34ca88a8841a3",
+            0x0,
+            0x1
+        )
+    ];
 
+    let type_id_should_be = vec![
+        "9b922def4aa6fb86836673896b4b59bd7ee2bb703cfde42ea1326d662a524bf7",
+        "a8a85678062badbca7580732b77b117337ce3944f5ea09d35d281ea4c6ff2fc2"
+    ];
+
+
+    tx_input_outputs.into_iter().enumerate().for_each(
+        |(index ,(tx_hash,
+            in_output_index, out_index))| {
+            let hash_raw = H256::from_trimmed_str(
+                tx_hash.trim_end()
+            ).expect("Failed to parse tx hash string!");
+            let packed_data = CellInput::new_builder()
+                .since(Uint64::default())
+                .previous_output(
+                    OutPoint::new_builder()
+                        .tx_hash(hash_raw.pack())
+                        .index(in_output_index.pack())
+                        .build()
+                )
+                .build();
+            let wanted_id = H256::from_trimmed_str(type_id_should_be[index]).expect("Failed decode type_id");
+            let target_id = calc_type_id(packed_data.as_slice(), out_index);
+            if wanted_id.as_bytes()[..] != target_id[..] {
+                panic!("Veiry type_id:\nexpect:\t{:?}\ngot:\t{:?}", wanted_id.as_bytes() ,target_id);
+            }
+    });
+}
 
 fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, TransactionView) {
     let nft_data: NativeNFTData = NativeNFTData {
@@ -160,11 +207,17 @@ fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, Tra
     };
 
     let serialized = SporeData::from(nft_data);
+    build_create_context_raw(serialized)
+}
+
+
+fn build_create_context_raw(raw_data: SporeData) -> (Context, TransactionView) {
+
     let mut context = Context::default();
     let nft_bin: Bytes = Loader::default().load_binary("spore");
     let nft_out_point = context.deploy_cell(nft_bin);
 
-    let input_ckb = { serialized.total_size() } as u64;
+    let input_ckb = { raw_data.total_size() } as u64;
 
     let output_ckb = input_ckb;
 
@@ -215,11 +268,11 @@ fn build_create_context(nft_content: Vec<u8>, nft_type: String) -> (Context, Tra
     let tx = TransactionBuilder::default()
         .input(input)
         .output(output)
-        .output_data(serialized.as_slice().pack())
+        .output_data(raw_data.as_slice().pack())
         .cell_dep(nft_script_dep)
         .build();
 
-    println!("data: {:?}", hex::encode(serialized.as_slice()));
+    println!("data: {:?}", hex::encode(raw_data.as_slice()));
 
     (context, tx)
 }
@@ -244,10 +297,10 @@ fn test_simple() {
 #[test]
 fn test_simple_with_cluster() {
     let (mut context, tx) =
-        build_create_context_with_cluster(
-            "THIS IS A SIMPLE SPORE".as_bytes().to_vec(),
+        build_simple_create_context_with_cluster(
+            "THIS IS A SIMPLE SPORE".to_string(),
             "plain/text".to_string(),
-            "0x123456789".to_string()
+            "0x12345678".to_string()
         );
 
     let tx = context.complete_tx(tx);
@@ -275,7 +328,6 @@ fn test_empty_content() {
 
 #[test]
 fn test_read_file() {
-    use std::io;
     use std::io::Read;
     use std::io::BufReader;
     use std::fs::File;
@@ -291,6 +343,34 @@ fn test_read_file() {
         println!("Error while reading file!");
     }
 }
+
+#[test]
+fn decode_file() {
+    use std::io::Read;
+    use std::io::BufReader;
+    use std::fs::File;
+    let f = File::open("res/spore_raw.nft").expect("Error while reading file!");
+    let mut reader = BufReader::new(f);
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer).expect("Error read to end");
+    let raw_data = SporeData::from_slice(buffer.as_slice()).expect("faile to parse");
+    println!("spore cluster_id: 0x{:?}", hex::encode(raw_data.cluster().to_opt().unwrap_or_default().raw_data().to_vec()));
+    let (mut context, tx) = build_create_context_raw(raw_data);
+    let view = context.complete_tx(tx);
+    context.verify_tx(&view, MAX_CYCLES).expect("decode nft file");
+
+    let f = File::open("res/spore_with_cluster.nft").expect("Error while reading file!");
+    let mut reader = BufReader::new(f);
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer).expect("Error read to end");
+    let raw_data = SporeData::from_slice(buffer.as_slice()).expect("faile to parse");
+    println!("spore cluster_id: 0x{:?}", hex::encode(raw_data.cluster().to_opt().unwrap_or_default().raw_data().to_vec()));
+    let (mut context, tx) = build_create_context_with_cluster_raw(raw_data, "0x4317d6d1e4a2afbdfb603fea45c0986bef17e8d5f26d7650c91d1176084bf6af".to_string());
+    let view = context.complete_tx(tx);
+    context.verify_tx(&view, MAX_CYCLES).expect("decode nft file");
+
+}
+
 
 fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())

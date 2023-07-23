@@ -21,19 +21,25 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
         Ok(cell_input) => cell_input,
         Err(_) => return false,
     };
-    let mut blake2b = Blake2bBuilder::new(32)
-        .personal(b"ckb-default-hash")
-        .build();
-    blake2b.update(first_input.as_slice());
-    blake2b.update(&(index as u64).to_le_bytes());
-    let mut verify_id = [0; 32];
-    blake2b.finalize(&mut verify_id);
+
+    let verify_id = calc_type_id(first_input.as_bytes().as_ref(), index);
 
     let nft_id: ckb_std::ckb_types::bytes::Bytes = match load_cell_type(index, source) {
         Ok(script) => script.unwrap_or_default().args().unpack(),
         Err(_) => return false,
     };
     nft_id[..] == verify_id[..]
+}
+
+pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8;32] {
+    let mut blake2b = Blake2bBuilder::new(32)
+        .personal(b"ckb-default-hash")
+        .build();
+    blake2b.update(prevout_hash);
+    blake2b.update(&(output_index as u64).to_le_bytes());
+    let mut verify_id = [0; 32];
+    blake2b.finalize(&mut verify_id);
+    verify_id
 }
 
 pub fn type_hash_filter_builder(
