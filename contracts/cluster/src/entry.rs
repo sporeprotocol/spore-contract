@@ -4,11 +4,10 @@ use alloc::vec::Vec;
 // Import from `core` instead of from `std` since we are in no-std mode
 use core::result::Result;
 
+use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, high_level::{load_cell_data, load_cell_type, load_script_hash}};
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
-use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::high_level::{load_cell_type_hash, QueryIter};
-use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug, high_level::{load_cell_data, load_cell_type, load_script_hash}};
 
 use spore_types::generated::spore_types::ClusterData;
 use spore_utils::{type_hash_filter_builder, verify_type_id};
@@ -76,7 +75,7 @@ pub fn main() -> Result<(), Error> {
 
     let mut group_cell_in_outputs = QueryIter::new(load_cell_type_hash, Source::GroupOutput)
         .enumerate()
-        .filter(|(_, script_hash)| hash_filter(script_hash) )
+        .filter(|(_, script_hash)| hash_filter(script_hash))
         .map(|(pos, _)| pos)
         .collect();
 
@@ -84,7 +83,7 @@ pub fn main() -> Result<(), Error> {
 
     QueryIter::new(load_cell_type_hash, Source::GroupInput)
         .enumerate()
-        .filter(|(_, script_hash)| hash_filter(script_hash) )
+        .filter(|(_, script_hash)| hash_filter(script_hash))
         .map(|(index, _)| index)
         .try_for_each(|index|
             // process every cluster input

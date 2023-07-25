@@ -1,20 +1,17 @@
 #![no_std]
 
 extern crate alloc;
-mod mime;
 
-use alloc::string::String;
+use alloc::vec::Vec;
+
 use ckb_std::ckb_constants::Source;
-use ckb_std::ckb_types::core::ScriptHashType;
+use ckb_std::ckb_types::{prelude::*};
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
-use ckb_std::ckb_types::{packed::Script, prelude::*};
-use ckb_std::error::SysError;
 use ckb_std::high_level::{load_cell_type, load_input};
-use core::result::Result;
-use ckb_std::debug;
+
 pub use mime::MIME;
-use spore_types::generated::spore_types::SporeData;
-use spore_types::NativeNFTData;
+
+mod mime;
 
 pub fn verify_type_id(index: usize, source: Source) -> bool {
     let first_input = match load_input(0, Source::Input) {
@@ -22,16 +19,13 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
         Err(_) => return false,
     };
 
-    let verify_id = calc_type_id(first_input.as_bytes().as_ref(), index);
-
-    let nft_id: ckb_std::ckb_types::bytes::Bytes = match load_cell_type(index, source) {
-        Ok(script) => script.unwrap_or_default().args().unpack(),
-        Err(_) => return false,
-    };
-    nft_id[..] == verify_id[..]
+    let verify_id = calc_type_id(first_input.as_slice(), index);
+    let script_args: Vec<u8> = load_cell_type(index, source).unwrap_or(None).unwrap_or_default().args().unpack();
+    let type_id = script_args.as_slice();
+    type_id[..] == verify_id[..]
 }
 
-pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8;32] {
+pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {
     let mut blake2b = Blake2bBuilder::new(32)
         .personal(b"ckb-default-hash")
         .build();

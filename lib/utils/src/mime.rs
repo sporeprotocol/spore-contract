@@ -33,7 +33,7 @@ impl MIME {
 
         let param_start_pos = content_type.find(';');
 
-        let mut has_param_part = match param_start_pos {
+        let has_param_part = match param_start_pos {
             None => false,
             Some(pos) => pos != content_type.len(),
         };
