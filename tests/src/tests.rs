@@ -95,7 +95,7 @@ fn test_simple_spore_mint() {
     let spore_data: NativeNFTData = NativeNFTData {
         content: spore_content.clone(),
         content_type: spore_type.clone(),
-        cluster: None,
+        cluster_id: None,
     };
     let serialized = SporeData::from(spore_data);
 
@@ -184,7 +184,7 @@ fn test_simple_spore_mint_with_cluster() {
     let spore_data: NativeNFTData = NativeNFTData {
         content: spore_content.clone(),
         content_type: spore_type.clone(),
-        cluster: Some(cluster_type_id.to_vec().clone()),
+        cluster_id: Some(cluster_type_id.to_vec().clone()),
     };
     let serialized = SporeData::from(spore_data);
     let capacity = serialized.total_size() as u64;
@@ -253,7 +253,7 @@ fn build_serialized_spore(nft_content: Vec<u8>, nft_type: String) -> SporeData {
     SporeData::from(NativeNFTData {
         content: nft_content.clone(),
         content_type: nft_type.clone(),
-        cluster: None,
+        cluster_id: None,
     })
 }
 
@@ -308,7 +308,7 @@ fn test_simple_spore_mint3() {
     let spore_data: NativeNFTData = NativeNFTData {
         content: spore_content.clone(),
         content_type: spore_type.clone(),
-        cluster: None,
+        cluster_id: None,
     };
     let serialized = SporeData::from(spore_data);
 
@@ -421,7 +421,7 @@ fn test_decode_hex() {
     let data = decode_hex(hex_str).unwrap();
     let nft = SporeData::from_slice(data.as_slice()).expect("error parse");
 
-    println!("content-type: {:?}, content: {:?}, cluster: {:?}", nft.content_type(), nft.content(), nft.cluster());
+    println!("content-type: {:?}, content: {:?}, cluster: {:?}", nft.content_type(), nft.content(), nft.cluster_id());
 }
 
 #[test]
@@ -552,7 +552,7 @@ fn build_simple_create_context_with_cluster(nft_content: String, nft_type: Strin
     let nft_data: NativeNFTData = NativeNFTData {
         content: nft_content.clone().into_bytes(),
         content_type: nft_type.clone(),
-        cluster: Some(H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x")).expect("parse cluster id").as_bytes().to_vec()),
+        cluster_id: Some(H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x")).expect("parse cluster id").as_bytes().to_vec()),
     };
     let serialized = SporeData::from(nft_data);
     build_create_context_with_cluster_raw(serialized, cluster_id)

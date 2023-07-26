@@ -95,9 +95,9 @@ fn process_creation(index: usize, source: Source) -> Result<(), Error> {
 
     let _ = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
 
-    if nft_data.cluster().to_opt().is_some() {
+    if nft_data.cluster_id().to_opt().is_some() {
         // need to check if group cell in deps
-        let group_id = nft_data.cluster().to_opt().unwrap_or_default();
+        let group_id = nft_data.cluster_id().to_opt().unwrap_or_default();
         let group_id = group_id.as_slice();
         get_position_by_type_args(&group_id, Source::CellDep).ok_or(Error::ClusterCellNotInDep)?;
         get_position_by_type_args(&group_id, Source::Input)

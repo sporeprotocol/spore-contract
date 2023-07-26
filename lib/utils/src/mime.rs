@@ -1,11 +1,8 @@
-#![no_std]
-
-use alloc::borrow::ToOwned;
 use alloc::collections::BTreeMap;
 use alloc::string::{String, ToString};
-use ckb_std::ckb_types::prelude::{Builder, Entity, Pack, PackVec};
+use ckb_std::ckb_types::prelude::Entity;
 use ckb_std::error::SysError;
-use spore_types::generated::spore_types::{Bytes, SporeData};
+use spore_types::generated::spore_types::Bytes;
 
 #[derive(Debug)]
 pub struct MIME {
