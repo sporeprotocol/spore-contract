@@ -1,14 +1,25 @@
 use alloc::{string::ToString, vec::Vec};
+use core::result::Result;
+
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
     high_level::{load_cell_data, load_cell_type, load_cell_type_hash, QueryIter},
 };
-use core::result::Result;
+
 use spore_types::generated::spore_types::SporeData;
-use spore_utils::{verify_type_id, MIME};
+use spore_utils::{MIME, verify_type_id};
 
 use crate::error::Error;
+
+pub const CLUSTER_CODE_HASHES: [[u8; 32]; 1] = [
+    [
+        0x8d, 0x2f, 0x24, 0xb5, 0x59, 0x61, 0x80, 0x8a,
+        0xb8, 0x1b, 0x31, 0x2e, 0x3e, 0xa7, 0x89, 0x67,
+        0x7e, 0x7c, 0x11, 0xad, 0x7c, 0x05, 0x9b, 0xf6,
+        0xb0, 0xca, 0x16, 0x38, 0x2b, 0xb1, 0x81, 0x8e
+    ]
+];
 
 fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -19,8 +30,13 @@ fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
 
 fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type, source).position(|x| {
-        let lhs_args = x.unwrap_or_default().args();
-        lhs_args.as_slice()[..] == args[..]
+        match x {
+            Some(script) => {
+                CLUSTER_CODE_HASHES.contains(&script.code_hash().unpack())
+                    && script.args().as_slice()[..] == args[..]
+            }
+            _ => false,
+        }
     })
 }
 
