@@ -1,7 +1,7 @@
 #![no_std]
 
 extern crate alloc;
-use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
+pub use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
 use molecule::prelude::{Builder, Entity};

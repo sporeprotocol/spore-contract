@@ -194,7 +194,7 @@ fn test_simple_spore_mint_with_cluster() {
     let spore_cluster_dep = CellDep::new_builder().out_point(cluster_input_cell.previous_output()).build();
 
     let input_cell = build_normal_input(&mut context, capacity, lock.clone());
-    let spore_type_id = build_script_args(&input_cell, 0);
+    let spore_type_id = build_script_args(&input_cell, 1);
     let spore_type = build_script(&mut context, &spore_out_point, ScriptHashType::Data1, spore_type_id.clone());
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone(), lock.clone());
 
@@ -302,7 +302,7 @@ fn test_simple_spore_mint2() {
 }
 
 #[test]
-fn test_simple_spore_mint3() {
+fn test_simple_spore_mint3() { // mint with normal output tx test
     let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
     let spore_type = String::from("plain/text");
     let spore_data: NativeNFTData = NativeNFTData {
@@ -344,6 +344,54 @@ fn test_simple_spore_mint3() {
     context.verify_tx(&tx, MAX_CYCLES).expect("test simple spore mint 3");
 }
 
+
+#[test]
+fn test_simple_spore_mint4() { // multiple mint tx test
+    let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
+    let spore_type = String::from("plain/text");
+    let spore_data: NativeNFTData = NativeNFTData {
+        content: spore_content.clone(),
+        content_type: spore_type.clone(),
+        cluster_id: None,
+    };
+    let serialized = SporeData::from(spore_data);
+
+    let capacity = serialized.total_size() as u64;
+
+    let mut context = Context::default();
+    // always success lock
+    let lock = build_always_success_script(&mut context);
+    let spore_bin: Bytes = Loader::default().load_binary("spore");
+    let spore_out_point = context.deploy_cell(spore_bin);
+    let spore_script_dep = CellDep::new_builder().out_point(spore_out_point.clone()).build();
+
+
+    let input_cell1 = build_normal_input(&mut context, capacity, lock.clone());
+    let input_cell2 = build_normal_input(&mut context, capacity, lock.clone());
+    let input_cell3 = build_normal_input(&mut context, capacity, lock.clone());
+
+    let spore_type_id = build_script_args(&input_cell1, 0);
+    let spore_type = build_script(&mut context, &spore_out_point, ScriptHashType::Data1, spore_type_id.clone());
+
+    let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone(), lock.clone());
+    let output_cell1 = build_normal_output(&mut context, capacity, lock.clone());
+
+    let spore_type_id2 = build_script_args(&input_cell1, 2);
+    let spore_type2 = build_script(&mut context, &spore_out_point, ScriptHashType::Data1, spore_type_id2.clone());
+
+    let spore_out_cell2 = build_output_cell_with_type_id(&mut context, capacity, spore_type2.clone(), lock.clone());
+
+
+    let tx = TransactionBuilder::default()
+        .inputs(vec![input_cell1, input_cell2, input_cell3])
+        .outputs(vec![spore_out_cell, output_cell1, spore_out_cell2])
+        .outputs_data(vec![serialized.as_slice().pack(), packed::Bytes::default(), serialized.as_slice().pack()])
+        .cell_dep(spore_script_dep).build();
+
+    let tx = context.complete_tx(tx);
+
+    context.verify_tx(&tx, MAX_CYCLES).expect("test simple spore mint 3");
+}
 
 #[test]
 fn test_simple_with_cluster() {
@@ -449,7 +497,6 @@ fn test_destroy() {
     let lock = build_always_success_script(&mut context);
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context);
     let spore_type_id = build_script_args(&build_normal_input(&mut context, capacity, lock.clone()), 0);
-    let spore_type = build_script(&mut context, &spore_out_point, ScriptHashType::Data1, spore_type_id.clone());
     let spore_input = build_spore_input(&mut context, &spore_out_point, serialized.clone(), spore_type_id.clone(), lock.clone());
 
     let output = build_normal_output(&mut context, capacity, lock.clone());
@@ -575,7 +622,7 @@ fn build_create_context_with_cluster_raw(nft_data: SporeData, cluster_id: String
     let input_ckb = { nft_data.total_size() } as u64;
 
     let output_ckb = input_ckb;
-    let always_success_out_point = context.deploy_contract(ALWAYS_SUCCESS.clone());
+    let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
 
     // build lock script
     let lock_script = context
@@ -641,7 +688,7 @@ fn build_create_context_with_cluster_raw(nft_data: SporeData, cluster_id: String
             .personal(b"ckb-default-hash")
             .build();
         blake2b.update(input.as_slice());
-        blake2b.update(&(0 as u64).to_le_bytes());
+        blake2b.update(&(1 as u64).to_le_bytes());
         let mut verify_id = [0; 32];
         blake2b.finalize(&mut verify_id);
         verify_id.to_vec().into()

@@ -4,22 +4,26 @@ use core::result::Result;
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
-    high_level::{load_cell_data, load_cell_type, load_cell_type_hash, QueryIter},
+    high_level::{load_cell_data, load_cell_type, QueryIter},
 };
+use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
+use ckb_std::ckb_types::packed::Script;
 
 use spore_types::generated::spore_types::SporeData;
-use spore_utils::{MIME, verify_type_id};
+use spore_utils::{find_position_by_type, MIME, verify_type_id};
 
 use crate::error::Error;
+use crate::error::Error::{ConflictCreation, MultipleSpend};
 
 pub const CLUSTER_CODE_HASHES: [[u8; 32]; 1] = [
     [
-        0x8d, 0x2f, 0x24, 0xb5, 0x59, 0x61, 0x80, 0x8a,
-        0xb8, 0x1b, 0x31, 0x2e, 0x3e, 0xa7, 0x89, 0x67,
-        0x7e, 0x7c, 0x11, 0xad, 0x7c, 0x05, 0x9b, 0xf6,
-        0xb0, 0xca, 0x16, 0x38, 0x2b, 0xb1, 0x81, 0x8e
+        89, 141, 121, 61, 239, 239, 54, 226,
+        238, 186, 84, 169, 180, 81, 48, 228,
+        202, 146, 130, 46, 29, 25, 54, 113,
+        244, 144, 149, 12, 59, 133, 96, 128
     ]
 ];
+
 
 fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -40,37 +44,41 @@ fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
     })
 }
 
-fn process_input(
-    index: usize,
-    input_source: Source,
-    cnft_in_outputs: &mut Vec<usize>,
-    output_source: Source,
-) -> Result<(), Error> {
-    let input_type = load_cell_type(index, input_source)?.unwrap_or_default();
-    for i in 0..cnft_in_outputs.len() {
-        let output_index = cnft_in_outputs
-            .get(i)
-            .ok_or_else(|| Error::IndexOutOfBound)?;
-        let output_type = load_cell_type(*output_index, output_source)?.unwrap_or_default();
-        if input_type.code_hash().as_slice()[..] != output_type.code_hash().as_slice()[..] {
-            continue;
-        }
-        if input_type.args().as_slice()[..] == output_type.args().as_slice()[..] {
-            // found same NFT in output, this is a transfer
-            // check no field was modified
-            let input_nft_data = load_nft_data(index.clone(), input_source)?;
-            let output_nft_data = load_nft_data(*output_index, output_source)?;
+fn process_creation(index: usize) -> Result<(), Error> {
+    let nft_data = load_nft_data(index, Output)?;
 
-            if input_nft_data.as_slice()[..] != output_nft_data.as_slice()[..] {
-                return Err(Error::ModifyPermanentField);
-            }
-            cnft_in_outputs.remove(i);
-            return Ok(());
-        }
+    if nft_data.content().is_empty() {
+        return Err(Error::EmptyContent);
     }
 
+    if nft_data.content_type().is_empty() {
+        return Err(Error::InvalidContentType);
+    }
+
+    // verify NFT ID
+    if !verify_type_id(index, Output) {
+        return Err(Error::InvalidNFTID);
+    }
+
+    let _ = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
+
+    if nft_data.cluster_id().to_opt().is_some() {
+        // need to check if group cell in deps
+        let group_id = nft_data.cluster_id().to_opt().unwrap_or_default();
+        let group_id = group_id.as_slice();
+        get_position_by_type_args(&group_id, CellDep).ok_or(Error::ClusterCellNotInDep)?;
+        get_position_by_type_args(&group_id, Input)
+            .ok_or(Error::ClusterCellCanNotUnlock)?;
+        get_position_by_type_args(&group_id, Output)
+            .ok_or(Error::ClusterCellCanNotUnlock)?;
+    }
+
+    Ok(())
+}
+
+fn process_destruction() -> Result<(), Error> {
     //destruction
-    let nft_data = load_nft_data(index, input_source)?;
+    let nft_data = load_nft_data(0, GroupInput)?;
 
     let mime = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?;
 
@@ -93,64 +101,46 @@ fn process_input(
     Ok(())
 }
 
-fn process_creation(index: usize, source: Source) -> Result<(), Error> {
-    let nft_data = load_nft_data(index, source)?;
+fn process_transfer() -> Result<(), Error> {
+    // found same NFT in output, this is a transfer
+    // check no field was modified
+    let input_nft_data = load_nft_data(0, GroupInput)?;
+    let output_nft_data = load_nft_data(0, GroupOutput)?;
 
-    if nft_data.content().is_empty() {
-        return Err(Error::EmptyContent);
-    }
-
-    if nft_data.content_type().is_empty() {
-        return Err(Error::InvalidContentType);
-    }
-
-    // verify NFT ID
-    if !verify_type_id(index, source) {
-        return Err(Error::InvalidNFTID);
-    }
-
-    let _ = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
-
-    if nft_data.cluster_id().to_opt().is_some() {
-        // need to check if group cell in deps
-        let group_id = nft_data.cluster_id().to_opt().unwrap_or_default();
-        let group_id = group_id.as_slice();
-        get_position_by_type_args(&group_id, Source::CellDep).ok_or(Error::ClusterCellNotInDep)?;
-        get_position_by_type_args(&group_id, Source::Input)
-            .ok_or(Error::ClusterCellCanNotUnlock)?;
-        get_position_by_type_args(&group_id, Source::Output)
-            .ok_or(Error::ClusterCellCanNotUnlock)?;
+    if input_nft_data.as_slice()[..] != output_nft_data.as_slice()[..] {
+        return Err(Error::ModifyPermanentField);
     }
 
     Ok(())
 }
 
 pub fn main() -> Result<(), Error> {
-    let mut cnft_in_outputs: Vec<usize> = QueryIter::new(load_cell_type_hash, Source::GroupOutput)
-        .enumerate()
-        .map(|(pos, _)| pos)
-        .collect();
+    let spore_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
+        .map(|script| {
+            script.unwrap_or_default()
+        }).collect();
 
-    // go through inputs, looking for cell matched with code hash
-    QueryIter::new(load_cell_type, Source::GroupInput)
-        .enumerate()
-        .map(|(pos, _)| pos)
-        .try_for_each(|pos| {
-            // process every matched spore cell in input
-            process_input(
-                pos,
-                Source::GroupInput,
-                &mut cnft_in_outputs,
-                Source::GroupOutput,
-            )
-        })?;
-
-    if !cnft_in_outputs.is_empty() {
-        for index in cnft_in_outputs {
-            // process matched spore creation cells in output
-            process_creation(index, Source::GroupOutput)?
-        }
+    if spore_in_output.len() > 1 {
+        return Err(ConflictCreation);
     }
 
-    Ok(())
+    let spore_in_input: Vec<Script> = QueryIter::new(load_cell_type, GroupInput)
+        .map(|script| {
+            script.unwrap_or_default()
+        }).collect();
+
+    if spore_in_input.len() > 1 {
+        return Err(MultipleSpend);
+    }
+
+    match (spore_in_input.len(), spore_in_output.len()) {
+        (0, 1) => {
+            // find it's index in Source::Output
+            let output_index = find_position_by_type(spore_in_output[0].as_slice(), Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
+            return process_creation(output_index);
+        }
+        (1, 0) => { return process_destruction(); }
+        (1, 1) => { return process_transfer(); }
+        _ => unreachable!(),
+    }
 }

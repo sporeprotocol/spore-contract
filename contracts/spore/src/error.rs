@@ -15,6 +15,8 @@ pub enum Error {
     EmptyContent = 10,      // content is empty
     ClusterCellNotInDep = 11,
     ClusterCellCanNotUnlock = 12,
+    ConflictCreation = 13,
+    MultipleSpend = 14,
 }
 
 impl From<SysError> for Error {

@@ -7,7 +7,8 @@ use alloc::vec::Vec;
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::{prelude::*};
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
-use ckb_std::high_level::{load_cell_type, load_input};
+use ckb_std::debug;
+use ckb_std::high_level::{QueryIter, load_cell_type, load_input};
 
 pub use mime::MIME;
 
@@ -22,6 +23,7 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
     let verify_id = calc_type_id(first_input.as_slice(), index);
     let script_args: Vec<u8> = load_cell_type(index, source).unwrap_or(None).unwrap_or_default().args().unpack();
     let type_id = script_args.as_slice();
+    debug!("wanted: {:?}, got: {:?}", verify_id, type_id);
     type_id[..] == verify_id[..]
 }
 
@@ -45,4 +47,15 @@ pub fn type_hash_filter_builder(
         }
         _ => false,
     }
+}
+
+pub fn find_position_by_type(script_hash: &[u8], source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_type, source)
+        .position(|script| {
+            if let Some(script) = script {
+                script.as_slice()[..] == script_hash[..]
+            } else {
+                false
+            }
+        })
 }
