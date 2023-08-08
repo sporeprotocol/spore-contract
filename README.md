@@ -28,7 +28,7 @@ Here are lists of Spore protocol contract cells code_hashes (Top item is the lat
 
 ### Spore
 Pudge Testnet:
-- `0xc1a7e2d2bd7e0fa90e2f1121782aa9f71204d1fee3a634bf3b12c61a69ee574f`
+- `0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494`
 
 ### Cluster
 Pudge Testnet:

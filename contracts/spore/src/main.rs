@@ -18,8 +18,7 @@ extern crate alloc;
 use ckb_std::default_alloc;
 #[cfg(not(test))]
 ckb_std::entry!(program_entry);
-#[cfg(not(test))]
-default_alloc!();
+default_alloc!(6 * 1024, 3800 * 1024, 64);
 
 /// program entry
 pub fn program_entry() -> i8 {

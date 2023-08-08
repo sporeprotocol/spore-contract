@@ -104,10 +104,10 @@ fn process_destruction() -> Result<(), Error> {
 fn process_transfer() -> Result<(), Error> {
     // found same NFT in output, this is a transfer
     // check no field was modified
-    let input_nft_data = load_nft_data(0, GroupInput)?;
-    let output_nft_data = load_nft_data(0, GroupOutput)?;
+    let input_nft_data = load_cell_data(0, GroupInput)?;
+    let output_nft_data = load_cell_data(0, GroupOutput)?;
 
-    if input_nft_data.as_slice()[..] != output_nft_data.as_slice()[..] {
+    if input_nft_data[..] != output_nft_data[..] {
         return Err(Error::ModifyPermanentField);
     }
 

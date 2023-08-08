@@ -2,6 +2,9 @@
 name = "spore-types"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Spore Protocol types serilization/deserilize utilities (based on molecule)"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
