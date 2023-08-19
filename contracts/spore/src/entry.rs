@@ -6,8 +6,11 @@ use ckb_std::{
     ckb_types::prelude::*,
     high_level::{load_cell_data, load_cell_type, QueryIter},
 };
-use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
+use ckb_std::ckb_constants::HeaderField;
+use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, HeaderDep, Input, Output};
 use ckb_std::ckb_types::packed::Script;
+use ckb_std::high_level::load_transaction;
+use ckb_std::syscalls::load_header_by_field;
 
 use spore_types::generated::spore_types::SporeData;
 use spore_utils::{find_position_by_type, MIME, verify_type_id};
