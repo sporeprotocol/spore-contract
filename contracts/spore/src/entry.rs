@@ -9,30 +9,22 @@ use ckb_std::{
 use ckb_std::ckb_constants::HeaderField;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, HeaderDep, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::load_transaction;
+use ckb_std::high_level::{load_cell_lock_hash, load_transaction};
 use ckb_std::syscalls::load_header_by_field;
 
 use spore_types::generated::spore_types::SporeData;
 use spore_utils::{find_position_by_type, MIME, verify_type_id};
+use spore_constant::CLUSTER_CODE_HASHES;
 
 use crate::error::Error;
 use crate::error::Error::{ConflictCreation, MultipleSpend};
 
-pub const CLUSTER_CODE_HASHES: [[u8; 32]; 1] = [
-    [
-        89, 141, 121, 61, 239, 239, 54, 226,
-        238, 186, 84, 169, 180, 81, 48, 228,
-        202, 146, 130, 46, 29, 25, 54, 113,
-        244, 144, 149, 12, 59, 133, 96, 128
-    ]
-];
 
-
-fn load_nft_data(index: usize, source: Source) -> Result<SporeData, Error> {
+fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
-    let nft_data =
+    let spore_data =
         SporeData::from_compatible_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
-    Ok(nft_data)
+    Ok(spore_data)
 }
 
 fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
@@ -47,14 +39,21 @@ fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
     })
 }
 
-fn process_creation(index: usize) -> Result<(), Error> {
-    let nft_data = load_nft_data(index, Output)?;
+fn get_position_by_lock(lock_hash: &[u8;32],source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_lock_hash, source)
+        .position(|hash| {
+             hash[..] == lock_hash [..]
+        })
+}
 
-    if nft_data.content().is_empty() {
+fn process_creation(index: usize) -> Result<(), Error> {
+    let spore_data = load_spore_data(index, Output)?;
+
+    if spore_data.content().is_empty() {
         return Err(Error::EmptyContent);
     }
 
-    if nft_data.content_type().is_empty() {
+    if spore_data.content_type().is_empty() {
         return Err(Error::InvalidContentType);
     }
 
@@ -63,27 +62,37 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidNFTID);
     }
 
-    let _ = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
+    let _ = MIME::parse(spore_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
 
-    if nft_data.cluster_id().to_opt().is_some() {
-        // need to check if group cell in deps
-        let group_id = nft_data.cluster_id().to_opt().unwrap_or_default();
-        let group_id = group_id.as_slice();
-        get_position_by_type_args(&group_id, CellDep).ok_or(Error::ClusterCellNotInDep)?;
-        get_position_by_type_args(&group_id, Input)
-            .ok_or(Error::ClusterCellCanNotUnlock)?;
-        get_position_by_type_args(&group_id, Output)
-            .ok_or(Error::ClusterCellCanNotUnlock)?;
+    if spore_data.cluster_id().to_opt().is_some() {
+        // check if cluster cell in deps
+        let cluster_id = spore_data.cluster_id().to_opt().unwrap_or_default();
+        let cluster_id = cluster_id.as_slice();
+        let cell_dep_index = get_position_by_type_args(&cluster_id, CellDep).ok_or(Error::ClusterCellNotInDep)?;
+
+        // Condition 1: Check if cluster exist in Inputs & Outputs
+        if get_position_by_type_args(&cluster_id, Input).is_some()
+                && get_position_by_type_args(&cluster_id, Output).is_some() {
+            return Ok(());
+        } else {
+            // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
+            let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
+            get_position_by_lock(&cluster_lock_hash, Output).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            get_position_by_lock(&cluster_lock_hash, Input).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            return Ok(());
+        }
     }
 
     Ok(())
 }
 
+
+
 fn process_destruction() -> Result<(), Error> {
     //destruction
-    let nft_data = load_nft_data(0, GroupInput)?;
+    let spore_data = load_spore_data(0, GroupInput)?;
 
-    let mime = MIME::parse(nft_data.content_type()).map_err(|_| Error::InvalidContentType)?;
+    let mime = MIME::parse(spore_data.content_type()).map_err(|_| Error::InvalidContentType)?;
 
     let immortal = if mime.params().contains_key("immortal") {
         mime.params()
