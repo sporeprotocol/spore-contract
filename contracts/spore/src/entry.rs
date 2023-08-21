@@ -13,7 +13,7 @@ use ckb_std::high_level::{load_cell_lock_hash, load_transaction};
 use ckb_std::syscalls::load_header_by_field;
 
 use spore_types::generated::spore_types::SporeData;
-use spore_utils::{find_position_by_type, MIME, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, MIME, verify_type_id};
 use spore_constant::CLUSTER_CODE_HASHES;
 
 use crate::error::Error;
@@ -25,25 +25,6 @@ fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let spore_data =
         SporeData::from_compatible_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
     Ok(spore_data)
-}
-
-fn get_position_by_type_args(args: &[u8], source: Source) -> Option<usize> {
-    QueryIter::new(load_cell_type, source).position(|x| {
-        match x {
-            Some(script) => {
-                CLUSTER_CODE_HASHES.contains(&script.code_hash().unpack())
-                    && script.args().as_slice()[..] == args[..]
-            }
-            _ => false,
-        }
-    })
-}
-
-fn get_position_by_lock(lock_hash: &[u8;32],source: Source) -> Option<usize> {
-    QueryIter::new(load_cell_lock_hash, source)
-        .position(|hash| {
-             hash[..] == lock_hash [..]
-        })
 }
 
 fn process_creation(index: usize) -> Result<(), Error> {
@@ -68,18 +49,19 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // check if cluster cell in deps
         let cluster_id = spore_data.cluster_id().to_opt().unwrap_or_default();
         let cluster_id = cluster_id.as_slice();
-        let cell_dep_index = get_position_by_type_args(&cluster_id, CellDep).ok_or(Error::ClusterCellNotInDep)?;
+        let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_CODE_HASHES.contains(x) };
+        let cell_dep_index = find_position_by_type_arg(&cluster_id, CellDep, Some(filter_fn)).ok_or(Error::ClusterCellNotInDep)?;
 
         // Condition 1: Check if cluster exist in Inputs & Outputs
-        if get_position_by_type_args(&cluster_id, Input).is_some()
-                && get_position_by_type_args(&cluster_id, Output).is_some() {
-            return Ok(());
+        return if find_position_by_type_arg(&cluster_id, Input, Some(filter_fn)).is_some()
+            && find_position_by_type_arg(&cluster_id, Output, Some(filter_fn)).is_some() {
+            Ok(())
         } else {
             // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
             let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-            get_position_by_lock(&cluster_lock_hash, Output).ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            get_position_by_lock(&cluster_lock_hash, Input).ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            return Ok(());
+            find_position_by_lock(&cluster_lock_hash, Output).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            find_position_by_lock(&cluster_lock_hash, Input).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            Ok(())
         }
     }
 

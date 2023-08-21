@@ -8,7 +8,7 @@ use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::{prelude::*};
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
-use ckb_std::high_level::{QueryIter, load_cell_type, load_input};
+use ckb_std::high_level::{QueryIter, load_cell_type, load_input, load_cell_lock_hash};
 
 pub use mime::MIME;
 
@@ -49,13 +49,35 @@ pub fn type_hash_filter_builder(
     }
 }
 
-pub fn find_position_by_type(script_hash: &[u8], source: Source) -> Option<usize> {
+pub fn find_position_by_type_arg(args: &[u8], source: Source, filter_fn: Option<fn(&[u8; 32]) -> bool>) -> Option<usize> {
     QueryIter::new(load_cell_type, source)
         .position(|script| {
             if let Some(script) = script {
-                script.as_slice()[..] == script_hash[..]
+                script.args().as_slice()[..] == args[..] && match &filter_fn {
+                    None => true,
+                    Some(ref filter_fn) => {
+                        filter_fn(&script.code_hash().unpack())
+                    }
+                }
             } else {
                 false
             }
+        })
+}
+
+pub fn find_position_by_type(type_hash: &[u8], source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_type, source)
+        .position(|script| {
+            match script {
+                Some(script) => script.as_slice()[..] == type_hash[..],
+                _ => false,
+            }
+        })
+}
+
+pub fn find_position_by_lock(lock_hash: &[u8;32], source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_lock_hash, source)
+        .position(|hash| {
+            hash[..] == lock_hash [..]
         })
 }

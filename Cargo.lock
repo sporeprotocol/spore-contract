@@ -58,6 +58,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cluster_agent"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+]
+
+[[package]]
+name = "cluster_proxy"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-constant",
+ "spore-utils",
+]
+
+[[package]]
 name = "molecule"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -15,3 +15,11 @@ template_type = "Rust"
 [[contracts]]
 name = "cluster"
 template_type = "Rust"
+
+[[contracts]]
+name = "cluster_proxy"
+template_type = "Rust"
+
+[[contracts]]
+name = "cluster_agent"
+template_type = "Rust"
