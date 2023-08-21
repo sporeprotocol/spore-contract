@@ -6,15 +6,13 @@ use ckb_std::{
     ckb_types::prelude::*,
     high_level::{load_cell_data, load_cell_type, QueryIter},
 };
-use ckb_std::ckb_constants::HeaderField;
-use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, HeaderDep, Input, Output};
+use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_lock_hash, load_transaction};
-use ckb_std::syscalls::load_header_by_field;
+use ckb_std::high_level::{load_cell_lock_hash};
 
 use spore_types::generated::spore_types::SporeData;
 use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, MIME, verify_type_id};
-use spore_constant::CLUSTER_CODE_HASHES;
+use spore_constant::{CLUSTER_CODE_HASHES, CLUSTER_AGENT_CODE_HASHES};
 
 use crate::error::Error;
 use crate::error::Error::{ConflictCreation, MultipleSpend};
@@ -50,14 +48,26 @@ fn process_creation(index: usize) -> Result<(), Error> {
         let cluster_id = spore_data.cluster_id().to_opt().unwrap_or_default();
         let cluster_id = cluster_id.as_slice();
         let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_CODE_HASHES.contains(x) };
+        let filter_fn2: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_AGENT_CODE_HASHES.contains(x) };
         let cell_dep_index = find_position_by_type_arg(&cluster_id, CellDep, Some(filter_fn)).ok_or(Error::ClusterCellNotInDep)?;
 
         // Condition 1: Check if cluster exist in Inputs & Outputs
         return if find_position_by_type_arg(&cluster_id, Input, Some(filter_fn)).is_some()
             && find_position_by_type_arg(&cluster_id, Output, Some(filter_fn)).is_some() {
             Ok(())
-        } else {
-            // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
+        } // Condition 2: Check if cluster agent in Inputs & Outputs
+        else if find_position_by_type_arg(&cluster_id, Input, Some(filter_fn2)).is_some()
+            && find_position_by_type_arg(&cluster_id, Output, Some(filter_fn2)).is_some() {
+            Ok(())
+        } // Condition 3: Use cluster agent by lock proxy
+        else if let Some(agent_index) = find_position_by_type_arg(&cluster_id, CellDep, Some(filter_fn2)) {
+            let agent_lock_hash =  load_cell_lock_hash(agent_index, CellDep)?;
+            find_position_by_lock(&agent_lock_hash, Output).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            find_position_by_lock(&agent_lock_hash, Input).ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            Ok(())
+        }
+        else {
+            // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
             let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
             find_position_by_lock(&cluster_lock_hash, Output).ok_or(Error::ClusterOwnershipVerifyFailed)?;
             find_position_by_lock(&cluster_lock_hash, Input).ok_or(Error::ClusterOwnershipVerifyFailed)?;

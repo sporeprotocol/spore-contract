@@ -7,8 +7,12 @@ pub enum Error {
     ItemMissing,
     LengthNotEnough,
     Encoding,
-    // Add customized errors here...
-    MyError,
+    InvalidOperation,
+    ImmutableFieldModification,
+    InvalidAgentID,
+    ProxyCellNotInDep,
+    PaymentNotEnough,
+    PaymentMethodNotSupport,
 }
 
 impl From<SysError> for Error {

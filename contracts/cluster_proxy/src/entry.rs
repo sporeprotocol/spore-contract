@@ -80,8 +80,8 @@ pub fn main() -> Result<(), Error> {
             let output_index = find_position_by_type(proxy_in_output[0].as_slice(), Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);
         },
-        (1, 0) => Ok(()), // There's no limitation to destroy a proxy
+        (1, 0) => Ok(()), // There's no limitation to destroy a proxy except lock
         (1, 1) => process_transfer(),
         _ => unreachable!(),
-    };
+    }
 }

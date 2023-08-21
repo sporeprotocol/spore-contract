@@ -1,0 +1,30 @@
+# [[cells]]
+# name = "my_cell"
+# enable_type_id = false
+# location = { file = "build/release/my_cell" }
+#
+# reference to on-chain cells
+[[cells]]
+name = "genesis_cell"
+enable_type_id = false
+location = { tx_hash = "0xf8de3bb47d055cdf460d93a2a6e1b05f7432f9777c8c474abf4eec1d4aee5d37", index = 0 }
+
+
+[[cells]]
+name = "spore_cluster_proxy_type"
+location = { file = "build/release/cluster_proxy" }
+enable_type_id = true
+
+[[dep_groups]]
+name = "spore_dep_group"
+cells = [
+    "genesis_cell"
+]
+
+
+# # Replace with your own lock if you want to unlock deployed cells.
+# # For example the secp256k1 lock
+[lock]
+code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
+args = "0xd507e9b771c38a0cf030c94a1bad825b713a044a"
+hash_type = "type"

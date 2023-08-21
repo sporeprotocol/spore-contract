@@ -70,9 +70,9 @@ fn process_creation(index: usize) -> Result<(), Error> {
 fn process_transfer() -> Result<(), Error> {
     // check no field was modified
     let input_cluster_data = load_cluster_data(0, GroupInput)?;
-    let output_nft_data = load_cluster_data(0, GroupOutput)?;
+    let output_cluster_data = load_cluster_data(0, GroupOutput)?;
 
-    if input_cluster_data.as_slice()[..] != output_nft_data.as_slice()[..] {
+    if input_cluster_data.as_slice()[..] != output_cluster_data.as_slice()[..] {
         return Err(Error::ModifyPermanentField);
     }
 
