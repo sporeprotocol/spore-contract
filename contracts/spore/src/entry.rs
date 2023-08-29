@@ -1,11 +1,7 @@
-use alloc::{string::ToString, vec::Vec};
+use alloc::{format, string::ToString, vec::Vec};
 use core::result::Result;
 
-use ckb_std::{
-    ckb_constants::Source,
-    ckb_types::prelude::*,
-    high_level::{load_cell_data, load_cell_type, QueryIter},
-};
+use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, high_level::{load_cell_data, load_cell_type, QueryIter}};
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_lock_hash};
@@ -32,6 +28,10 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::EmptyContent);
     }
 
+    let content = spore_data.content();
+    let content_arr = content.as_slice();
+
+
     if spore_data.content_type().is_empty() {
         return Err(Error::InvalidContentType);
     }
@@ -41,7 +41,17 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidNFTID);
     }
 
-    let _ = MIME::parse(spore_data.content_type()).map_err(|_| Error::InvalidContentType)?; // content_type validation
+    let raw_content_type = spore_data.content_type();
+    let content_type = raw_content_type.unpack();
+
+    let mime = MIME::parse(content_type)?; // content_type validation
+    if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
+        // Check if boundary param exists
+        let boundary_range = mime.get_param(content_type, "boundary").ok_or(Error::InvalidContentType)?;
+        kmp::kmp_find(format!("--{}", alloc::str::from_utf8(&content_arr[boundary_range]).or(Err(Error::Encoding))?).as_bytes(),
+                      content_arr)
+            .ok_or(Error::InvalidMultipartContent)?;
+    }
 
     if spore_data.cluster_id().to_opt().is_some() {
         // check if cluster cell in deps
@@ -84,18 +94,11 @@ fn process_destruction() -> Result<(), Error> {
     //destruction
     let spore_data = load_spore_data(0, GroupInput)?;
 
-    let mime = MIME::parse(spore_data.content_type()).map_err(|_| Error::InvalidContentType)?;
+    let content_type_bytes = spore_data.content_type();
+    let content_type = content_type_bytes.as_reader().as_slice();
+    let mime = MIME::parse(content_type)?;
 
-    let immortal = if mime.params().contains_key("immortal") {
-        mime.params()
-            .get("immortal")
-            .unwrap_or(&"".to_string())
-            .trim()
-            .to_ascii_lowercase()
-            == "true"
-    } else {
-        false
-    };
+    let immortal = mime.verify_param(spore_data.content_type().as_slice(), "immortal", "true".as_bytes());
 
     if immortal {
         // true destroy a immortal nft

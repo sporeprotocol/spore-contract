@@ -75,6 +75,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "kmp"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "131bddab59a64213cc1e9f0c5be010d7eb485951358ab7e52017888dec482028"
+
+[[package]]
 name = "molecule"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -88,6 +94,7 @@ name = "spore"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "kmp",
  "spore-constant",
  "spore-types",
  "spore-utils",

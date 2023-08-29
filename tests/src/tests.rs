@@ -493,6 +493,43 @@ fn test_simple_spore_mint4() { // multiple mint tx test
     context.verify_tx(&tx, MAX_CYCLES).expect("test simple spore mint 3");
 }
 
+
+#[test]
+fn test_spore_multipart_mint() {
+    let (mut context, tx) =
+        simple_build_context("THIS IS A TEST MULTIPART NFT\n\n--SporeDefaultBoundary\nThis is an extra message I want to include".as_bytes().to_vec(),
+                             "multipart/mixed;boundary=SporeDefaultBoundary".to_string(),
+                             None,
+                             0,
+        );
+    let tx = context.complete_tx(tx);
+    context.verify_tx(&tx, MAX_CYCLES).expect("test multipart mint");
+}
+
+#[test]
+fn test_spore_multipart_mint_failure01() {
+    let (mut context, tx) =
+        simple_build_context("THIS IS A TEST MULTIPART NFT\n\n--SporeDefaultBoundary\nThis is an extra message I want to include".as_bytes().to_vec(),
+                             "multipart/mixed;".to_string(), // no boundary param
+                             None,
+                             0,
+        );
+    let tx = context.complete_tx(tx);
+    context.verify_tx(&tx, MAX_CYCLES).expect_err("test multipart failure 01");
+}
+
+#[test]
+fn test_spore_multipart_mint_failure02() {
+    let (mut context, tx) =
+        simple_build_context("THIS IS A TEST MULTIPART NFT\n\nThis is an extra message I want to include".as_bytes().to_vec(),
+                             "multipart/mixed;boundary=SporeDefaultBoundary;".to_string(),
+                             None,
+                             0,
+        );
+    let tx = context.complete_tx(tx);
+    context.verify_tx(&tx, MAX_CYCLES).expect_err("test multipart failure 02");
+}
+
 #[test]
 fn test_simple_with_cluster() {
     let (mut context, tx) =

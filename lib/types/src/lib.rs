@@ -4,7 +4,7 @@ extern crate alloc;
 pub use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
-use molecule::prelude::{Builder, Entity};
+use molecule::prelude::{Builder, Byte, Entity};
 
 pub mod generated;
 
@@ -58,6 +58,12 @@ impl From<generated::spore_types::Bool> for bool {
             1 => true,
             _ => false,
         }
+    }
+}
+
+impl generated::spore_types::Bytes {
+    pub fn unpack(&self) -> &[u8] {
+        &self.as_slice()[4..]
     }
 }
 
