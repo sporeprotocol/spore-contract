@@ -14,7 +14,7 @@ pub enum Error {
     DestroyImmortalNFT = 9, // cannot destroy an immortal cellular cell
     EmptyContent = 10,      // content is empty
     ClusterCellNotInDep = 11,
-    ClusterCellCanNotUnlock = 12,
+    ClusterOwnershipVerifyFailed = 12,
     ConflictCreation = 13,
     MultipleSpend = 14,
 }

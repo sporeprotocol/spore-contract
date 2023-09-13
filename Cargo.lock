@@ -71,9 +71,14 @@ name = "spore"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "spore-constant",
  "spore-types",
  "spore-utils",
 ]
+
+[[package]]
+name = "spore-constant"
+version = "0.1.0"
 
 [[package]]
 name = "spore-types"

@@ -9,3 +9,4 @@ edition = "2021"
 ckb-std = "0.14.0"
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
+spore-constant = { path = "../../lib/constant"}
