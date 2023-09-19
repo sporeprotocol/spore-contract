@@ -10,3 +10,4 @@ ckb-std = "0.14.0"
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
 spore-constant = { path = "../../lib/constant"}
+kmp = { version = "0.1.1" }

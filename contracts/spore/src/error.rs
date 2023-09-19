@@ -17,6 +17,9 @@ pub enum Error {
     ClusterOwnershipVerifyFailed = 12,
     ConflictCreation = 13,
     MultipleSpend = 14,
+    InvalidMultipartContent = 15,
+    MIMEParsingError,
+    Unknown
 }
 
 impl From<SysError> for Error {
@@ -27,7 +30,8 @@ impl From<SysError> for Error {
             ItemMissing => Self::ItemMissing,
             LengthNotEnough(_) => Self::LengthNotEnough,
             Encoding => Self::Encoding,
-            Unknown(err_code) => panic!("unexpected sys error {}", err_code),
+            Unknown(code) if code >= 100 && code <= 104 =>  Self::MIMEParsingError ,
+            _ => Self::Unknown
         }
     }
 }
