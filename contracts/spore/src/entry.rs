@@ -1,7 +1,7 @@
 use alloc::{format, string::ToString, vec::Vec};
 use core::result::Result;
 
-use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, high_level::{load_cell_data, load_cell_type, QueryIter}};
+use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug, high_level::{load_cell_data, load_cell_type, QueryIter}};
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_lock_hash};
@@ -48,7 +48,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
         let boundary_range = mime.get_param(content_type, "boundary").ok_or(Error::InvalidContentType)?;
-        kmp::kmp_find(format!("--{}", alloc::str::from_utf8(&content_arr[boundary_range]).or(Err(Error::Encoding))?).as_bytes(),
+        kmp::kmp_find(format!("--{}", alloc::str::from_utf8(&content_type[boundary_range]).or(Err(Error::Encoding))?).as_bytes(),
                       content_arr)
             .ok_or(Error::InvalidMultipartContent)?;
     }
@@ -95,11 +95,12 @@ fn process_destruction() -> Result<(), Error> {
     let spore_data = load_spore_data(0, GroupInput)?;
 
     let content_type_bytes = spore_data.content_type();
-    let content_type = content_type_bytes.as_reader().as_slice();
+    let content_type = content_type_bytes.unpack();
     let mime = MIME::parse(content_type)?;
 
-    let immortal = mime.verify_param(spore_data.content_type().as_slice(), "immortal", "true".as_bytes());
+    let immortal = mime.verify_param(content_type, "immortal", "true".as_bytes());
 
+    debug!("immortal is: {}", immortal);
     if immortal {
         // true destroy a immortal nft
         return Err(Error::DestroyImmortalNFT);
