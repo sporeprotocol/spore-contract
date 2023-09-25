@@ -64,9 +64,9 @@ impl MIME {
         let mut vec = Vec::new();
         let right_part = &content_type[sub_end..];
         let mut offset = sub_end;
-        while let Some((name_range, value_range, i)) = parse_param(content_type, offset)? {
+        while let Some((name_range, value_range, new_offset)) = parse_param(content_type, offset)? {
             vec.push((name_range, value_range));
-            offset = offset + i;
+            offset = new_offset;
         }
 
         let mime_type = MIME {
@@ -110,6 +110,18 @@ pub fn is_restricted_name(s: &str) -> bool {
         && is_restricted_str(s)
 }
 
+pub fn is_restricted_name_patched(s: &str) -> bool {
+    s == "mutant[]" || is_restricted_name(s)
+}
+
+pub fn is_restricted_value_char(c: char) -> bool {
+    c.is_ascii_alphanumeric()
+        || matches!(
+            c,
+            '!' | '#' | '$' | '&' | '-' | '^' | '_' | '.' | '+' | '%' | '*' | '\'' | ','
+        )
+}
+
 pub fn is_restricted_str(s: &str) -> bool {
     s.chars().all(is_restricted_char)
 }
@@ -141,14 +153,19 @@ fn parse_param(source: &str, offset: usize) -> Result<Option<(RangePair, RangePa
     };
 
     let (name, value) = match rhs.split_once('=') {
-        Some(pair) => pair,
+        Some((name, value_maybe)) => {
+            match value_maybe.split_once(';') {
+                None => (name, value_maybe),
+                Some((value_maybe_lhs, _)) => (name, value_maybe_lhs),
+            }
+        },
         _ => return Err(SysError::Unknown(MIMEErrorCode::InvalidParams.into())),
     };
 
     let key_trimmed = name.trim_start_matches(is_ows).len();
     let key_start = lhs.len() + 1 + name.len() - key_trimmed;
     let key_range = key_start + offset ..key_start + offset + key_trimmed;
-    if !is_restricted_name(&source[key_range.clone()]) {
+    if !is_restricted_name_patched(&source[key_range.clone()]) {
         return Err(SysError::Unknown(MIMEErrorCode::InvalidParams.into()));
     }
     let value_start = key_range.end + 1;
@@ -157,7 +174,7 @@ fn parse_param(source: &str, offset: usize) -> Result<Option<(RangePair, RangePa
         let value_range = value_start..value_end;
         Ok(Some((key_range.clone(), value_range.clone(), value_end)))
     } else {
-        let value_end = value_start + value.chars().take_while(|&c| is_restricted_char(c)).map(char::len_utf8).sum::<usize>();
+        let value_end = value_start + value.chars().take_while(|&c| is_restricted_value_char(c)).map(char::len_utf8).sum::<usize>();
         let value_range = value_start..value_end;
         Ok(Some((key_range.clone(), value_range.clone(), value_end)))
     }
@@ -187,6 +204,11 @@ pub fn parse_quoted_value(s: &str) -> Result<usize, SysError> {
 fn test_basic() {
     assert!(MIME::str_parse("image/png").is_ok());
     assert!(MIME::str_parse("image/png;immortal=true").is_ok());
+    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_ok());
+    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").expect("mutant verify_param")
+        .verify_param(b"image/png;immortal=true;mutant[]=2,3,4,5", "mutant[]", b"2,3,4,5"));
+    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").expect("mutant verify_param")
+        .verify_param(b"image/png;immortal=true;mutant[]=2,3,4,5", "immortal", b"true"));
     assert!(MIME::str_parse("image/").is_err());
     assert!(MIME::str_parse("image/;").is_err());
     assert!(MIME::str_parse("/;").is_err());
