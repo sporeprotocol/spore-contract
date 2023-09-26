@@ -8,7 +8,7 @@ use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::{prelude::*};
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
-use ckb_std::high_level::{QueryIter, load_cell_type, load_input, load_cell_lock_hash};
+use ckb_std::high_level::{QueryIter, load_cell_type, load_input, load_cell_lock_hash, load_cell};
 
 pub use mime::MIME;
 
@@ -24,7 +24,7 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
     let script_args: Vec<u8> = load_cell_type(index, source).unwrap_or(None).unwrap_or_default().args().unpack();
     let type_id = script_args.as_slice();
     debug!("wanted: {:?}, got: {:?}", verify_id, type_id);
-    type_id[..] == verify_id[..]
+    type_id[..32] == verify_id[..]
 }
 
 pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {
@@ -80,4 +80,15 @@ pub fn find_position_by_lock(lock_hash: &[u8;32], source: Source) -> Option<usiz
         .position(|hash| {
             hash[..] == lock_hash [..]
         })
+}
+
+
+pub fn calc_capacity_sum(lock_hash: &[u8;32], source: Source) -> u128 {
+    QueryIter::new(load_cell, source)
+        .filter(|cell| {
+            cell.lock().calc_script_hash().as_slice()[..] == lock_hash[..]
+        })
+        .map(|cell| {
+            cell.capacity().unpack() as u128
+        }).sum()
 }

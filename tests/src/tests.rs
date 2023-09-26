@@ -3,11 +3,13 @@ use std::num::ParseIntError;
 
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use ckb_testtool::ckb_error::Error;
-use ckb_testtool::ckb_hash::Blake2bBuilder;
+use ckb_testtool::ckb_hash::{Blake2bBuilder, new_blake2b};
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, H256, packed::*, packed, prelude::*};
+use ckb_testtool::ckb_types::core::cell::ResolvedDep::Cell;
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use ckb_testtool::context::Context;
 use hex;
+use hex::encode;
 
 use spore_types::NativeNFTData;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
@@ -682,6 +684,8 @@ fn test_destroy_cluster() {
 
     let capacity = cluster.total_size() as u64;
 
+
+
     let mut context = Context::default();
     // always success lock
     let lock = build_always_success_script(&mut context);
@@ -729,6 +733,56 @@ fn test_error_type() {
         let result = context
             .verify_tx(&tx, MAX_CYCLES).expect_err("Error type");
     }
+}
+
+fn calc_code_hash(data: Bytes) -> [u8; 32] {
+    let mut blake2b = new_blake2b();
+    let mut buf = [0u8; 8 * 1024];
+    blake2b.update(data.to_vec().as_slice());
+    let mut hash = [0u8; 32];
+    blake2b.finalize(&mut hash);
+    hash
+}
+
+#[test]
+fn test_extension_1() {
+    let mut context = Context::default();
+    // always success lock
+    let lock = build_always_success_script(&mut context);
+    let lua_lib_bin: Bytes = Loader::default().load_binary("libckblua.so");
+    let lua_lib_out_point = context.deploy_cell(lua_lib_bin.clone());
+    let code_hash = CellOutput::calc_data_hash(&lua_lib_bin.clone());
+    let lua_lib_dep = CellDep::new_builder().out_point(lua_lib_out_point.clone()).build();
+
+    println!("lua lib hash: {}", encode(code_hash.as_slice()));
+
+    let spore_extension_bin: Bytes = Loader::default().load_binary("spore_extension_lua");
+    println!("extension hash: {}", encode(calc_code_hash(spore_extension_bin.clone())));
+    let spore_extension_out_point = context.deploy_cell(spore_extension_bin);
+    let spore_extension_script_dep = CellDep::new_builder().out_point(spore_extension_out_point.clone()).build();
+
+    let lua_code = String::from("_code_hash, _hash_type, args, err = ckb.load_and_unpack_script(); print(err); if err == nil then ckb.dump(args) end");
+
+    let capacity = lua_code.len() as u64;
+
+    let input_cell = build_normal_input(&mut context, capacity, lock.clone());
+
+    println!("input cell hash: {:?}, out_index: {}", input_cell.previous_output().tx_hash().unpack().to_string(), 0);
+    let spore_extension_type_id = build_script_args(&input_cell, 0);
+    let type_ = build_script(&mut context, &spore_extension_out_point, ScriptHashType::Data1, spore_extension_type_id.clone());
+
+    let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, type_.clone(), lock.clone());
+
+    let tx = TransactionBuilder::default()
+        .input(input_cell)
+        .output(spore_out_cell)
+        .output_data(lua_code.pack())
+        .cell_deps(vec![lua_lib_dep, spore_extension_script_dep])
+        .build();
+
+    let tx = context.complete_tx(tx);
+
+    context.verify_tx(&tx, MAX_CYCLES).expect("test spore lua extension");
 }
 
 

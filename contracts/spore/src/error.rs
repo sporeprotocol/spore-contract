@@ -18,8 +18,10 @@ pub enum Error {
     ConflictCreation = 13,
     MultipleSpend = 14,
     InvalidMultipartContent = 15,
-    MIMEParsingError,
-    Unknown
+    MIMEParsingError = 16,
+    ExtensionCellNotInDep = 17,
+    ExtensionPaymentNotEnough = 18,
+    Unknown = 100,
 }
 
 impl From<SysError> for Error {
