@@ -1,7 +1,4 @@
-<br/>
-<p align="center">
-  🧬 Spore Protocol
-</p>
+# <p align="center">🧬 Spore Protocol</p>
 <p align="center">
   A protocol for valuing on-chain contents, build on top of <a href="https://github.com/nervosnetwork/ckb">CKB</a>.
 </p>
