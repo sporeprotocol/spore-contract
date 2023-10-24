@@ -44,7 +44,7 @@ For method 1, the flow is:
 1. Run `capsule new-contract YOUR_CONTRACT_NAME` to init a new contract
 2. Modify `Cargo.toml` of your contract, introduce `spore-types`,`spore-utils`, `spore-constant`
 3. Implementing your contract rules in `entry.rs`
-4. Writing new tests in `tests/src/tests.rf`. See existed test cases for how-to.
+4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to.
 
 
 ## Deployed Code Hashes
