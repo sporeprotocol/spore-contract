@@ -25,17 +25,17 @@ use crate::error::Error::{ConflictCreation, Encoding, FailedToCreateLuaInstance,
 type CreateLuaInstanceType = unsafe extern "C" fn(c_ulong, c_ulong) -> *mut c_void;
 type EvaluateLuaInstanceType = unsafe extern "C" fn(instance: *mut c_void, code: *const c_char, code_size: usize, name: *const c_char) -> c_int;
 
-const SPORE_EXT_NORMAL_ARG_LEN: u8 = 32;
-const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: u8 = 33;
+const SPORE_EXT_NORMAL_ARG_LEN: usize = 32;
+const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 33;
 
 struct CKBLuaLib {
-    context: CKBDLContext<[u8; 270 * 1024]>,
+    context: CKBDLContext<[u8; 280 * 1024]>,
     lib: Library,
 }
 
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
-        let mut context = unsafe { CKBDLContext::<[u8; 270 * 1024]>::new() };
+        let mut context = unsafe { CKBDLContext::<[u8; 280 * 1024]>::new() };
         let lib = context.load(&spore_constant::CKB_LUA_LIB_CODE_HASH).map_err(|_|FailedToLoadLuaLib)?;
         Ok(Self {
             context,
@@ -54,9 +54,9 @@ impl CKBLuaLib {
     fn create_lua_instance(&self) -> Result<*mut c_void, Error> {
         match unsafe { self.lib.get(b"lua_create_instance") } {
             Some(create_lua_instance) => {
-                let lua_mem  = [0usize; 200 * 1024 ];
+                let mut lua_mem  = vec![0u8; 60 * 1024];
                 unsafe {
-                    let instance = (create_lua_instance as Symbol<CreateLuaInstanceType>)(lua_mem.as_ptr() as c_ulong, lua_mem.as_ptr().offset(100 * 1024) as c_ulong);
+                    let instance = (create_lua_instance as Symbol<CreateLuaInstanceType>)(lua_mem.as_mut_ptr() as c_ulong, lua_mem.as_mut_ptr().offset(60 * 1024) as c_ulong);
                     if instance.is_null(){
                         return Err(FailedToCreateLuaInstance)
                     }
@@ -73,7 +73,6 @@ impl CKBLuaLib {
 
     pub fn execute_lua_script(&self, code: &Vec<u8>) -> Result<(), Error> {
         let instance = self.create_lua_instance()?;
-
         let ret = match unsafe { self.lib.get(b"lua_run_code") } {
             Some(lua_run_code) => {
                 let size = code.len().clone();
