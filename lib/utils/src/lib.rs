@@ -65,6 +65,21 @@ pub fn find_position_by_type_arg(args: &[u8], source: Source, filter_fn: Option<
         })
 }
 
+// fallback:
+pub fn find_position_by_type_arg_ext(args: &[u8], source: Source, filter_fn: Option<fn(&[u8; 32]) -> bool>) -> Option<usize> {
+    match find_position_by_type_arg(args, source, filter_fn) {
+        None => {
+            if args.len() < 32 {
+                return None
+            } else {
+                let args_ref = &args[0..32];
+                return find_position_by_type_arg(&args_ref, source, filter_fn)
+            }
+        },
+        Some(pos) => return Some(pos),
+    }
+}
+
 pub fn find_position_by_type(type_hash: &[u8], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type, source)
         .position(|script| {

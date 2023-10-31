@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-std = "0.14.0"
+ckb-std = "0.14.3"
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
 spore-constant = { path = "../../lib/constant"}

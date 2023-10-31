@@ -5,14 +5,15 @@ use alloc::vec::Vec;
 use core::result::Result;
 
 use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, high_level::{load_cell_data, load_cell_type}};
-use ckb_std::ckb_constants::Source::{GroupInput, GroupOutput, Output};
+use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
 use ckb_std::ckb_types::packed::Script;
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
-use ckb_std::high_level::QueryIter;
+use ckb_std::high_level::{load_script, QueryIter};
+use spore_constant::CodeHash::SPORE_EXTENSION_LUA;
 
 use spore_types::generated::spore_types::ClusterData;
-use spore_utils::{find_position_by_type, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_type_arg, verify_type_id};
 
 use crate::error::Error;
 
@@ -52,7 +53,7 @@ fn process_input(
 fn load_cluster_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
     let cluster_data =
-        ClusterData::from_slice(raw_data.as_slice()).map_err(|_| Error::InvalidClusterData)?;
+        ClusterData::from_compatible_slice(raw_data.as_slice()).map_err(|_| Error::InvalidClusterData)?;
     Ok(cluster_data)
 }
 
@@ -64,6 +65,15 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if !verify_type_id(index, Output) {
         return Err(Error::InvalidClusterID);
     }
+
+    // Verify if mutant is set
+    if cluster_data.mutant_id().is_some() {
+        let script = load_script().unwrap_or_default();
+        let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { SPORE_EXTENSION_LUA.contains(x) };
+        let args: Vec<u8> = script.args().unpack();
+        find_position_by_type_arg(args.as_slice(), CellDep, Some(filter_fn)).ok_or(Error::MutantNotInDeps)?;
+    }
+
     Ok(())
 }
 

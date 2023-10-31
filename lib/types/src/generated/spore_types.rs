@@ -1779,6 +1779,7 @@ impl ::core::fmt::Display for ClusterData {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "name", self.name())?;
         write!(f, ", {}: {}", "description", self.description())?;
+        write!(f, ", {}: {}", "mutant_id", self.mutant_id())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
         write!(f, " }}")
@@ -1787,13 +1788,13 @@ impl ::core::fmt::Display for ClusterData {
 
 impl ::core::default::Default for ClusterData {
     fn default() -> Self {
-        let v: Vec<u8> = vec![20, 0, 0, 0, 12, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let v: Vec<u8> = vec![24, 0, 0, 0, 16, 0, 0, 0, 20, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         ClusterData::new_unchecked(v.into())
     }
 }
 
 impl ClusterData {
-    pub const FIELD_COUNT: usize = 2;
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
     pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
     pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
@@ -1807,10 +1808,16 @@ impl ClusterData {
     pub fn description(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Bytes::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn mutant_id(&self) -> BytesOpt {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
-            Bytes::new_unchecked(self.0.slice(start..end))
-        } else { Bytes::new_unchecked(self.0.slice(start..)) }
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            BytesOpt::new_unchecked(self.0.slice(start..end))
+        } else { BytesOpt::new_unchecked(self.0.slice(start..)) }
     }
     pub fn as_reader<'r>(&'r self) -> ClusterDataReader<'r> { ClusterDataReader::new_unchecked(self.as_slice()) }
 }
@@ -1824,7 +1831,7 @@ impl molecule::prelude::Entity for ClusterData {
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { ClusterDataReader::from_slice(slice).map(|reader| reader.to_entity()) }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { ClusterDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
     fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().name(self.name()).description(self.description()) }
+    fn as_builder(self) -> Self::Builder { Self::new_builder().name(self.name()).description(self.description()).mutant_id(self.mutant_id()) }
 }
 
 #[derive(Clone, Copy)]
@@ -1845,6 +1852,7 @@ impl<'r> ::core::fmt::Display for ClusterDataReader<'r> {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "name", self.name())?;
         write!(f, ", {}: {}", "description", self.description())?;
+        write!(f, ", {}: {}", "mutant_id", self.mutant_id())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
         write!(f, " }}")
@@ -1852,7 +1860,7 @@ impl<'r> ::core::fmt::Display for ClusterDataReader<'r> {
 }
 
 impl<'r> ClusterDataReader<'r> {
-    pub const FIELD_COUNT: usize = 2;
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
     pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
     pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
@@ -1866,10 +1874,16 @@ impl<'r> ClusterDataReader<'r> {
     pub fn description(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        BytesReader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn mutant_id(&self) -> BytesOptReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
-            BytesReader::new_unchecked(&self.as_slice()[start..end])
-        } else { BytesReader::new_unchecked(&self.as_slice()[start..]) }
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            BytesOptReader::new_unchecked(&self.as_slice()[start..end])
+        } else { BytesOptReader::new_unchecked(&self.as_slice()[start..]) }
     }
 }
 
@@ -1897,6 +1911,7 @@ impl<'r> molecule::prelude::Reader<'r> for ClusterDataReader<'r> {
         if offsets.windows(2).any(|i| i[0] > i[1]) { return ve!(Self , OffsetsNotMatch); }
         BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
         BytesReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        BytesOptReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
         Ok(())
     }
 }
@@ -1905,10 +1920,11 @@ impl<'r> molecule::prelude::Reader<'r> for ClusterDataReader<'r> {
 pub struct ClusterDataBuilder {
     pub(crate) name: Bytes,
     pub(crate) description: Bytes,
+    pub(crate) mutant_id: BytesOpt,
 }
 
 impl ClusterDataBuilder {
-    pub const FIELD_COUNT: usize = 2;
+    pub const FIELD_COUNT: usize = 3;
     pub fn name(mut self, v: Bytes) -> Self {
         self.name = v;
         self
@@ -1917,12 +1933,16 @@ impl ClusterDataBuilder {
         self.description = v;
         self
     }
+    pub fn mutant_id(mut self, v: BytesOpt) -> Self {
+        self.mutant_id = v;
+        self
+    }
 }
 
 impl molecule::prelude::Builder for ClusterDataBuilder {
     type Entity = ClusterData;
     const NAME: &'static str = "ClusterDataBuilder";
-    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.name.as_slice().len() + self.description.as_slice().len() }
+    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.name.as_slice().len() + self.description.as_slice().len() + self.mutant_id.as_slice().len() }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
@@ -1930,10 +1950,13 @@ impl molecule::prelude::Builder for ClusterDataBuilder {
         total_size += self.name.as_slice().len();
         offsets.push(total_size);
         total_size += self.description.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.mutant_id.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() { writer.write_all(&molecule::pack_number(offset as molecule::Number))?; }
         writer.write_all(self.name.as_slice())?;
         writer.write_all(self.description.as_slice())?;
+        writer.write_all(self.mutant_id.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {

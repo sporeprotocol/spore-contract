@@ -4,6 +4,7 @@ use std::num::ParseIntError;
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use ckb_testtool::ckb_error::Error;
 use ckb_testtool::ckb_hash::{Blake2bBuilder, new_blake2b};
+use ckb_testtool::ckb_traits::CellDataProvider;
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, core::TransactionView, H256, packed::*, packed, prelude::*};
 use ckb_testtool::ckb_types::core::cell::ResolvedDep::Cell;
 use ckb_testtool::ckb_types::core::ScriptHashType;
@@ -33,6 +34,26 @@ fn assert_script_error(err: Error, err_code: i8) {
 }
 
 
+#[test]
+fn echo_contract_hash() {
+    let contracts = vec![
+        "spore",
+        "cluster",
+        "cluster_proxy",
+        "cluster_agent",
+        "spore_extension_lua",
+    ];
+    let mut context = Context::default();
+
+    println!("Contract binary hashes:");
+    for contract in contracts {
+        let bin = Loader::default().load_binary(contract);
+        let outpoint = context.deploy_cell(bin);
+        let hash = context.get_cell_data_hash(&outpoint).unwrap_or_default().unpack();
+        println!("{}, {:?}", contract, hash);
+    }
+
+}
 
 #[test]
 fn test_type_id() {
@@ -228,7 +249,17 @@ fn test_spore_mint_with_lock_proxy() {
     let input_cell = build_normal_input(&mut context, cluster_capacity, lock.clone());
     let cluster_type_id = build_script_args(&input_cell, 0);
     let cluster_type = build_script(&mut context, &cluster_out_point, ScriptHashType::Data1, cluster_type_id.clone());
-    let cluster_input_cell = build_cluster_input(&mut context, cluster.clone(), cluster_type.clone(), lock.clone());
+    let cluster_out_point = context.create_cell(
+        CellOutput::new_builder()
+            .capacity((cluster.total_size() as u64).pack())
+            .lock(lock.clone())
+            .type_(ScriptOpt::new_builder().set(cluster_type.clone()).build())
+            .build(), Bytes::copy_from_slice(cluster.as_slice()),
+    );
+    let cluster_dep = CellDep::new_builder()
+        .out_point(cluster_out_point.clone())
+        .build();
+
     // spore
     let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
     let spore_type = String::from("plain/text");
@@ -242,7 +273,6 @@ fn test_spore_mint_with_lock_proxy() {
     let spore_bin: Bytes = Loader::default().load_binary("spore");
     let spore_out_point = context.deploy_cell(spore_bin);
     let spore_script_dep = CellDep::new_builder().out_point(spore_out_point.clone()).build();
-    let spore_cluster_dep = CellDep::new_builder().out_point(cluster_input_cell.previous_output()).build();
 
     let input_cell = build_normal_input(&mut context, capacity, lock.clone());
     let spore_type_id = build_script_args(&input_cell, 0);
@@ -253,7 +283,7 @@ fn test_spore_mint_with_lock_proxy() {
         .inputs(vec![input_cell])
         .outputs(vec![spore_out_cell])
         .outputs_data(vec![serialized.as_slice().pack()])
-        .cell_deps(vec![cluster_script_dep, spore_cluster_dep, spore_script_dep]).build();
+        .cell_deps(vec![cluster_script_dep, spore_script_dep, cluster_dep]).build();
     let tx = context.complete_tx(tx);
 
     context.verify_tx(&tx, MAX_CYCLES).expect("test spore mint with lock proxy");
@@ -761,7 +791,7 @@ fn test_extension_1() {
     let spore_extension_out_point = context.deploy_cell(spore_extension_bin);
     let spore_extension_script_dep = CellDep::new_builder().out_point(spore_extension_out_point.clone()).build();
 
-    let lua_code = String::from("_code_hash, _hash_type, args, err = ckb.load_and_unpack_script(); print(err); if err == nil then ckb.dump(args) end");
+    let lua_code = String::from("print(\"hello\")");
 
     let capacity = lua_code.len() as u64;
 

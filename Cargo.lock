@@ -28,9 +28,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "ckb-standalone-types"
-version = "0.1.3"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acafe9a1a706e9704a3c37cdc05fddb84cf991fb0744df21e5a0d91e128163b8"
+checksum = "b5c776d70eb4f60a22a3180857646d77b2da8d33c0c4a063ad9f6610fc94609f"
 dependencies = [
  "blake2b-ref",
  "cfg-if",
@@ -39,9 +39,9 @@ dependencies = [
 
 [[package]]
 name = "ckb-std"
-version = "0.14.0"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef02519ff65a2326e0ce8d3b4920c7dedac28f79eee4d7aef3ce64fccb556710"
+checksum = "2a08518aa0fd4ce069d3ec80b63dcd3d6543ad3805ad1c0b4e1d8e4d38f8a9fc"
 dependencies = [
  "buddy-alloc",
  "cc",
@@ -53,6 +53,7 @@ name = "cluster"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "spore-constant",
  "spore-types",
  "spore-utils",
 ]
@@ -102,7 +103,7 @@ dependencies = [
 
 [[package]]
 name = "spore-constant"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "spore-types"
