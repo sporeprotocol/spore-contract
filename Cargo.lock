@@ -118,3 +118,12 @@ dependencies = [
  "ckb-std",
  "spore-types",
 ]
+
+[[package]]
+name = "spore_extension_lua"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-constant",
+ "spore-utils",
+]

@@ -23,3 +23,7 @@ template_type = "Rust"
 [[contracts]]
 name = "cluster_agent"
 template_type = "Rust"
+
+[[contracts]]
+name = "spore_extension_lua"
+template_type = "Rust"

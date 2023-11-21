@@ -16,21 +16,11 @@ use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
-use spore_utils::{find_position_by_type, verify_type_id};
+use spore_utils::{find_position_by_type, verify_type_id, calc_capacity_sum};
 
 use crate::error::Error;
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
-
-fn calc_capacity_sum(lock_hash: &[u8;32], source: Source) -> u128 {
-    QueryIter::new(load_cell, source)
-        .filter(|cell| {
-            cell.lock().calc_script_hash().as_slice()[..] == lock_hash[..]
-        })
-        .map(|cell| {
-            cell.capacity().unpack() as u128
-        }).sum()
-}
 
 
 fn process_creation(index: usize) -> Result<(), Error> {
@@ -52,12 +42,12 @@ fn process_creation(index: usize) -> Result<(), Error> {
     } else {
         // Condition 2: Check for minimal payment
         let args = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default().args();
-        if args.as_slice().len() > CLUSTER_PROXY_ID_LEN {
-            let minimal_payment = 10u128.pow(args.as_slice()[CLUSTER_PROXY_ID_LEN] as u32);
+        if args.len() > CLUSTER_PROXY_ID_LEN {
+            let minimal_payment = 10u128.pow(args.get(CLUSTER_PROXY_ID_LEN).unwrap_or_default().as_slice()[0] as u32);
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock,Input);
             let output_capacity = calc_capacity_sum(&lock,Output);
-            if input_capacity + minimal_payment > output_capacity {
+            if input_capacity + minimal_payment <= output_capacity {
                 return Err(Error::PaymentNotEnough)
             }
         } else {

@@ -8,6 +8,7 @@ use ckb_std::debug;
 use ckb_std::error::SysError;
 use spore_types::generated::spore_types::Bytes;
 use crate::mime::MIMEErrorCode::Illformed;
+use crate::mime::ParamType::Generic;
 
 #[repr(u64)]
 pub enum MIMEErrorCode {
@@ -16,6 +17,7 @@ pub enum MIMEErrorCode {
     InvalidSubType = 102,
     InvalidParams = 103,
     InvalidParamValue = 104,
+    MutantIDNotValid = 105,
 }
 
 impl Into<u64> for MIMEErrorCode {
@@ -26,12 +28,23 @@ impl Into<u64> for MIMEErrorCode {
 
 type RangePair = core::ops::Range<usize>;
 
+
+#[derive(Debug, Clone)]
+enum ParamType {
+    Generic(RangePair),
+    Immortal(RangePair),
+    Mutant(RangePair),
+}
+
 #[derive(Debug, Clone)]
 pub struct MIME {
     pub main_type: RangePair,
     pub sub_type: RangePair,
     params: Vec<(RangePair, RangePair)>,
+    pub mutants: Vec<[u8;32]>,
+    pub immortal: bool,
 }
+
 
 
 impl MIME {
@@ -44,6 +57,7 @@ impl MIME {
     }
 
     pub fn str_parse(content_type: &str) -> Result<Self, SysError> {
+        debug!("Content type is: {}", content_type);
         // main_type.len() + '/' + sub_type.len() + '+' +
         let (main_type, right) = match content_type.find('/') {
             Some(pos) => (0usize..pos, pos..content_type.len()),
@@ -64,8 +78,31 @@ impl MIME {
         let mut vec = Vec::new();
         let right_part = &content_type[sub_end..];
         let mut offset = sub_end;
+        let mut mutants = Vec::new();
+        let mut immortal = false;
         while let Some((name_range, value_range, new_offset)) = parse_param(content_type, offset)? {
-            vec.push((name_range, value_range));
+            match name_range {
+                ParamType::Mutant(name_range) => {
+                    vec.push((name_range, value_range.clone()));
+                    let value = &content_type[value_range];
+                    for mutant_id in value.split(',') {
+                        let mutant_id_str = mutant_id.trim_matches(is_ows);
+                        if mutant_id_str.len() != 32 {
+                            return Err(SysError::Unknown(MIMEErrorCode::MutantIDNotValid.into()));
+                        }
+                        let mut mutant_id = [0u8;32];
+                        mutant_id.copy_from_slice(mutant_id_str.as_bytes());
+                        mutants.push(mutant_id);
+                    }
+                },
+                ParamType::Generic(name_range) => {
+                    vec.push((name_range, value_range));
+                },
+                ParamType::Immortal(name_range) => {
+                    immortal = &content_type[value_range.clone()] == "true";
+                    vec.push((name_range, value_range));
+                }
+            }
             offset = new_offset;
         }
 
@@ -73,6 +110,8 @@ impl MIME {
             main_type: main_type,
             sub_type: sub_type,
             params: vec,
+            mutants,
+            immortal
         };
 
         Ok(mime_type)
@@ -138,7 +177,7 @@ pub const fn is_ows(c: char) -> bool {
     c == ' ' || c == '\t'
 }
 
-fn parse_param(source: &str, offset: usize) -> Result<Option<(RangePair, RangePair, usize)>, SysError> {
+fn parse_param(source: &str, offset: usize) -> Result<Option<(ParamType, RangePair, usize)>, SysError> {
     if offset >= source.len() {
         return Ok(None);
     }
@@ -168,15 +207,26 @@ fn parse_param(source: &str, offset: usize) -> Result<Option<(RangePair, RangePa
     if !is_restricted_name_patched(&source[key_range.clone()]) {
         return Err(SysError::Unknown(MIMEErrorCode::InvalidParams.into()));
     }
+    let key = match &source[key_range.clone()] {
+        "immortal" => {
+            ParamType::Immortal(key_range.clone())
+        },
+        "mutant[]" => {
+            ParamType::Mutant(key_range.clone())
+        },
+        _ => {
+            ParamType::Generic(key_range.clone())
+        }
+    };
     let value_start = key_range.end + 1;
     if let Some(value) = value.strip_prefix('\"') {
         let value_end = value_start + parse_quoted_value(value)? + 1;
         let value_range = value_start..value_end;
-        Ok(Some((key_range.clone(), value_range.clone(), value_end)))
+        Ok(Some((key.clone(), value_range.clone(), value_end)))
     } else {
         let value_end = value_start + value.chars().take_while(|&c| is_restricted_value_char(c)).map(char::len_utf8).sum::<usize>();
         let value_range = value_start..value_end;
-        Ok(Some((key_range.clone(), value_range.clone(), value_end)))
+        Ok(Some((key.clone(), value_range.clone(), value_end)))
     }
 }
 

@@ -1,13 +1,16 @@
-use alloc::{format, string::ToString, vec::Vec};
+use alloc::{format, string::ToString, vec, vec::Vec};
+use alloc::ffi::CString;
+use core::ffi::CStr;
 use core::result::Result;
 
 use ckb_std::{ckb_constants::Source, ckb_types::prelude::*, debug, high_level::{load_cell_data, load_cell_type, QueryIter}};
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
+use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_lock_hash};
+use ckb_std::high_level::{find_cell_by_data_hash, load_cell_data_hash, load_cell_lock, load_cell_lock_hash, load_cell_type_hash};
 
 use spore_types::generated::spore_types::SporeData;
-use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, MIME, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, MIME, verify_type_id, calc_capacity_sum};
 use spore_constant::{CLUSTER_CODE_HASHES, CLUSTER_AGENT_CODE_HASHES};
 
 use crate::error::Error;
@@ -85,9 +88,12 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
     }
 
+    if !mime.mutants.is_empty() {
+        verify_extension(&mime, 0, vec![index as u8])?;
+    }
+
     Ok(())
 }
-
 
 
 fn process_destruction() -> Result<(), Error> {
@@ -97,13 +103,15 @@ fn process_destruction() -> Result<(), Error> {
     let content_type_bytes = spore_data.content_type();
     let content_type = content_type_bytes.unpack();
     let mime = MIME::parse(content_type)?;
-
-    let immortal = mime.verify_param(content_type, "immortal", "true".as_bytes());
-
-    debug!("immortal is: {}", immortal);
-    if immortal {
+    if mime.immortal {
         // true destroy a immortal nft
         return Err(Error::DestroyImmortalNFT);
+    }
+
+    if !mime.mutants.is_empty() {
+        let type_hash = load_cell_type(0, GroupInput)?.unwrap_or_default();
+        let index = find_position_by_type(type_hash.as_slice(), Input).ok_or(Error::IndexOutOfBound)?;
+        verify_extension(&mime, 2, vec![index as u8])?;
     }
 
     Ok(())
@@ -112,11 +120,88 @@ fn process_destruction() -> Result<(), Error> {
 fn process_transfer() -> Result<(), Error> {
     // found same NFT in output, this is a transfer
     // check no field was modified
-    let input_nft_data = load_cell_data(0, GroupInput)?;
-    let output_nft_data = load_cell_data(0, GroupOutput)?;
+    let input_data = load_spore_data(0, GroupInput)?;
+    let output_data = load_spore_data(0, GroupOutput)?;
 
-    if input_nft_data[..] != output_nft_data[..] {
+    if input_data.as_slice()[..] != output_data.as_slice()[..] {
         return Err(Error::ModifyPermanentField);
+    }
+
+
+    let content_type_bytes = input_data.content_type();
+    let content_type = content_type_bytes.unpack();
+    let mime = MIME::parse(content_type)?;
+
+    if !mime.mutants.is_empty() {
+        let type_hash = load_cell_type(0, GroupInput)?.unwrap_or_default();
+        let input_index = find_position_by_type(type_hash.as_slice(), Input).ok_or(Error::IndexOutOfBound)?;
+        let output_index = find_position_by_type(type_hash.as_slice(), Output).ok_or(Error::IndexOutOfBound)?;
+        verify_extension(&mime, 1, vec![input_index as u8, output_index as u8])?;
+    }
+
+    Ok(())
+}
+
+fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
+    for mutant in mime.mutants.iter() {
+        let ext_pos =  QueryIter::new(load_cell_type, CellDep)
+            .position(|script| {
+                match script {
+                    Some(script) => {
+                        mutant[..32] == script.args().as_slice()[..32]
+                    }
+                    None => false,
+                }
+            });
+        match ext_pos {
+            None => return Err(Error::ExtensionCellNotInDep),
+            Some(ext_pos) => {
+
+                if op == 0 {
+                    check_payment(ext_pos)?;
+                }
+
+                let ext_pos = ext_pos as u8;
+                let code_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
+                match op {
+                    0 | 2 => {
+                        ckb_std::high_level::exec_cell(&code_hash, ScriptHashType::Data1,
+                                                       &[
+                                                           CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
+                                                           CStr::from_bytes_with_nul([b'0' + ext_pos, 0].as_slice()).unwrap_or_default(),
+                                                           CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()).unwrap_or_default(),
+                                                       ])?;
+                    },
+                    1 => {
+                        ckb_std::high_level::exec_cell(&code_hash, ScriptHashType::Data1,
+                                                       &[
+                                                           CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
+                                                           CStr::from_bytes_with_nul([b'0' + ext_pos, 0].as_slice()).unwrap_or_default(),
+                                                           CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()).unwrap_or_default(),
+                                                           CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()).unwrap_or_default(),
+                                                       ])?;
+
+                    },
+                    _ => unreachable!()
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn check_payment(ext_pos: usize) -> Result<(), Error> {
+    let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
+    let ext_arg = ext_script.args();
+    if ext_arg.len() == 33 { // we need a payment
+        let lock = load_cell_lock_hash(ext_pos, CellDep)?;
+
+        let input_capacity = calc_capacity_sum(&lock,Input);
+        let output_capacity = calc_capacity_sum(&lock,Output);
+        let minimal_payment = 10u128.pow(ext_arg.get(32).unwrap_or_default().as_slice()[0] as u32);
+        if input_capacity + minimal_payment <= output_capacity {
+            return Err(Error::ExtensionPaymentNotEnough)
+        }
     }
 
     Ok(())

@@ -1,0 +1,11 @@
+[package]
+name = "spore_extension_lua"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ckb-std = { version = "0.14.3", features = ["dlopen-c"] }
+spore-utils = { path = "../../lib/utils" }
+spore-constant = {path = "../../lib/constant"}
