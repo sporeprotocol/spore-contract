@@ -19,5 +19,6 @@ table SporeData {
 table ClusterData {
     name: Bytes,
     description: Bytes,
+    mutant_id: BytesOpt,
 }
 

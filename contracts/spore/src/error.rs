@@ -21,6 +21,7 @@ pub enum Error {
     MIMEParsingError = 16,
     ExtensionCellNotInDep = 17,
     ExtensionPaymentNotEnough = 18,
+    ClusterRequiresMutantApplied = 19,
     Unknown = 100,
 }
 

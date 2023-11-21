@@ -9,7 +9,7 @@ use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, Q
 use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, verify_type_id};
 
 use crate::error::Error;
-use spore_constant::CLUSTER_CODE_HASHES;
+use spore_constant::CodeHash::CLUSTER_CODE_HASHES;
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
