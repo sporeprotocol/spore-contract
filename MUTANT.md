@@ -45,3 +45,42 @@ Mutant has three execution modes mapped to three types of opcode, and will be au
 - code_hash: `0xf979ff194202dd2178c18cfc2e5cc60c965a1c94aad8a46eb80e74ee85842b5ce`
 - tx: `0xa3add6709887b3e136546edb024cd905726d73a126d47764b4537e8b08de390f`
 - index: `1`
+
+
+## RFC
+### Data Structure
+```yaml
+Data:
+  LUA_CODE_DATA_BYTES
+Type:
+  hash_type: "data1"
+  code_hash: SPORE_MUTANT_TYPE_HASH
+  args: <MUTANT_ID>[<MINIMAL_PAYMENT>]
+Lock: <user_defined>
+```
+Available Mutant args are list as below:
+```yaml
+<32bytes Mutant ID>
+<32bytes Mutant ID><1bytes CKByte minimum>
+```
+Where `Mutant ID = hash(Inputs[0], Output_Index)`. The value stored in CKByte minimum  amount are interpreted in the following way: 
+
+if `x` is stored in the field, the minimal transfer amount will be `10^x`, for example:
+
+- If 3 is stored in CKByte minimum, it means the minimal payment amount to use this mutant cell is 1000 shannons
+- If 0 is stored in CKByte minimum, it means the minimal payment amount to use this mutant cell is 1 shannon
+
+The additions of CKByte minimums enforce a minimal payment for one to reference this mutant extension while minting Spore.
+
+When applying a Mutant Extension to a Spore, it will cause:
+
+1. contract will run extension code using `ckb_std::exec`
+2. arguments of `exec` will be packed as:
+argv[0]: `content-type` of Spore
+argv[1]: Type `args` (Spore ID) of Spore
+argv[2]: Spore `content`
+3. Result of exec will be performed:
+`0` : success, this operation to Spore is valid and will continue to finish;
+any other codes: failed. operation will abort, transaction will return failure code
+
+These effects will be performed once every time during Spore’s creation, transfer, and destruction.
