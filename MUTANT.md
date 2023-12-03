@@ -1,7 +1,7 @@
 # Mutant
 Mutant is a special extension cell in Spore eco. It stores Lua scripting code inside the data field, and will be executed & evaluated in every referenced transaction once applied. One can apply mutants to:
 
-1. A Spore by specifying in `content-type` using param `mutant[] = MUTANT_ID_1, MUTANT_ID2,…;`, and including the referenced mutant cell in `CellDep`.
+1. A Spore by specifying in `content-type` using param `mutant[] = MUTANT_ID_1, MUTANT_ID2,…;`, and including the referenced mutant cell in `CellDep`. You'll also need to include Spore Lua Lib binary in CellDeps.
 2. A cluster by setting cluster’s `mutant_id=MUTANT_ID`, and including the referenced mutant cell in `CellDep`.
 
 For example, you can write:
