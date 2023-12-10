@@ -775,6 +775,18 @@ fn calc_code_hash(data: Bytes) -> [u8; 32] {
 }
 
 #[test]
+fn test_code_hash() {
+    let binary_list = vec![
+        "spore", "cluster", "cluster_agent", "cluster_proxy", "spore_extension_lua", "libckblua.so"
+    ];
+    for lib in binary_list {
+        let bin: Bytes = Loader::default().load_binary(lib);
+        let code_hash = CellOutput::calc_data_hash(&bin.clone());
+        println!("{} code_hash: 0x{}, to vec: {:?}", lib, encode(code_hash.as_slice()), code_hash.as_slice().to_vec());
+    }
+}
+
+#[test]
 fn test_extension_1() {
     let mut context = Context::default();
     // always success lock
