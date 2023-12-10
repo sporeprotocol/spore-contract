@@ -15,35 +15,42 @@ use ckb_std::{
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
-use spore_utils::{find_position_by_type, verify_type_id, calc_capacity_sum};
-
+use ckb_std::high_level::{encode_hex, load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
+use spore_utils::{find_position_by_type, verify_type_id, calc_capacity_sum, find_position_by_type_and_data, find_posityion_by_type_hash};
+use spore_constant::CodeHash::CLUSTER_PROXY_CODE_HASHES;
 use crate::error::Error;
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
+fn is_valid_cluster_proxy_cell(script_hash: &[u8;32]) -> bool {
+    CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
+}
 
 fn process_creation(index: usize) -> Result<(), Error> {
-
     let proxy_type_hash = load_cell_data(0, GroupOutput)?;
-
     // check cluster proxy in Deps
-    let cell_dep_index = find_position_by_type(proxy_type_hash.as_slice(), CellDep).ok_or(Error::ProxyCellNotInDep)?;
+    let cell_dep_index = find_posityion_by_type_hash(proxy_type_hash.as_slice(), CellDep).ok_or(Error::ProxyCellNotInDep)?;
 
-    // verify Agent ID
-    if !verify_type_id(index, Output) {
-        return Err(Error::InvalidAgentID);
+    // verify cluster ID
+    let cluster_id = load_cell_data(cell_dep_index, CellDep)?;
+    let script = load_script()?;
+    let script_args: Vec<u8> = script.args().unpack();
+    if script_args.as_slice()[..] != cluster_id.as_slice()[..] {
+        return Err(Error::InvalidAgentArgs)
     }
 
     // Condition 1: Check if cluster proxy exist in Inputs & Outputs
-    return if find_position_by_type(proxy_type_hash.as_slice(), Input).is_some()
-        && find_position_by_type(proxy_type_hash.as_slice(), Output).is_some() {
+    return if find_posityion_by_type_hash(proxy_type_hash.as_slice(), Input).is_some()
+        && find_posityion_by_type_hash(proxy_type_hash.as_slice(), Output).is_some() {
         Ok(())
     } else {
         // Condition 2: Check for minimal payment
-        let args = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default().args();
-        if args.len() > CLUSTER_PROXY_ID_LEN {
-            let minimal_payment = 10u128.pow(args.get(CLUSTER_PROXY_ID_LEN).unwrap_or_default().as_slice()[0] as u32);
+        let proxy_type_args = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default().args();
+        let proxy_type_args_value: Vec<u8> = proxy_type_args.unpack();
+        if proxy_type_args_value.len() > CLUSTER_PROXY_ID_LEN {
+            let minimal_payment_arg = proxy_type_args_value.get(CLUSTER_PROXY_ID_LEN).unwrap_or(&0);
+            debug!("Minimal payment is: {}", minimal_payment_arg);
+            let minimal_payment = 10u128.pow(*minimal_payment_arg as u32);
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock,Input);
             let output_capacity = calc_capacity_sum(&lock,Output);

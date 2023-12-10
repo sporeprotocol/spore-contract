@@ -3,11 +3,11 @@ use alloc::vec::Vec;
 use core::result::Result;
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
-use ckb_std::ckb_types::packed::Script;
+use ckb_std::ckb_types::packed::{Bytes, Script};
 use ckb_std::ckb_types::prelude::Entity;
 use ckb_std::debug;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
-use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, verify_type_id, find_position_by_type_arg_unpack};
 
 use crate::error::Error;
 use spore_constant::CodeHash::CLUSTER_CODE_HASHES;
@@ -15,14 +15,13 @@ use spore_constant::CodeHash::CLUSTER_CODE_HASHES;
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
 fn is_valid_cluster_cell(script_hash: &[u8;32]) -> bool {
-    debug!("Check if CLUSTER_CODE_HASHES contains {:?}", script_hash);
     CLUSTER_CODE_HASHES.contains(script_hash)
 }
 
 fn process_creation(index: usize) -> Result<(), Error> {
     let target_cluster_id = load_cell_data(0, GroupOutput)?;
     // check cluster in Deps
-    let cell_dep_index = find_position_by_type_arg(target_cluster_id.as_slice(), CellDep, Some(is_valid_cluster_cell)).ok_or(Error::ClusterCellNotInDep)?;
+    let cell_dep_index = find_position_by_type_arg_unpack(target_cluster_id.as_slice(), CellDep, Some(is_valid_cluster_cell)).ok_or(Error::ClusterCellNotInDep)?;
 
     // verify Proxy ID
     if !verify_type_id(index, Output) {
