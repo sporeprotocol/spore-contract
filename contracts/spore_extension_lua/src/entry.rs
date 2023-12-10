@@ -36,7 +36,7 @@ struct CKBLuaLib {
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
         let mut context = unsafe { CKBDLContext::<[u8; 280 * 1024]>::new() };
-        let lib = context.load(&spore_constant::CKB_LUA_LIB_CODE_HASH).map_err(|_|FailedToLoadLuaLib)?;
+        let lib = context.load(&spore_constant::CodeHash::CKB_LUA_LIB_CODE_HASH).map_err(|_|FailedToLoadLuaLib)?;
         Ok(Self {
             context,
             lib
@@ -44,9 +44,7 @@ impl CKBLuaLib {
     }
 
     pub fn evaluate_lua_script(&self, index: usize) -> Result<(), Error> {
-        let instance = self.create_lua_instance()?;
         let cell_data = load_cell_data(index, Output)?;
-        let size = cell_data.len();
         self.execute_lua_script(&cell_data)?;
         Ok(())
     }
@@ -54,9 +52,9 @@ impl CKBLuaLib {
     fn create_lua_instance(&self) -> Result<*mut c_void, Error> {
         match unsafe { self.lib.get(b"lua_create_instance") } {
             Some(create_lua_instance) => {
-                let mut lua_mem  = vec![0u8; 60 * 1024];
+                let mut lua_mem  = vec![0u8; 500 * 1024];
                 unsafe {
-                    let instance = (create_lua_instance as Symbol<CreateLuaInstanceType>)(lua_mem.as_mut_ptr() as c_ulong, lua_mem.as_mut_ptr().offset(60 * 1024) as c_ulong);
+                    let instance = (create_lua_instance as Symbol<CreateLuaInstanceType>)(lua_mem.as_mut_ptr() as c_ulong, lua_mem.as_mut_ptr().offset(500 * 1024) as c_ulong);
                     if instance.is_null(){
                         return Err(FailedToCreateLuaInstance)
                     }

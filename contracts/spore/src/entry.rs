@@ -9,9 +9,9 @@ use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{find_cell_by_data_hash, load_cell_data_hash, load_cell_lock, load_cell_lock_hash, load_cell_type_hash};
 
-use spore_types::generated::spore_types::SporeData;
+use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_utils::{find_position_by_type, find_position_by_lock, find_position_by_type_arg, MIME, verify_type_id, calc_capacity_sum};
-use spore_constant::{CLUSTER_CODE_HASHES, CLUSTER_AGENT_CODE_HASHES};
+use spore_constant::CodeHash::{CLUSTER_CODE_HASHES, CLUSTER_AGENT_CODE_HASHES};
 
 use crate::error::Error;
 use crate::error::Error::{ConflictCreation, MultipleSpend};
@@ -63,6 +63,23 @@ fn process_creation(index: usize) -> Result<(), Error> {
         let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_CODE_HASHES.contains(x) };
         let filter_fn2: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_AGENT_CODE_HASHES.contains(x) };
         let cell_dep_index = find_position_by_type_arg(&cluster_id, CellDep, Some(filter_fn)).ok_or(Error::ClusterCellNotInDep)?;
+
+        let raw_cluster_data = load_cell_data(cell_dep_index, CellDep)?;
+        let cluster_data = ClusterData::from_compatible_slice(raw_cluster_data.as_slice()).unwrap_or_default(); // the cluster contract guarantees the cluster data will always be correct once created
+        if cluster_data.mutant_id().is_some() {
+            let mutant_id  = cluster_data.mutant_id().to_opt().unwrap_or_default();
+            let mutant_id = mutant_id.unpack();
+            let mut mutant_verify_passed = false;
+            for mutant in mime.mutants.iter() {
+                if mutant[0..32] == mutant_id[0..32] {
+                    mutant_verify_passed = true;
+                    break
+                }
+            }
+            if !mutant_verify_passed { // required mutant does not applied
+                return Err(Error::ClusterRequiresMutantApplied)
+            }
+        }
 
         // Condition 1: Check if cluster exist in Inputs & Outputs
         return if find_position_by_type_arg(&cluster_id, Input, Some(filter_fn)).is_some()

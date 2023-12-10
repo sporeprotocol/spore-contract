@@ -12,6 +12,7 @@ pub enum Error {
     InvalidClusterID = 7,
     InvalidOperation = 8,
     InvalidClusterData = 11,
+    MutantNotInDeps = 12,
 }
 
 impl From<SysError> for Error {
