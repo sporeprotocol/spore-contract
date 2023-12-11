@@ -15,7 +15,7 @@ use ckb_std::{
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{encode_hex, load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
+use ckb_std::high_level::{encode_hex, load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, load_cell_type_hash, QueryIter};
 use spore_utils::{find_position_by_type, verify_type_id, calc_capacity_sum, find_position_by_type_and_data, find_posityion_by_type_hash};
 use spore_constant::CodeHash::CLUSTER_PROXY_CODE_HASHES;
 use crate::error::Error;
@@ -30,6 +30,10 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let proxy_type_hash = load_cell_data(0, GroupOutput)?;
     // check cluster proxy in Deps
     let cell_dep_index = find_posityion_by_type_hash(proxy_type_hash.as_slice(), CellDep).ok_or(Error::ProxyCellNotInDep)?;
+    let target_cell_type_hash = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default();
+    if !is_valid_cluster_proxy_cell(&target_cell_type_hash.code_hash().unpack()) {
+        return Err(Error::RefCellNotClusterProxy)
+    }
 
     // verify cluster ID
     let cluster_id = load_cell_data(cell_dep_index, CellDep)?;
@@ -54,7 +58,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock,Input);
             let output_capacity = calc_capacity_sum(&lock,Output);
-            if input_capacity + minimal_payment <= output_capacity {
+            if input_capacity + minimal_payment < output_capacity {
                 return Err(Error::PaymentNotEnough)
             }
         } else {

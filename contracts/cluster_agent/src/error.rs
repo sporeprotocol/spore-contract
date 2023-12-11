@@ -13,6 +13,7 @@ pub enum Error {
     ProxyCellNotInDep,
     PaymentNotEnough,
     PaymentMethodNotSupport,
+    RefCellNotClusterProxy,
 }
 
 impl From<SysError> for Error {
