@@ -58,8 +58,26 @@ Here are lists of Spore protocol contract cells code_hashes (Top item is the lat
 
 ### Spore
 Pudge Testnet:
-- `0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494`
+- data_hash: `0x56f5dbbafccf025c2fde98fda20498dc98245a0a28fce2db190cd24cc3636c6d`
+- data_hash: `0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494`
 
 ### Cluster
 Pudge Testnet:
-- `0x598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080`
+- data_hash: `0x15f835c4ca0b861df38f10d4e95c51ba9cee3c89f178b21e2e28baa67ebd8b42`
+- data_hash: `0x598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080`
+
+### Mutant (Lua Extension)
+Pudge Testnet:
+- data_hash: `0xb4d3f207831e2774d310a87571fb0095f5b4af4fa176d8bfaae0191a4d6989c8`
+
+### Spore Lua Lib
+- tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`
+- index: `0`
+- data_hash: `0xed08faee8c29b7a7c29bd9d495b4b93cc207bd70ca93f7b356f39c677e7ab0fc`
+
+### Cluster Proxy
+Pudge Testnet:
+- data_hash: `0x428457c447f0200e302c3b64f0ee0c165b759e9d3b98118c55710bf2f294a7c2`
+
+### Cluster Agent
+- data_hash: `0x1c6296a5a0aa3cdb50c9f9e6c713c28c2e1dff5c826d84d4dbe5d35cc307bb6f`
