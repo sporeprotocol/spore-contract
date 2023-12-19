@@ -216,7 +216,7 @@ fn check_payment(ext_pos: usize) -> Result<(), Error> {
         let input_capacity = calc_capacity_sum(&lock,Input);
         let output_capacity = calc_capacity_sum(&lock,Output);
         let minimal_payment = 10u128.pow(ext_arg.get(32).unwrap_or_default().as_slice()[0] as u32);
-        if input_capacity + minimal_payment <= output_capacity {
+        if input_capacity + minimal_payment < output_capacity {
             return Err(Error::ExtensionPaymentNotEnough)
         }
     }
