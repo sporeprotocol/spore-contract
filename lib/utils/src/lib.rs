@@ -6,9 +6,10 @@ use alloc::vec::Vec;
 
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::{prelude::*};
+use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
-use ckb_std::high_level::{QueryIter, load_cell_type, load_input, load_cell_lock_hash, load_cell};
+use ckb_std::high_level::{QueryIter, load_cell_type, load_input, load_cell_lock_hash, load_cell, load_cell_data, encode_hex, load_cell_type_hash};
 
 pub use mime::MIME;
 
@@ -65,6 +66,23 @@ pub fn find_position_by_type_arg(args: &[u8], source: Source, filter_fn: Option<
         })
 }
 
+pub fn find_position_by_type_arg_unpack(args: &[u8], source: Source, filter_fn: Option<fn(&[u8; 32]) -> bool>) -> Option<usize> {
+    QueryIter::new(load_cell_type, source)
+        .position(|script| {
+            if let Some(script) = script {
+                let script_arg: Vec<u8> = script.args().unpack();
+                script_arg[..] == args[..] && match &filter_fn {
+                    None => true,
+                    Some(ref filter_fn) => {
+                        filter_fn(&script.code_hash().unpack())
+                    }
+                }
+            } else {
+                false
+            }
+        })
+}
+
 // fallback:
 pub fn find_position_by_type_arg_ext(args: &[u8], source: Source, filter_fn: Option<fn(&[u8; 32]) -> bool>) -> Option<usize> {
     match find_position_by_type_arg(args, source, filter_fn) {
@@ -84,10 +102,41 @@ pub fn find_position_by_type(type_hash: &[u8], source: Source) -> Option<usize> 
     QueryIter::new(load_cell_type, source)
         .position(|script| {
             match script {
-                Some(script) => script.as_slice()[..] == type_hash[..],
+                Some(script) => {
+                    script.as_slice()[..] == type_hash[..]
+                },
                 _ => false,
             }
         })
+}
+
+pub fn find_posityion_by_type_hash(type_hash: &[u8], source: Source) -> Option<usize> {
+    QueryIter::new(load_cell_type_hash, source)
+        .position(|cell_type_hash| {
+            match cell_type_hash {
+                None => false,
+                Some(cell_type_hash) => {
+                    debug!("cell_type_hash : {:?}, wanted: {:?}", cell_type_hash, type_hash);
+                    cell_type_hash[..] == type_hash[..]
+                }
+            }
+        })
+}
+
+pub fn find_position_by_type_and_data(target_data: &[u8], source: Source, filter_fn: Option<fn(&[u8; 32]) -> bool>) -> Option<usize>  {
+    QueryIter::new(load_cell_data, source)
+        .enumerate().position(|(index, data)|{
+        data[..] == target_data[..] && match filter_fn {
+            None => true,
+            Some(ref filter_fn) => {
+                if let Some(type_script) = load_cell_type(index, source).unwrap_or_default() {
+                    filter_fn(&type_script.calc_script_hash().unpack())
+                } else {
+                    false
+                }
+            }
+        }
+    })
 }
 
 pub fn find_position_by_lock(lock_hash: &[u8;32], source: Source) -> Option<usize> {

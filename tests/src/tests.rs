@@ -340,6 +340,131 @@ fn test_spore_mint_with_lock_proxy_failure() {
 }
 
 
+#[test]
+fn test_spore_mint_with_cluster_proxy() {
+    let mut context = Context::default();
+    // always success lock
+    let lock = build_always_success_script(&mut context);
+
+    // cluster
+    let cluster = ClusterData::new_builder()
+        .name("Spore Cluster".as_bytes().into())
+        .description("Test Cluster".as_bytes().into()).build();
+
+    let cluster_capacity = cluster.total_size() as u64;
+    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
+    let cluster_out_point = context.deploy_cell(cluster_bin);
+    let cluster_script_dep = CellDep::new_builder().out_point(cluster_out_point.clone()).build();
+    let input_cell = build_normal_input(&mut context, cluster_capacity, lock.clone());
+    let cluster_type_id = build_script_args(&input_cell, 0);
+    let cluster_type = build_script(&mut context, &cluster_out_point, ScriptHashType::Data1, cluster_type_id.clone());
+    let cluster_out_point = context.create_cell(
+        CellOutput::new_builder()
+            .capacity((cluster.total_size() as u64).pack())
+            .lock(lock.clone())
+            .type_(ScriptOpt::new_builder().set(cluster_type.clone()).build())
+            .build(), Bytes::copy_from_slice(cluster.as_slice()),
+    );
+    let cluster_dep = CellDep::new_builder()
+        .out_point(cluster_out_point.clone())
+        .build();
+
+    // proxy
+    let capacity = cluster_type_id.len() as u64;
+    let proxy_bin: Bytes = Loader::default().load_binary("cluster_proxy");
+    let proxy_out_point = context.deploy_cell(proxy_bin);
+    let proxy_script_dep = CellDep::new_builder().out_point(proxy_out_point.clone()).build();
+
+    let input_cell = build_normal_input(&mut context, capacity, lock.clone());
+    let proxy_type_id = build_script_args(&input_cell, 0);
+    let proxy_type = build_script(&mut context, &proxy_out_point, ScriptHashType::Data1, proxy_type_id.clone());
+    let proxy_out_cell = build_output_cell_with_type_id(&mut context, capacity, proxy_type.clone(), lock.clone());
+
+    let tx = TransactionBuilder::default()
+        .inputs(vec![input_cell])
+        .outputs(vec![proxy_out_cell])
+        .outputs_data(vec![cluster_type_id.pack()])
+        .cell_deps(vec![cluster_script_dep, proxy_script_dep, cluster_dep]).build();
+    let tx = context.complete_tx(tx);
+
+    context.verify_tx(&tx, MAX_CYCLES).expect("test spore mint with lock proxy");
+}
+
+#[test]
+fn test_cluster_agent() {
+    let mut context = Context::default();
+    // always success lock
+    let lock = build_always_success_script(&mut context);
+
+    // cluster
+    let cluster = ClusterData::new_builder()
+        .name("Spore Cluster".as_bytes().into())
+        .description("Test Cluster".as_bytes().into()).build();
+
+    let cluster_capacity = cluster.total_size() as u64;
+    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
+    let cluster_out_point = context.deploy_cell(cluster_bin);
+    let cluster_script_dep = CellDep::new_builder().out_point(cluster_out_point.clone()).build();
+    let input_cell = build_normal_input(&mut context, cluster_capacity, lock.clone());
+    let cluster_type_id = build_script_args(&input_cell, 0);
+    let cluster_type = build_script(&mut context, &cluster_out_point, ScriptHashType::Data1, cluster_type_id.clone());
+    let cluster_out_point = context.create_cell(
+        CellOutput::new_builder()
+            .capacity((cluster.total_size() as u64).pack())
+            .lock(lock.clone())
+            .type_(ScriptOpt::new_builder().set(cluster_type.clone()).build())
+            .build(), Bytes::copy_from_slice(cluster.as_slice()),
+    );
+    let cluster_dep = CellDep::new_builder()
+        .out_point(cluster_out_point.clone())
+        .build();
+
+    // proxy
+    let capacity = cluster_type_id.len() as u64;
+    let proxy_bin: Bytes = Loader::default().load_binary("cluster_proxy");
+    let proxy_out_point = context.deploy_cell(proxy_bin);
+    let proxy_script_dep = CellDep::new_builder().out_point(proxy_out_point.clone()).build();
+
+    let input_cell = build_normal_input(&mut context, capacity, lock.clone());
+    let proxy_type_id = build_script_args(&input_cell, 0);
+    let mut proxy_type_arg = proxy_type_id.to_vec();
+    proxy_type_arg.push(1);
+    println!("Proxy_type_arg len: {}", proxy_type_arg.len());
+    let proxy_type = build_script(&mut context, &proxy_out_point, ScriptHashType::Data1, Bytes::copy_from_slice(proxy_type_arg.clone().as_slice()));
+    let proxy_outpoint = context.create_cell(
+        CellOutput::new_builder()
+            .capacity(capacity.pack())
+            .lock(lock.clone())
+            .type_(ScriptOpt::new_builder().set(proxy_type.clone()).build())
+            .build(), Bytes::copy_from_slice(cluster_type_id.as_ref()),
+    );
+    let proxy_dep = CellDep::new_builder()
+        .out_point(proxy_outpoint.clone())
+        .build();
+
+
+    // agent
+    let agent_capacity = capacity;
+    let agent_bin: Bytes = Loader::default().load_binary("cluster_agent");
+    let agent_out_point = context.deploy_cell(agent_bin);
+    let agent_script_dep = CellDep::new_builder().out_point(agent_out_point.clone()).build();
+
+    let input_cell = build_normal_input(&mut context, agent_capacity, lock.clone());
+
+    let agent_type = build_script(&mut context, &agent_out_point, ScriptHashType::Data1, cluster_type_id);
+    let agent_out_cell = build_output_cell_with_type_id(&mut context, capacity, agent_type.clone(), lock.clone());
+
+    let tx = TransactionBuilder::default()
+        .inputs(vec![input_cell])
+        .outputs(vec![agent_out_cell])
+        .outputs_data(vec![proxy_type.unwrap_or_default().calc_script_hash().as_slice().pack()])
+        .cell_deps(vec![cluster_script_dep, proxy_script_dep, agent_script_dep, cluster_dep, proxy_dep]).build();
+    let tx = context.complete_tx(tx);
+
+    context.verify_tx(&tx, MAX_CYCLES).expect("test cluster_agent create");
+}
+
+
 fn build_simple_tx(input_cells: Vec<CellInput>, output_cells: Vec<CellOutput>, cell_deps: Vec<CellDep>, outputs_data: Vec<packed::Bytes>) -> TransactionView {
     TransactionBuilder::default()
         .inputs(input_cells)
@@ -772,6 +897,18 @@ fn calc_code_hash(data: Bytes) -> [u8; 32] {
     let mut hash = [0u8; 32];
     blake2b.finalize(&mut hash);
     hash
+}
+
+#[test]
+fn test_code_hash() {
+    let binary_list = vec![
+        "spore", "cluster", "cluster_agent", "cluster_proxy", "spore_extension_lua", "libckblua.so"
+    ];
+    for lib in binary_list {
+        let bin: Bytes = Loader::default().load_binary(lib);
+        let code_hash = CellOutput::calc_data_hash(&bin.clone());
+        println!("{} code_hash: 0x{}, to vec: {:?}", lib, encode(code_hash.as_slice()), code_hash.as_slice().to_vec());
+    }
 }
 
 #[test]

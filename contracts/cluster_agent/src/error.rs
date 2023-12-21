@@ -9,10 +9,11 @@ pub enum Error {
     Encoding,
     InvalidOperation,
     ImmutableFieldModification,
-    InvalidAgentID,
+    InvalidAgentArgs,
     ProxyCellNotInDep,
     PaymentNotEnough,
     PaymentMethodNotSupport,
+    RefCellNotClusterProxy,
 }
 
 impl From<SysError> for Error {
