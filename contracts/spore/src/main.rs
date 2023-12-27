@@ -9,7 +9,6 @@
 
 // define modules
 mod entry;
-mod error;
 
 #[cfg(test)]
 extern crate alloc;
@@ -18,6 +17,7 @@ extern crate alloc;
 use ckb_std::default_alloc;
 #[cfg(not(test))]
 ckb_std::entry!(program_entry);
+#[cfg(not(test))]
 default_alloc!(6 * 1024, 3000 * 1024, 64);
 
 /// program entry

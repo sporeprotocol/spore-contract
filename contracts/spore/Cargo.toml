@@ -9,5 +9,6 @@ edition = "2021"
 ckb-std = "0.14.3"
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
-spore-constant = { path = "../../lib/constant"}
+spore-constant = { path = "../../lib/constant" }
+spore-errors = { path = "../../lib/errors" }
 kmp = { version = "0.1.1" }

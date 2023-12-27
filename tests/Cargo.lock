@@ -362,9 +362,9 @@ dependencies = [
 
 [[package]]
 name = "ckb-standalone-types"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd206470d9b270fe13f38c4c7fecabf323739f4930ea6f9b80e9490bfa750447"
+checksum = "b5c776d70eb4f60a22a3180857646d77b2da8d33c0c4a063ad9f6610fc94609f"
 dependencies = [
  "blake2b-ref 0.3.1",
  "cfg-if",
@@ -373,9 +373,9 @@ dependencies = [
 
 [[package]]
 name = "ckb-std"
-version = "0.14.2"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e05fb8e44ea056a54666881031036c9f58301037bf43b11a8e820634ee93d4d"
+checksum = "2a08518aa0fd4ce069d3ec80b63dcd3d6543ad3805ad1c0b4e1d8e4d38f8a9fc"
 dependencies = [
  "buddy-alloc",
  "cc",
@@ -1150,6 +1150,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62bb4feee49fdd9f707ef802e22365a35de4b7b299de4763d44bfea899442ff9"
 
 [[package]]
+name = "spore-errors"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+]
+
+[[package]]
 name = "spore-types"
 version = "0.1.0"
 dependencies = [
@@ -1161,6 +1168,7 @@ name = "spore-utils"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "spore-errors",
  "spore-types",
 ]
 

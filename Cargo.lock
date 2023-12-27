@@ -16,9 +16,12 @@ checksum = "1f0d2da64a6a895d5a7e0724882825d50f83c13396b1b9f1878e19a024bab395"
 
 [[package]]
 name = "cc"
-version = "1.0.79"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50d30906286121d95be3d479533b458f87493b30a4b5f79a607db8f5d11aa91f"
+checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "cfg-if"
@@ -54,6 +57,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-std",
  "spore-constant",
+ "spore-errors",
  "spore-types",
  "spore-utils",
 ]
@@ -64,6 +68,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-std",
  "spore-constant",
+ "spore-errors",
  "spore-utils",
 ]
 
@@ -73,6 +78,7 @@ version = "0.1.0"
 dependencies = [
  "ckb-std",
  "spore-constant",
+ "spore-errors",
  "spore-utils",
 ]
 
@@ -81,6 +87,12 @@ name = "kmp"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "131bddab59a64213cc1e9f0c5be010d7eb485951358ab7e52017888dec482028"
+
+[[package]]
+name = "libc"
+version = "0.2.151"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
 
 [[package]]
 name = "molecule"
@@ -98,6 +110,7 @@ dependencies = [
  "ckb-std",
  "kmp",
  "spore-constant",
+ "spore-errors",
  "spore-types",
  "spore-utils",
 ]
@@ -105,6 +118,13 @@ dependencies = [
 [[package]]
 name = "spore-constant"
 version = "0.2.0"
+
+[[package]]
+name = "spore-errors"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+]
 
 [[package]]
 name = "spore-types"
@@ -118,6 +138,7 @@ name = "spore-utils"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "spore-errors",
  "spore-types",
 ]
 
@@ -127,5 +148,6 @@ version = "0.1.0"
 dependencies = [
  "ckb-std",
  "spore-constant",
+ "spore-errors",
  "spore-utils",
 ]
