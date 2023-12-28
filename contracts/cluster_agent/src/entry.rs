@@ -11,14 +11,13 @@ use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Ou
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
-use spore_constant::CodeHash::CLUSTER_PROXY_CODE_HASHES;
 use spore_errors::error::Error;
 use spore_utils::{calc_capacity_sum, find_position_by_type, find_posityion_by_type_hash};
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
 fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
-    CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
+    crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
 }
 
 fn process_creation(_index: usize) -> Result<(), Error> {

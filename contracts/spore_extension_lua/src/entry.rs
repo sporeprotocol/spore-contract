@@ -9,6 +9,7 @@ use alloc::{format, vec, vec::Vec};
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
+use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::dynamic_loading_c_impl::{CKBDLContext, Library, Symbol};
 use ckb_std::env::Arg;
@@ -19,6 +20,7 @@ use spore_errors::error::Error;
 use spore_utils::{find_position_by_type, verify_type_id};
 
 use crate::error::WrappedError;
+use crate::hash::CKB_LUA_LIB_CODE_HASH;
 
 type CreateLuaInstanceType = unsafe extern "C" fn(c_ulong, c_ulong) -> *mut c_void;
 type EvaluateLuaInstanceType = unsafe extern "C" fn(
@@ -32,6 +34,7 @@ const SPORE_EXT_NORMAL_ARG_LEN: usize = 32;
 const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 33;
 
 struct CKBLuaLib {
+    #[allow(dead_code)]
     context: CKBDLContext<[u8; 280 * 1024]>,
     lib: Library,
 }
@@ -40,7 +43,7 @@ impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
         let mut context = unsafe { CKBDLContext::<[u8; 280 * 1024]>::new() };
         let lib = context
-            .load(&spore_constant::CodeHash::CKB_LUA_LIB_CODE_HASH)
+            .load_by(&CKB_LUA_LIB_CODE_HASH, ScriptHashType::Data1)
             .map_err(|_| Error::FailedToLoadLuaLib)?;
         Ok(Self { context, lib })
     }
@@ -163,6 +166,7 @@ fn execute_code_transfer(
     lua_lib.execute_lua_script(&code_base)
 }
 
+#[allow(unused)]
 fn execute_code_destroy(extension_index: usize, input_index: usize) -> Result<(), WrappedError> {
     let mut code_base = format!(
         "local spore_ext_mode = {};local spore_input_index = {};\n",

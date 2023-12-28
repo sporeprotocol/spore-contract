@@ -11,12 +11,10 @@ use spore_utils::{
     find_position_by_type_arg_unpack, verify_type_id,
 };
 
-use spore_constant::CodeHash::CLUSTER_CODE_HASHES;
-
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
-    CLUSTER_CODE_HASHES.contains(script_hash)
+    crate::hash::CLUSTER_CODE_HASHES.contains(script_hash)
 }
 
 fn process_creation(index: usize) -> Result<(), Error> {

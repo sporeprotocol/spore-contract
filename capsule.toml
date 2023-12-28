@@ -4,12 +4,14 @@
 # workspace_dir = "."
 
 # capsule version
-version = "0.10.1 04d03e8"
+version = "0.10.2 5e49142"
 # path of deployment config file
 deployment = "deployment.toml"
 
+# CAUTION: contracts order cannot be changed here
+
 [[contracts]]
-name = "spore"
+name = "spore_extension_lua"
 template_type = "Rust"
 
 [[contracts]]
@@ -25,5 +27,5 @@ name = "cluster_agent"
 template_type = "Rust"
 
 [[contracts]]
-name = "spore_extension_lua"
+name = "spore"
 template_type = "Rust"

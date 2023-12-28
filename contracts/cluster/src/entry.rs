@@ -14,10 +14,11 @@ use ckb_std::{
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::high_level::{load_script, QueryIter};
-use spore_constant::CodeHash::SPORE_EXTENSION_LUA;
 use spore_errors::error::Error;
 use spore_types::generated::spore_types::ClusterData;
 use spore_utils::{find_position_by_type, find_position_by_type_arg, verify_type_id};
+
+use crate::hash::SPORE_EXTENSION_LUA;
 
 #[allow(unused)]
 fn process_input(

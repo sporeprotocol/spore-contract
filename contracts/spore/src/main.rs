@@ -9,6 +9,7 @@
 
 // define modules
 mod entry;
+mod hash;
 
 #[cfg(test)]
 extern crate alloc;

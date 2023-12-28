@@ -12,13 +12,14 @@ use ckb_std::{
     high_level::{load_cell_data, load_cell_type, QueryIter},
 };
 
-use spore_constant::CodeHash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
 use spore_errors::error::Error;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_utils::{
     calc_capacity_sum, find_position_by_lock, find_position_by_type, find_position_by_type_arg,
     verify_type_id, MIME,
 };
+
+use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
