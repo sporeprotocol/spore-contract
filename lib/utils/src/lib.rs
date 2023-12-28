@@ -108,9 +108,9 @@ pub fn find_position_by_type_arg_ext(
     }
 }
 
-pub fn find_position_by_type(type_hash: &[u8], source: Source) -> Option<usize> {
+pub fn find_position_by_type(type_script: &[u8], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type, source).position(|script| match script {
-        Some(script) => script.as_slice()[..] == type_hash[..],
+        Some(script) => script.as_slice()[..] == type_script[..],
         _ => false,
     })
 }

@@ -30,7 +30,7 @@ jobs:
       - name: Capsule build
         run: capsule build
 
-      - name: Capsule test
+      - name: Capsule test -- --nocapture
         run: capsule test
 
       

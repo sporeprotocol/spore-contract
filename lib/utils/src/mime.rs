@@ -1,6 +1,8 @@
+use alloc::ffi::CString;
 use alloc::str;
 use alloc::vec::Vec;
 use ckb_std::debug;
+use ckb_std::high_level::decode_hex;
 use spore_errors::error::Error;
 
 type RangePair = core::ops::Range<usize>;
@@ -62,12 +64,17 @@ impl MIME {
                     vec.push((name_range, value_range.clone()));
                     let value = &content_type[value_range];
                     for mutant_id in value.split(',') {
-                        let mutant_id_str = mutant_id.trim_matches(is_ows);
-                        if mutant_id_str.len() != 32 {
+                        // hexed mutant id doesn't have a prefix '0x'
+                        let mutant_id_hex = mutant_id.trim_matches(is_ows);
+                        if mutant_id_hex.len() != 64 {
                             return Err(Error::MutantIDNotValid);
                         }
-                        let mut mutant_id = [0u8; 32];
-                        mutant_id.copy_from_slice(mutant_id_str.as_bytes());
+                        let mutant_id_c_str =
+                            CString::new(mutant_id_hex).map_err(|_| Error::MutantIDNotValid)?;
+                        let mutant_id: [u8; 32] = decode_hex(mutant_id_c_str.as_c_str())
+                            .map_err(|_| Error::MutantIDNotValid)?
+                            .try_into()
+                            .unwrap();
                         mutants.push(mutant_id);
                     }
                 }

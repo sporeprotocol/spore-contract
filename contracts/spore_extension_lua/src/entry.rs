@@ -4,6 +4,7 @@ use core::result::Result;
 // Import heap related library from `alloc`
 // https://doc.rust-lang.org/alloc/index.html
 use alloc::ffi::CString;
+use alloc::string::String;
 use alloc::{format, vec, vec::Vec};
 
 // Import CKB syscalls and structures
@@ -48,9 +49,18 @@ impl CKBLuaLib {
         Ok(Self { context, lib })
     }
 
-    pub fn evaluate_lua_script(&self, index: usize) -> Result<(), WrappedError> {
-        let cell_data = load_cell_data(index, Output)?;
-        self.execute_lua_script(&cell_data)?;
+    pub fn evaluate_lua_script(
+        &self,
+        index: usize,
+        prefix_code: Option<String>,
+    ) -> Result<(), WrappedError> {
+        let mut code_base = load_cell_data(index, Output)?;
+        if let Some(prefix_code) = prefix_code {
+            let mut prefix_code = prefix_code.as_bytes().to_vec();
+            prefix_code.append(&mut code_base);
+            code_base = prefix_code;
+        }
+        self.execute_lua_script(&code_base)?;
         Ok(())
     }
 
@@ -118,7 +128,9 @@ fn process_creation(index: usize) -> Result<(), WrappedError> {
         }
     }
     let lua_lib = CKBLuaLib::new()?;
-    lua_lib.evaluate_lua_script(index)?;
+
+    let prefix_code = format!("local spore_ext_mode = 0\nlocal spore_output_index = {index}\n");
+    lua_lib.evaluate_lua_script(index, Some(prefix_code))?;
     Ok(())
 }
 
@@ -137,12 +149,10 @@ fn process_transfer() -> Result<(), WrappedError> {
 }
 
 fn execute_code_create(extension_index: usize, target_index: usize) -> Result<(), WrappedError> {
-    let mut code_base = format!(
-        "local spore_ext_mode = {};local spore_output_index = {};\n",
-        0, target_index
-    )
-    .as_bytes()
-    .to_vec();
+    let mut code_base =
+        format!("local spore_ext_mode = 1\nlocal spore_output_index = {target_index}\n")
+            .as_bytes()
+            .to_vec();
     let mut ext_code = load_cell_data(extension_index, CellDep)?;
     code_base.append(&mut ext_code);
     let lua_lib = CKBLuaLib::new()?;
@@ -155,8 +165,7 @@ fn execute_code_transfer(
     output_index: usize,
 ) -> Result<(), WrappedError> {
     let mut code_base = format!(
-        "local spore_ext_mode = {};local spore_input_index = {} ;local spore_output_index = {};\n",
-        1, input_index, output_index
+        "local spore_ext_mode = 2\nlocal spore_input_index = {input_index}\nlocal spore_output_index = {output_index}\n"
     )
     .as_bytes()
     .to_vec();
@@ -166,14 +175,11 @@ fn execute_code_transfer(
     lua_lib.execute_lua_script(&code_base)
 }
 
-#[allow(unused)]
 fn execute_code_destroy(extension_index: usize, input_index: usize) -> Result<(), WrappedError> {
-    let mut code_base = format!(
-        "local spore_ext_mode = {};local spore_input_index = {};\n",
-        2, input_index
-    )
-    .as_bytes()
-    .to_vec();
+    let mut code_base =
+        format!("local spore_ext_mode = 3\nlocal spore_input_index = {input_index}\n")
+            .as_bytes()
+            .to_vec();
     let mut ext_code = load_cell_data(extension_index, CellDep)?;
     code_base.append(&mut ext_code);
     let lua_lib = CKBLuaLib::new()?;
@@ -255,7 +261,7 @@ pub fn main(argv: &[Arg]) -> Result<(), WrappedError> {
                     .to_string_lossy()
                     .parse::<usize>()
                     .map_err(|_| Error::InvalidLuaParameters)?;
-                execute_code_transfer(spore_extension_index, input_index, input_index)?;
+                execute_code_destroy(spore_extension_index, input_index)?;
             }
             _ => return Err(Error::InvalidExtensionOperation.into()),
         }
