@@ -28,7 +28,11 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
         .unwrap_or_default()
         .args()
         .raw_data();
+
     debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
+    if type_id_args.len() < 32 {
+        return false;
+    }
     type_id_args.as_ref()[..32] == expected_id
 }
 

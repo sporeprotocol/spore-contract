@@ -184,7 +184,7 @@ fn process_transfer() -> Result<(), Error> {
 fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
     for mutant in mime.mutants.iter() {
         let ext_pos = QueryIter::new(load_cell_type, CellDep).position(|script| match script {
-            Some(script) => mutant == script.args().raw_data().as_ref(),
+            Some(script) => mutant[..] == script.args().raw_data()[..32],
             None => false,
         });
         match ext_pos {
