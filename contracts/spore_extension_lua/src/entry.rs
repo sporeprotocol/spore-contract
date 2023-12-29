@@ -208,8 +208,8 @@ pub fn main(argv: &[Arg]) -> Result<(), WrappedError> {
         return match (extension_in_input.len(), extension_in_output.len()) {
             (0, 1) => {
                 // find it's index in Source::Output
-                let output_index = find_position_by_type(extension_in_output[0].as_slice(), Output)
-                    .unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
+                let output_index =
+                    find_position_by_type(&extension_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
                 process_creation(output_index)
             }
             (1, 1) => {

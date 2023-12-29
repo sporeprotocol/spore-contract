@@ -5,6 +5,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use ckb_std::ckb_constants::Source;
+use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::prelude::*;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
@@ -52,14 +53,14 @@ pub fn type_hash_filter_builder(type_hash: [u8; 32]) -> impl Fn(&Option<[u8; 32]
     }
 }
 
-pub fn find_position_by_type_arg(
+pub fn find_position_by_type_args(
     args: &[u8],
     source: Source,
     filter_fn: Option<fn(&[u8; 32]) -> bool>,
 ) -> Option<usize> {
     QueryIter::new(load_cell_type, source).position(|script| {
         if let Some(script) = script {
-            script.args().as_slice()[..] == args[..]
+            script.args().raw_data().as_ref() == args
                 && match &filter_fn {
                     None => true,
                     Some(ref filter_fn) => filter_fn(&script.code_hash().unpack()),
@@ -70,47 +71,9 @@ pub fn find_position_by_type_arg(
     })
 }
 
-pub fn find_position_by_type_arg_unpack(
-    args: &[u8],
-    source: Source,
-    filter_fn: Option<fn(&[u8; 32]) -> bool>,
-) -> Option<usize> {
-    QueryIter::new(load_cell_type, source).position(|script| {
-        if let Some(script) = script {
-            let script_arg: Vec<u8> = script.args().unpack();
-            script_arg[..] == args[..]
-                && match &filter_fn {
-                    None => true,
-                    Some(ref filter_fn) => filter_fn(&script.code_hash().unpack()),
-                }
-        } else {
-            false
-        }
-    })
-}
-
-// fallback:
-pub fn find_position_by_type_arg_ext(
-    args: &[u8],
-    source: Source,
-    filter_fn: Option<fn(&[u8; 32]) -> bool>,
-) -> Option<usize> {
-    match find_position_by_type_arg(args, source, filter_fn) {
-        None => {
-            if args.len() < 32 {
-                return None;
-            } else {
-                let args_ref = &args[0..32];
-                return find_position_by_type_arg(&args_ref, source, filter_fn);
-            }
-        }
-        Some(pos) => return Some(pos),
-    }
-}
-
-pub fn find_position_by_type(type_script: &[u8], source: Source) -> Option<usize> {
+pub fn find_position_by_type(type_script: &Script, source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type, source).position(|script| match script {
-        Some(script) => script.as_slice()[..] == type_script[..],
+        Some(script) => script.as_bytes() == type_script.as_bytes(),
         _ => false,
     })
 }
@@ -140,9 +103,10 @@ pub fn find_position_by_type_and_data(
                 && match filter_fn {
                     None => true,
                     Some(ref filter_fn) => {
-                        if let Some(type_script) = load_cell_type(index, source).unwrap_or_default()
+                        if let Some(type_hash) =
+                            load_cell_type_hash(index, source).unwrap_or_default()
                         {
-                            filter_fn(&type_script.calc_script_hash().unpack())
+                            filter_fn(&type_hash)
                         } else {
                             false
                         }
@@ -151,13 +115,13 @@ pub fn find_position_by_type_and_data(
         })
 }
 
-pub fn find_position_by_lock(lock_hash: &[u8; 32], source: Source) -> Option<usize> {
+pub fn find_position_by_lock_hash(lock_hash: &[u8; 32], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_lock_hash, source).position(|hash| hash[..] == lock_hash[..])
 }
 
 pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u128 {
     QueryIter::new(load_cell, source)
-        .filter(|cell| cell.lock().calc_script_hash().as_slice()[..] == lock_hash[..])
+        .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
         .map(|cell| cell.capacity().unpack() as u128)
         .sum()
 }

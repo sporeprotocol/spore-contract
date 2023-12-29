@@ -16,7 +16,7 @@ use ckb_std::{
 use ckb_std::high_level::{load_script, QueryIter};
 use spore_errors::error::Error;
 use spore_types::generated::spore_types::ClusterData;
-use spore_utils::{find_position_by_type, find_position_by_type_arg, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_type_args, verify_type_id};
 
 use crate::hash::SPORE_EXTENSION_LUA;
 
@@ -75,7 +75,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         let script = load_script().unwrap_or_default();
         let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { SPORE_EXTENSION_LUA.contains(x) };
         let args: Vec<u8> = script.args().unpack();
-        find_position_by_type_arg(args.as_slice(), CellDep, Some(filter_fn))
+        find_position_by_type_args(&args, CellDep, Some(filter_fn))
             .ok_or(Error::MutantNotInDeps)?;
     }
 
@@ -118,7 +118,7 @@ pub fn main() -> Result<(), Error> {
             // find it's index in Source::Output
 
             let output_index =
-                find_position_by_type(cluster_in_output[0].as_slice(), Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
+                find_position_by_type(&cluster_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);
         }
         // can not destroy a cluster cell

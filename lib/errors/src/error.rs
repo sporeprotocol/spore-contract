@@ -9,11 +9,11 @@ pub enum Error {
     Encoding,
 
     // common
-    ClusterCellNotInDep = 10,
+    ClusterCellNotInDep,
     ClusterOwnershipVerifyFailed,
 
     // spore_extension_lua errors
-    ModifyExtensionPermanentField,
+    ModifyExtensionPermanentField = 10,
     ConflictExtensionCreation,
     ExtensionMultipleSpend,
     InvalidExtensionOperation,
@@ -26,12 +26,12 @@ pub enum Error {
     FailedToCreateLuaInstance,
 
     // cluster_proxy errors
-    InvalidProxyOperation,
+    InvalidProxyOperation = 30,
     ImmutableProxyFieldModification,
     InvalidProxyID,
 
     // cluster_agent errors
-    InvalidAgentOperation,
+    InvalidAgentOperation = 40,
     ImmutableAgentFieldModification,
     InvalidAgentArgs,
     ProxyCellNotInDep,
@@ -40,7 +40,7 @@ pub enum Error {
     RefCellNotClusterProxy,
 
     // cluster errors
-    InvalidClusterOperation,
+    InvalidClusterOperation = 50,
     ModifyClusterPermanentField,
     EmptyName,
     InvalidClusterID,
@@ -48,7 +48,7 @@ pub enum Error {
     MutantNotInDeps,
 
     // spore errors
-    ModifySporePermanentField,
+    ModifySporePermanentField = 60,
     InvalidNFTData,
     InvalidNFTID,
     InvalidContentType, // failed to parse content-type
@@ -63,7 +63,7 @@ pub enum Error {
     ClusterRequiresMutantApplied,
 
     // mime errors
-    Illformed,
+    Illformed = 80,
     InvaliMainType,
     InvalidSubType,
     InvalidParams,

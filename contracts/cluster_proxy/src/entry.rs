@@ -7,8 +7,7 @@ use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, Q
 use core::result::Result;
 use spore_errors::error::Error;
 use spore_utils::{
-    find_position_by_lock, find_position_by_type, find_position_by_type_arg,
-    find_position_by_type_arg_unpack, verify_type_id,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, verify_type_id,
 };
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
@@ -20,12 +19,9 @@ fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
 fn process_creation(index: usize) -> Result<(), Error> {
     let target_cluster_id = load_cell_data(0, GroupOutput)?;
     // check cluster in Deps
-    let cell_dep_index = find_position_by_type_arg_unpack(
-        target_cluster_id.as_slice(),
-        CellDep,
-        Some(is_valid_cluster_cell),
-    )
-    .ok_or(Error::ClusterCellNotInDep)?;
+    let cell_dep_index =
+        find_position_by_type_args(&target_cluster_id, CellDep, Some(is_valid_cluster_cell))
+            .ok_or(Error::ClusterCellNotInDep)?;
 
     // verify Proxy ID
     if !verify_type_id(index, Output) {
@@ -33,18 +29,18 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // Condition 1: Check if cluster exist in Inputs & Outputs
-    return if find_position_by_type_arg(&target_cluster_id, Input, Some(is_valid_cluster_cell))
+    return if find_position_by_type_args(&target_cluster_id, Input, Some(is_valid_cluster_cell))
         .is_some()
-        && find_position_by_type_arg(&target_cluster_id, Output, Some(is_valid_cluster_cell))
+        && find_position_by_type_args(&target_cluster_id, Output, Some(is_valid_cluster_cell))
             .is_some()
     {
         Ok(())
     } else {
         // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
         let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-        find_position_by_lock(&cluster_lock_hash, Output)
+        find_position_by_lock_hash(&cluster_lock_hash, Output)
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-        find_position_by_lock(&cluster_lock_hash, Input)
+        find_position_by_lock_hash(&cluster_lock_hash, Input)
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
         Ok(())
     };
@@ -87,7 +83,7 @@ pub fn main() -> Result<(), Error> {
         (0, 1) => {
             // Creation
             let output_index =
-                find_position_by_type(proxy_in_output[0].as_slice(), Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
+                find_position_by_type(&proxy_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);
         }
         (1, 0) => Ok(()), // There's no limitation to destroy a proxy except lock
