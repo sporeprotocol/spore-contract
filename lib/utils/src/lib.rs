@@ -22,14 +22,14 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
         Err(_) => return false,
     };
 
-    let verify_id = calc_type_id(first_input.as_slice(), index);
-    let type_id = load_cell_type(index, source)
+    let expected_id = calc_type_id(first_input.as_slice(), index);
+    let type_id_args = load_cell_type(index, source)
         .unwrap_or(None)
         .unwrap_or_default()
         .args()
         .raw_data();
-    debug!("wanted: {:?}, got: {:?}", verify_id, type_id);
-    type_id.as_ref() == verify_id
+    debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
+    type_id_args.as_ref()[..32] == expected_id
 }
 
 pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {
