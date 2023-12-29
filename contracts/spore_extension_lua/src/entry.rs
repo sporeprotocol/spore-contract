@@ -1,6 +1,7 @@
 // Import from `core` instead of from `std` since we are in no-std mode
 use core::result::Result;
 
+use alloc::borrow::ToOwned;
 // Import heap related library from `alloc`
 // https://doc.rust-lang.org/alloc/index.html
 use alloc::ffi::CString;
@@ -12,10 +13,10 @@ use alloc::{format, vec, vec::Vec};
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
 use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
+use ckb_std::debug;
 use ckb_std::dynamic_loading_c_impl::{CKBDLContext, Library, Symbol};
 use ckb_std::env::Arg;
 use ckb_std::high_level::{load_cell_data, load_cell_type, QueryIter};
-use ckb_std::{ckb_types::prelude::*, debug};
 use core::ffi::{c_char, c_int, c_ulong, c_void};
 use spore_errors::error::Error;
 use spore_utils::{find_position_by_type, verify_type_id};
@@ -129,7 +130,7 @@ fn process_creation(index: usize) -> Result<(), WrappedError> {
     }
     let lua_lib = CKBLuaLib::new()?;
 
-    let prefix_code = format!("local spore_ext_mode = 0\nlocal spore_output_index = {index}\n");
+    let prefix_code = "local spore_ext_mode = 0\n".to_owned();
     lua_lib.evaluate_lua_script(index, Some(prefix_code))?;
     Ok(())
 }
