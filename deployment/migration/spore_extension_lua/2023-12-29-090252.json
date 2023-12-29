@@ -1,0 +1,13 @@
+{
+  "cell_recipes": [
+    {
+      "name": "spore_extension_lua",
+      "tx_hash": "0x278741031c5362e4e68508936fa7bc0863d9384641572a0fdff130ac7a7a24e7",
+      "index": 0,
+      "occupied_capacity": 4517400000000,
+      "data_hash": "0x1ddb44dca2ef6aab1995511d5069911db39bb4c80ff4f4e67b3877168d6289f0",
+      "type_id": "0x43befa1e7081db9b2741ce98d20707f46474d19b49b2b765f832696cacc39341"
+    }
+  ],
+  "dep_group_recipes": []
+}

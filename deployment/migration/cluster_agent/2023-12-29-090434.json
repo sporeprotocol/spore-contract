@@ -2,10 +2,10 @@
   "cell_recipes": [
     {
       "name": "cluster_agent",
-      "tx_hash": "0x200b32cd9e95f510d1c3b04925529dbae2954848d70281d7357f66e56e4644d7",
+      "tx_hash": "0xdd5145d3e8e9f2f112429e6a619acc8cd347a99d72de84d1257d9b6dc06ea304",
       "index": 0,
       "occupied_capacity": 4961400000000,
-      "data_hash": "0xbad767a67ec92d95652593315cf5f0555fbd36e78e9bab5742bec8f4606e1737",
+      "data_hash": "0xf088c9c1513fb904e29099c29c48955ed876b83be3366caf4d5e89d65c080825",
       "type_id": "0xbfe31502db747a6a90e20d88c7a3819e339f78200691b11057323fbdf85754fe"
     }
   ],
