@@ -121,8 +121,11 @@ fn process_creation(index: usize) -> Result<(), WrappedError> {
     if !verify_type_id(index, Output) {
         return Err(Error::InvalidExtensionID.into());
     }
-    let arg = load_cell_type(index, Output)?.unwrap_or_default().args();
-    match arg.len() {
+    let args = load_cell_type(index, Output)?
+        .unwrap_or_default()
+        .args()
+        .raw_data();
+    match args.len() {
         SPORE_EXT_NORMAL_ARG_LEN | SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN => {}
         _ => {
             return Err(Error::InvalidExtensionArg.into());

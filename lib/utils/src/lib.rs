@@ -2,8 +2,6 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
-
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::prelude::*;
@@ -25,14 +23,13 @@ pub fn verify_type_id(index: usize, source: Source) -> bool {
     };
 
     let verify_id = calc_type_id(first_input.as_slice(), index);
-    let script_args: Vec<u8> = load_cell_type(index, source)
+    let type_id = load_cell_type(index, source)
         .unwrap_or(None)
         .unwrap_or_default()
         .args()
-        .unpack();
-    let type_id = script_args.as_slice();
+        .raw_data();
     debug!("wanted: {:?}, got: {:?}", verify_id, type_id);
-    type_id[..32] == verify_id[..]
+    type_id.as_ref() == verify_id
 }
 
 pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {

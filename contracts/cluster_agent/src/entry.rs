@@ -47,14 +47,12 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         // Condition 2: Check for minimal payment
         let proxy_type_args = load_cell_type(cell_dep_index, CellDep)?
             .unwrap_or_default()
-            .args();
-        let proxy_type_args_value: Vec<u8> = proxy_type_args.unpack();
-        if proxy_type_args_value.len() > CLUSTER_PROXY_ID_LEN {
-            let minimal_payment_arg = proxy_type_args_value
-                .get(CLUSTER_PROXY_ID_LEN)
-                .unwrap_or(&0);
-            debug!("Minimal payment is: {}", minimal_payment_arg);
-            let minimal_payment = 10u128.pow(*minimal_payment_arg as u32);
+            .args()
+            .raw_data();
+        if proxy_type_args.len() > CLUSTER_PROXY_ID_LEN {
+            let minimal_payment_args = proxy_type_args.get(CLUSTER_PROXY_ID_LEN).unwrap_or(&0);
+            debug!("Minimal payment is: {}", minimal_payment_args);
+            let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock, Input);
             let output_capacity = calc_capacity_sum(&lock, Output);

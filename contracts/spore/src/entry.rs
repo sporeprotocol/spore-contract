@@ -237,13 +237,13 @@ fn check_payment(ext_pos: usize) -> Result<(), Error> {
     let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
     let ext_args = ext_script.args().raw_data();
     // CAUTION: only check 33 size pattern, leave room for user customizing
-    if ext_args.len() == 33 {
+    if ext_args.len() > 32 {
         // we need a payment
         let lock = load_cell_lock_hash(ext_pos, CellDep)?;
 
         let input_capacity = calc_capacity_sum(&lock, Input);
         let output_capacity = calc_capacity_sum(&lock, Output);
-        let minimal_payment = 10u128.pow(ext_args.last().cloned().unwrap_or(0) as u32);
+        let minimal_payment = 10u128.pow(ext_args.get(32).cloned().unwrap_or(0) as u32);
         if input_capacity + minimal_payment < output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }

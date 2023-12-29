@@ -2,7 +2,6 @@ use alloc::vec::Vec;
 // Import from `core` instead of from `std` since we are in no-std mode
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::ckb_types::prelude::Entity;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use core::result::Result;
 use spore_errors::error::Error;
@@ -51,8 +50,8 @@ fn process_transfer() -> Result<(), Error> {
     let output_proxy_type = load_cell_type(0, GroupOutput)?.unwrap_or_default();
 
     // NOTE: We allow minimal payment modification during transfer
-    if input_proxy_type.args().as_slice()[0..CLUSTER_PROXY_ID_LEN]
-        != output_proxy_type.args().as_slice()[0..CLUSTER_PROXY_ID_LEN]
+    if input_proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN]
+        != output_proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN]
     {
         return Err(Error::ImmutableProxyFieldModification);
     }
