@@ -11,7 +11,6 @@ use alloc::{format, vec, vec::Vec};
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
-use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::debug;
 use ckb_std::dynamic_loading_c_impl::{CKBDLContext, Library, Symbol};
@@ -36,18 +35,17 @@ const SPORE_EXT_NORMAL_ARG_LEN: usize = 32;
 const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 33;
 
 struct CKBLuaLib {
-    #[allow(dead_code)]
-    context: CKBDLContext<[u8; 280 * 1024]>,
     lib: Library,
 }
 
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
-        let mut context = unsafe { CKBDLContext::<[u8; 280 * 1024]>::new() };
+        let mut context = unsafe { CKBDLContext::<[u8; 270 * 1024]>::new() };
+        #[allow(deprecated)]
         let lib = context
-            .load_by(&CKB_LUA_LIB_CODE_HASH, ScriptHashType::Data1)
+            .load(&CKB_LUA_LIB_CODE_HASH)
             .map_err(|_| Error::FailedToLoadLuaLib)?;
-        Ok(Self { context, lib })
+        Ok(Self { lib })
     }
 
     pub fn evaluate_lua_script(

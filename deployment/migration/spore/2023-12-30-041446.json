@@ -2,10 +2,10 @@
   "cell_recipes": [
     {
       "name": "spore",
-      "tx_hash": "0x4edcd31f01962ad0b570143fe9040e4de201d72b7880c49a756811f9a908bb49",
+      "tx_hash": "0x469fb1c7a1003266e2d98e51ce9b5aa19d0c1e39ea667c1f5cd973c0d7da9649",
       "index": 0,
       "occupied_capacity": 7855000000000,
-      "data_hash": "0x8d75144412a03b12abe382e576b6c765c4443c9ae9bf1b02915ffb47cc504a4d",
+      "data_hash": "0x49d12ddc57a6eb4ea57ab4bf4c380c7607a647ea8e83f7499b97e1b9ce894ad0",
       "type_id": "0x657323d5a9672e35deb3d46500c140b511208f111fc233eeee74545634e2ebee"
     }
   ],
