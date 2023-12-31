@@ -14,3 +14,4 @@ kmp = { version = "0.1.1" }
 
 [build-dependencies]
 ckb-hash = "0.112.1"
+hex = "0.4.3"
