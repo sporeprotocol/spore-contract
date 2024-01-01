@@ -1,35 +1,28 @@
-use ckb_std::error::SysError;
+use ckb_std::syscalls::SysError;
+use spore_errors::error::Error;
 
-/// Error
-#[repr(i8)]
-pub enum Error {
-    InternalError = -1,
-    IndexOutOfBound = 1,
-    ItemMissing,
-    LengthNotEnough,
-    Encoding,
-    ModifyPermanentField = 5,
-    ConflictCreation = 6,
-    MultipleSpend = 7,
-    InvalidOperation = 8,
-    InvalidExtensionID = 9,
-    InvalidExtensionArg = 10,
-    InvalidLuaScript = 11,
-    InvalidLuaLib = 12,
-    FailedToLoadLuaLib = 13,
-    FailedToCreateLuaInstance = 14,
+pub enum WrappedError {
+    SystemError(Error),
+    LuaError(i8),
 }
 
-impl From<SysError> for Error {
-    fn from(err: SysError) -> Self {
-        use SysError::*;
-        match err {
-            IndexOutOfBound => Self::IndexOutOfBound,
-            ItemMissing => Self::ItemMissing,
-            LengthNotEnough(_) => Self::LengthNotEnough,
-            Encoding => Self::Encoding,
-            Unknown(err_code) => panic!("unexpected sys error {}", err_code),
+impl From<WrappedError> for i8 {
+    fn from(value: WrappedError) -> Self {
+        match value {
+            WrappedError::SystemError(error) => error as i8,
+            WrappedError::LuaError(error) => error,
         }
     }
 }
 
+impl From<Error> for WrappedError {
+    fn from(value: Error) -> Self {
+        Self::SystemError(value)
+    }
+}
+
+impl From<SysError> for WrappedError {
+    fn from(value: SysError) -> Self {
+        Self::SystemError(value.into())
+    }
+}

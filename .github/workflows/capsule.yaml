@@ -1,0 +1,37 @@
+name: Capsule build/test
+on:
+  pull_request:
+    paths:
+      - contracts/**
+      - lib/**
+      - tests/**
+
+jobs:
+  capsule:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            override: true
+      
+      - name: Prepare capsule v0.10.2
+        run: |
+          if [ ! -f "/tmp/capsule.tar.gz" ]; then
+            curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.10.2/capsule_v0.10.2_x86_64-linux.tar.gz -o /tmp/capsule.tar.gz
+          fi
+          tar -zxf /tmp/capsule.tar.gz -C /tmp
+          echo "/tmp/capsule_v0.10.2_x86_64-linux" >> $GITHUB_PATH
+    
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Capsule build
+        run: capsule build
+
+      - name: Capsule test -- --nocapture
+        run: capsule test
+
+      
+        

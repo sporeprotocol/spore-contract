@@ -1,0 +1,13 @@
+{
+  "cell_recipes": [
+    {
+      "name": "cluster",
+      "tx_hash": "0x91555ebd2bbddf80da141a58220648d6dd3f8c04ba4bb8312d01907165b636ad",
+      "index": 0,
+      "occupied_capacity": 3764600000000,
+      "data_hash": "0x1dbd4b03f1cf9d27b5359f8e3569efcb848bc71e6f204654509ce67c07bb1fdd",
+      "type_id": "0xd70ad85c0b3c377b3f9d73f53e110de6c853139340e12aa667bba9db749ae876"
+    }
+  ],
+  "dep_group_recipes": []
+}

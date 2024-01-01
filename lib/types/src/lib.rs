@@ -4,7 +4,7 @@ extern crate alloc;
 pub use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
-use molecule::prelude::{Builder, Byte, Entity};
+use molecule::prelude::{Builder, Entity};
 
 pub mod generated;
 
@@ -40,7 +40,9 @@ impl From<NativeNFTData> for generated::spore_types::SporeData {
         let content: Bytes = data.content.as_slice().into();
         let content_type: Bytes = data.content_type.as_bytes().into();
         let cluster_id = match data.cluster_id {
-            Some(cluster) => BytesOpt::new_builder().set(Some(cluster.as_slice().into())).build(),
+            Some(cluster) => BytesOpt::new_builder()
+                .set(Some(cluster.as_slice().into()))
+                .build(),
             None => BytesOpt::default(),
         };
         SporeData::new_builder()

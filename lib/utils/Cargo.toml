@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 ckb-std = "0.14.0"
 spore-types = { path = "../types" }
+spore-errors = { path = "../errors" }
