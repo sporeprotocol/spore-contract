@@ -28,14 +28,17 @@ pub fn main() {
     let cluster_code_hash = load_code_hash("cluster", &compile_mode);
     let cluster_agent_code_hash = load_code_hash("cluster_agent", &compile_mode);
 
-    let mut cluster_code_hashes = vec![cluster_code_hash];
-    // this is version v1 of cluster contract in testnet
-    cluster_code_hashes.push(
-        hex::decode("598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080")
-            .unwrap()
-            .try_into()
-            .unwrap(),
-    );
+    let mut cluster_code_hashes = vec![];
+    if let Err(env::VarError::NotPresent) = env::var("CARGO_FEATURE_RELEASE_EXPORT") {
+        // this is version v1 of cluster contract in testnet
+        cluster_code_hashes.push(
+            hex::decode("598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080")
+                .unwrap()
+                .try_into()
+                .unwrap(),
+        );
+    }
+    cluster_code_hashes.push(cluster_code_hash);
 
     let mut content = concat_code_hashes("CLUSTER_CODE_HASHES", &cluster_code_hashes);
     content += concat_code_hashes("CLUSTER_AGENT_CODE_HASHES", &[cluster_agent_code_hash]).as_str();

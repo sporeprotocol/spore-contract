@@ -23,14 +23,18 @@ pub fn main() {
     let cluster = std::fs::read(cluster_path).expect("load cluster");
     let code_hash = blake2b_256(cluster);
 
-    let mut cluster_code_hashes = vec![code_hash];
-    // this is version v1 of cluster contract in testnet
-    cluster_code_hashes.push(
-        hex::decode("598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080")
-            .unwrap()
-            .try_into()
-            .unwrap(),
-    );
+    let mut cluster_code_hashes = vec![];
+
+    if let Err(env::VarError::NotPresent) = env::var("CARGO_FEATURE_RELEASE_EXPORT") {
+        // this is version v1 of cluster contract in testnet
+        cluster_code_hashes.push(
+            hex::decode("598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080")
+                .unwrap()
+                .try_into()
+                .unwrap(),
+        );
+    }
+    cluster_code_hashes.push(code_hash);
 
     let content = concat_code_hashes("CLUSTER_CODE_HASHES", &cluster_code_hashes);
     fs::write("./src/hash.rs", content).unwrap();
