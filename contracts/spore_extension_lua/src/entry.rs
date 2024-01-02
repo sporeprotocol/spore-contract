@@ -4,6 +4,7 @@ use core::result::Result;
 use alloc::borrow::ToOwned;
 // Import heap related library from `alloc`
 // https://doc.rust-lang.org/alloc/index.html
+use alloc::boxed::Box;
 use alloc::ffi::CString;
 use alloc::string::String;
 use alloc::{format, vec, vec::Vec};
@@ -40,7 +41,7 @@ struct CKBLuaLib {
 
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
-        let mut context = unsafe { CKBDLContext::<[u8; 270 * 1024]>::new() };
+        let mut context = Box::new(unsafe { CKBDLContext::<[u8; 384 * 1024]>::new() });
         #[allow(deprecated)]
         let lib = context
             .load(&CKB_LUA_LIB_CODE_HASH)
