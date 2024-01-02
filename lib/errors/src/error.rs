@@ -62,6 +62,10 @@ pub enum Error {
     ExtensionCellNotInDep,
     ExtensionPaymentNotEnough,
     ClusterRequiresMutantApplied,
+    InvliadCoBuildWitnessLayout,
+    InvliadCoBuildMessage,
+    SporeActionMismatch,
+    SporeActionFieldMismatch,
 
     // mime errors
     Illformed = 80,

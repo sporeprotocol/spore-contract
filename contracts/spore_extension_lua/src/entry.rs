@@ -116,7 +116,7 @@ impl CKBLuaLib {
 }
 
 fn process_creation(index: usize) -> Result<(), WrappedError> {
-    if !verify_type_id(index, Output) {
+    if verify_type_id(index, Output).is_none() {
         return Err(Error::InvalidExtensionID.into());
     }
     let args = load_cell_type(index, Output)?

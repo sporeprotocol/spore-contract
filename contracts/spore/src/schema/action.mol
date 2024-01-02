@@ -1,0 +1,26 @@
+array Byte32 [byte; 32];
+array Address [byte; 32];
+option AddressOpt (Address);
+
+table Mint {
+    nft_id: Byte32,
+    to: AddressOpt,
+    data_hash: Byte32,
+}
+
+table Transfer {
+    nft_id: Byte32,
+    from: AddressOpt,
+    to: AddressOpt,
+}
+
+table Burn {
+    nft_id: Byte32,
+    from: AddressOpt,
+}
+
+union SporeAction {
+    Mint,
+    Transfer,
+    Burn,
+}

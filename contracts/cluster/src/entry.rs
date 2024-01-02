@@ -66,7 +66,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if cluster_data.name().is_empty() {
         return Err(Error::EmptyName);
     }
-    if !verify_type_id(index, Output) {
+    if verify_type_id(index, Output).is_none() {
         return Err(Error::InvalidClusterID);
     }
 

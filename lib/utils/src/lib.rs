@@ -3,6 +3,7 @@
 extern crate alloc;
 
 use ckb_std::ckb_constants::Source;
+use ckb_std::ckb_types::bytes::Bytes;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::prelude::*;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
@@ -16,24 +17,32 @@ pub use mime::MIME;
 
 mod mime;
 
-pub fn verify_type_id(index: usize, source: Source) -> bool {
-    let first_input = match load_input(0, Source::Input) {
-        Ok(cell_input) => cell_input,
-        Err(_) => return false,
-    };
-
-    let expected_id = calc_type_id(first_input.as_slice(), index);
-    let type_id_args = load_cell_type(index, source)
+pub fn load_type_args(index: usize, source: Source) -> Bytes {
+    load_cell_type(index, source)
         .unwrap_or(None)
         .unwrap_or_default()
         .args()
-        .raw_data();
+        .raw_data()
+}
+
+pub fn verify_type_id(index: usize, source: Source) -> Option<[u8; 32]> {
+    let first_input = match load_input(0, Source::Input) {
+        Ok(cell_input) => cell_input,
+        Err(_) => return None,
+    };
+
+    let expected_id = calc_type_id(first_input.as_slice(), index);
+    let type_id_args = load_type_args(index, source);
 
     debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
     if type_id_args.len() < 32 {
-        return false;
+        return None;
     }
-    type_id_args.as_ref()[..32] == expected_id
+    if type_id_args.as_ref()[..32] == expected_id {
+        return Some(expected_id);
+    }
+
+    None
 }
 
 pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {
