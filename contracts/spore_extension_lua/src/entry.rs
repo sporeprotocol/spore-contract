@@ -12,6 +12,7 @@ use alloc::{format, vec, vec::Vec};
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
+use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::debug;
 use ckb_std::dynamic_loading_c_impl::{CKBDLContext, Library, Symbol};
@@ -35,16 +36,24 @@ type EvaluateLuaInstanceType = unsafe extern "C" fn(
 const SPORE_EXT_NORMAL_ARG_LEN: usize = 32;
 const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 33;
 
+type LUAContext = CKBDLContext<[u8; 400 * 1024]>;
+
+lazy_static::lazy_static! {
+    static ref LUA_CONTEXT: LUAContext = unsafe { LUAContext::new() };
+}
+
 struct CKBLuaLib {
     lib: Library,
 }
 
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
-        let mut context = Box::new(unsafe { CKBDLContext::<[u8; 384 * 1024]>::new() });
-        #[allow(deprecated)]
+        let mut context = unsafe {
+            let dl_ctx: &LUAContext = &LUA_CONTEXT;
+            Box::from_raw(dl_ctx as *const LUAContext as *mut LUAContext)
+        };
         let lib = context
-            .load(&CKB_LUA_LIB_CODE_HASH)
+            .load_by(&CKB_LUA_LIB_CODE_HASH, ScriptHashType::Data1)
             .map_err(|_| Error::FailedToLoadLuaLib)?;
         Ok(Self { lib })
     }

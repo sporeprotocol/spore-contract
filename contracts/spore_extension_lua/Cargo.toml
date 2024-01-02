@@ -9,6 +9,7 @@ edition = "2021"
 ckb-std = "0.14.3"
 spore-utils = { path = "../../lib/utils" }
 spore-errors = { path = "../../lib/errors" }
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
 
 [build-dependencies]
 ckb-hash = "0.112.1"
