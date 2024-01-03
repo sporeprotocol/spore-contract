@@ -9,9 +9,12 @@ use ckb_std::ckb_types::prelude::*;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
-    load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, load_cell_type_hash,
-    load_input, QueryIter,
+    load_cell, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type,
+    load_cell_type_hash, load_input, load_script_hash, QueryIter,
 };
+
+use spore_errors::error::Error;
+use spore_types::generated::action;
 
 pub use mime::MIME;
 
@@ -134,4 +137,32 @@ pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u128 {
         .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
         .map(|cell| cell.capacity().unpack() as u128)
         .sum()
+}
+
+pub fn check_spore_address(
+    gourp_source: Source,
+    spore_address: action::Address,
+) -> Result<(), Error> {
+    let address = load_cell_lock(0, gourp_source)?;
+    let action::AddressUnion::Script(expected_script) = spore_address.to_enum();
+    if address.as_slice() != expected_script.as_slice() {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    Ok(())
+}
+
+pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
+    let message = ckb_transaction_cobuild::fetch_message()
+        .map_err(|_| Error::InvliadCoBuildWitnessLayout)?
+        .ok_or(Error::InvliadCoBuildWitnessLayout)?;
+
+    let script_hash = load_script_hash()?;
+    let action = message
+        .actions()
+        .into_iter()
+        .find(|v| v.script_hash().as_slice() == script_hash.as_slice())
+        .ok_or(Error::InvliadCoBuildMessage)?;
+    let spore_action = action::SporeAction::from_slice(&action.data().raw_data())
+        .map_err(|_| Error::InvliadCoBuildMessage)?;
+    Ok(spore_action)
 }

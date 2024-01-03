@@ -7,7 +7,7 @@ use core::result::Result;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash, load_script_hash};
+use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash};
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -15,14 +15,14 @@ use ckb_std::{
 };
 
 use spore_errors::error::Error;
+use spore_types::generated::action;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_utils::{
-    calc_capacity_sum, find_position_by_lock_hash, find_position_by_type,
-    find_position_by_type_args, load_type_args, verify_type_id, MIME,
+    calc_capacity_sum, check_spore_address, extract_spore_action, find_position_by_lock_hash,
+    find_position_by_type, find_position_by_type_args, load_type_args, verify_type_id, MIME,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
-use crate::schema;
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -31,20 +31,7 @@ fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     Ok(spore_data)
 }
 
-fn check_spore_address(
-    gourp_source: Source,
-    spore_address: Option<schema::Address>,
-) -> Result<(), Error> {
-    if let Some(expected_address) = spore_address {
-        let address = load_cell_lock_hash(0, gourp_source)?;
-        if address.as_slice() != expected_address.as_slice() {
-            return Err(Error::SporeActionFieldMismatch);
-        }
-    }
-    Ok(())
-}
-
-fn process_creation(index: usize, action: schema::SporeAction) -> Result<(), Error> {
+fn process_creation(index: usize) -> Result<(), Error> {
     let spore_data = load_spore_data(index, Output)?;
 
     if spore_data.content().is_empty() {
@@ -155,7 +142,7 @@ fn process_creation(index: usize, action: schema::SporeAction) -> Result<(), Err
     }
 
     // check co-build action @lyk
-    let schema::SporeActionUnion::Mint(mint) = action.to_enum() else {
+    let action::SporeActionUnion::Mint(mint) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if mint.nft_id().as_slice() != spore_id
@@ -163,12 +150,12 @@ fn process_creation(index: usize, action: schema::SporeAction) -> Result<(), Err
     {
         return Err(Error::SporeActionFieldMismatch);
     }
-    check_spore_address(GroupOutput, mint.to().to_opt())?;
+    check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
 
-fn process_destruction(action: schema::SporeAction) -> Result<(), Error> {
+fn process_destruction() -> Result<(), Error> {
     //destruction
     let spore_data = load_spore_data(0, GroupInput)?;
 
@@ -187,18 +174,18 @@ fn process_destruction(action: schema::SporeAction) -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let schema::SporeActionUnion::Burn(burn) = action.to_enum() else {
+    let action::SporeActionUnion::Burn(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if burn.nft_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
         return Err(Error::SporeActionFieldMismatch);
     }
-    check_spore_address(GroupInput, burn.from().to_opt())?;
+    check_spore_address(GroupInput, burn.from())?;
 
     Ok(())
 }
 
-fn process_transfer(action: schema::SporeAction) -> Result<(), Error> {
+fn process_transfer() -> Result<(), Error> {
     // found same NFT in output, this is a transfer
     // check no field was modified
     let input_data = load_spore_data(0, GroupInput)?;
@@ -222,14 +209,14 @@ fn process_transfer(action: schema::SporeAction) -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let schema::SporeActionUnion::Transfer(transfer) = action.to_enum() else {
+    let action::SporeActionUnion::Transfer(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if transfer.nft_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
         return Err(Error::SporeActionFieldMismatch);
     }
-    check_spore_address(GroupInput, transfer.to().to_opt())?;
-    check_spore_address(GroupOutput, transfer.from().to_opt())?;
+    check_spore_address(GroupInput, transfer.to())?;
+    check_spore_address(GroupOutput, transfer.from())?;
 
     Ok(())
 }
@@ -337,31 +324,18 @@ pub fn main() -> Result<(), Error> {
         return Err(Error::MultipleSpend);
     }
 
-    let message = ckb_transaction_cobuild::fetch_message()
-        .map_err(|_| Error::InvliadCoBuildWitnessLayout)?
-        .ok_or(Error::InvliadCoBuildWitnessLayout)?;
-
-    let script_hash = load_script_hash()?;
-    let action = message
-        .actions()
-        .into_iter()
-        .find(|v| v.script_hash().as_slice() == script_hash.as_slice())
-        .ok_or(Error::InvliadCoBuildMessage)?;
-    let spore_action = schema::SporeAction::from_slice(&action.data().raw_data())
-        .map_err(|_| Error::InvliadCoBuildMessage)?;
-
     match (spore_in_input.len(), spore_in_output.len()) {
         (0, 1) => {
             // find it's index in Output
             let output_index =
                 find_position_by_type(&spore_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
-            return process_creation(output_index, spore_action);
+            return process_creation(output_index);
         }
         (1, 0) => {
-            return process_destruction(spore_action);
+            return process_destruction();
         }
         (1, 1) => {
-            return process_transfer(spore_action);
+            return process_transfer();
         }
         _ => unreachable!(),
     }

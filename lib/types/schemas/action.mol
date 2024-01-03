@@ -1,0 +1,56 @@
+array Byte32 [byte; 32];
+vector Bytes <byte>;
+
+table Script {
+    code_hash: Byte32,
+    hash_type: byte,
+    args: Bytes,
+}
+
+union Address {
+    Script,
+}
+
+/* Actions for Spore */
+
+table Mint {
+    nft_id: Byte32,
+    to: Address,
+    data_hash: Byte32,
+}
+
+table Transfer {
+    nft_id: Byte32,
+    from: Address,
+    to: Address,
+}
+
+table Burn {
+    nft_id: Byte32,
+    from: Address,
+}
+
+/* Actions for Cluster */
+
+table ClusterCreate {
+    cluster_id: Byte32,
+    to: Address,
+    data_hash: Byte32,
+}
+
+table ClusterTransfer {
+    cluster_id: Byte32,
+    from: Address,
+    to: Address,
+}
+
+/* Action in ScriptInfo */
+
+union SporeAction {
+    Mint,
+    Transfer,
+    Burn,
+
+    ClusterCreate,
+    ClusterTransfer,
+}

@@ -11,9 +11,13 @@ pub enum Error {
     // common
     ClusterCellNotInDep,
     ClusterOwnershipVerifyFailed,
+    InvliadCoBuildWitnessLayout,
+    InvliadCoBuildMessage,
+    SporeActionMismatch,
+    SporeActionFieldMismatch,
 
     // spore_extension_lua errors
-    ModifyExtensionPermanentField = 10,
+    ModifyExtensionPermanentField = 15,
     ConflictExtensionCreation,
     ExtensionMultipleSpend,
     InvalidExtensionOperation,
@@ -62,10 +66,6 @@ pub enum Error {
     ExtensionCellNotInDep,
     ExtensionPaymentNotEnough,
     ClusterRequiresMutantApplied,
-    InvliadCoBuildWitnessLayout,
-    InvliadCoBuildMessage,
-    SporeActionMismatch,
-    SporeActionFieldMismatch,
 
     // mime errors
     Illformed = 80,

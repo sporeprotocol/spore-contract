@@ -1301,6 +1301,7 @@ name = "spore-utils"
 version = "0.1.0"
 dependencies = [
  "ckb-std",
+ "ckb-transaction-cobuild",
  "spore-errors",
  "spore-types",
 ]
