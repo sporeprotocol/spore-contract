@@ -5,7 +5,6 @@ use ckb_testtool::ckb_hash::{new_blake2b, Blake2bBuilder};
 use ckb_testtool::ckb_types::core::ScriptHashType;
 use ckb_testtool::ckb_types::{
     bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed, packed::*, prelude::*,
-    H256,
 };
 use ckb_testtool::context::Context;
 use std::num::ParseIntError;
@@ -18,11 +17,14 @@ use crate::Loader;
 pub mod co_build;
 mod internal;
 
-pub fn build_serialized_spore(nft_content: &str, nft_type: &str) -> SporeData {
-    build_serialized_spore_internal(nft_content.as_bytes().to_vec(), nft_type, None)
+pub fn build_serialized_cluster_data(name: &str, description: &str) -> ClusterData {
+    ClusterData::new_builder()
+        .name(name.as_bytes().into())
+        .description(description.as_bytes().into())
+        .build()
 }
 
-pub fn build_serialized_spore_internal(
+pub fn build_serialized_spore_data(
     nft_content: Vec<u8>,
     nft_type: &str,
     cluster_id: Option<Vec<u8>>,
@@ -82,20 +84,16 @@ pub fn build_cluster_input(
     )
 }
 
-pub fn build_normal_input(context: &mut Context, capacity: u64) -> CellInput {
-    internal::build_input(context, capacity, None, Bytes::new())
+pub fn build_normal_input(context: &mut Context) -> CellInput {
+    internal::build_input(context, 1000u64, None, Bytes::new())
 }
 
-pub fn build_output_cell_with_type_id(
-    context: &mut Context,
-    capacity: u64,
-    type_: Option<Script>,
-) -> CellOutput {
-    internal::build_output(context, capacity, type_)
+pub fn build_output_cell_with_type_id(context: &mut Context, type_: Option<Script>) -> CellOutput {
+    internal::build_output(context, 1000u64, type_)
 }
 
-pub fn build_normal_output(context: &mut Context, capasity: u64) -> CellOutput {
-    internal::build_output(context, capasity, None)
+pub fn build_normal_output(context: &mut Context) -> CellOutput {
+    internal::build_output(context, 1000u64, None)
 }
 
 pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<Script>) -> CellDep {
@@ -108,74 +106,51 @@ pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<S
     CellDep::new_builder().out_point(outpoint).build()
 }
 
-pub fn build_simple_tx(
-    input_cells: Vec<CellInput>,
-    output_cells: Vec<CellOutput>,
-    cell_deps: Vec<CellDep>,
-    outputs_data: Vec<packed::Bytes>,
-) -> TransactionView {
-    TransactionBuilder::default()
-        .inputs(input_cells)
-        .outputs(output_cells)
-        .outputs_data(outputs_data)
-        .cell_deps(cell_deps)
-        .build()
+pub fn build_spore_materials(context: &mut Context, binary_name: &str) -> (OutPoint, CellDep) {
+    let binary = Loader::default().load_binary(binary_name);
+    let out_point = context.deploy_cell(binary);
+    let script_dep = CellDep::new_builder().out_point(out_point.clone()).build();
+    (out_point, script_dep)
 }
 
-pub fn build_spore_materials(context: &mut Context) -> (OutPoint, CellDep) {
-    let spore_bin: Bytes = Loader::default().load_binary("spore");
-    let spore_out_point = context.deploy_cell(spore_bin);
-    let spore_script_dep = CellDep::new_builder()
-        .out_point(spore_out_point.clone())
-        .build();
-    (spore_out_point, spore_script_dep)
-}
-
-pub fn simple_build_context(
+pub fn build_single_spore_mint_tx(
+    context: &mut Context,
     output_data: Vec<u8>,
     content_type: &str,
     input_data: Option<SporeData>,
-    out_index: usize,
-) -> (Context, TransactionView) {
-    let output_data = build_serialized_spore_internal(output_data, content_type, None);
-    let capacity = output_data.total_size() as u64;
-    let mut context = Context::default();
+    cluster_id: Option<[u8; 32]>,
+) -> TransactionView {
+    let output_data =
+        build_serialized_spore_data(output_data, content_type, cluster_id.map(|v| v.to_vec()));
 
     // always success lock
-    let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context);
+    let (spore_out_point, spore_script_dep) = build_spore_materials(context, "spore");
     let (input, type_id) = match input_data {
         None => {
-            let input = build_normal_input(&mut context, capacity);
-            let spore_type_id = build_type_id(&input, out_index);
+            let input = build_normal_input(context);
+            let spore_type_id = build_type_id(&input, 0);
             (input, spore_type_id)
         }
         Some(input_data) => {
-            let input_capacity = input_data.total_size() as u64;
-            let spore_type_id =
-                build_type_id(&build_normal_input(&mut context, input_capacity), out_index);
-            let spore_type = build_spore_type_script(
-                &mut context,
-                &spore_out_point,
-                spore_type_id.to_vec().into(),
-            );
-            let spore_input = build_spore_input(&mut context, spore_type, input_data);
+            let input = build_normal_input(context);
+            let spore_type_id = build_type_id(&input, 0);
+            let spore_type =
+                build_spore_type_script(context, &spore_out_point, spore_type_id.to_vec().into());
+            let spore_input = build_spore_input(context, spore_type, input_data);
             (spore_input, spore_type_id)
         }
     };
-    let spore_type =
-        build_spore_type_script(&mut context, &spore_out_point, type_id.to_vec().into());
-    let spore_output = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
-    let tx = build_simple_tx(
-        vec![input],
-        vec![spore_output],
-        vec![spore_script_dep],
-        vec![output_data.as_slice().pack()],
-    );
+    let spore_type = build_spore_type_script(context, &spore_out_point, type_id.to_vec().into());
+    let spore_output = build_output_cell_with_type_id(context, spore_type.clone());
+    let tx = TransactionBuilder::default()
+        .input(input)
+        .output(spore_output)
+        .output_data(output_data.as_slice().pack())
+        .cell_dep(spore_script_dep)
+        .build();
 
-    let action = co_build::build_mint_action(&mut context, type_id, output_data.as_slice());
-    let tx = co_build::complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
-
-    (context, tx)
+    let action = co_build::build_mint_action(context, type_id, output_data.as_slice());
+    co_build::complete_co_build_message_with_actions(tx, &[(spore_type, action)])
 }
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
@@ -193,48 +168,23 @@ pub fn calc_code_hash(data: Bytes) -> [u8; 32] {
     hash
 }
 
-pub fn build_simple_create_context_with_cluster(
-    nft_content: String,
-    nft_type: String,
-    cluster_id: String,
-) -> (Context, TransactionView) {
-    let nft_data: NativeNFTData = NativeNFTData {
-        content: nft_content.clone().into_bytes(),
-        content_type: nft_type.clone(),
-        cluster_id: Some(
-            H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x"))
-                .expect("parse cluster id")
-                .as_bytes()
-                .to_vec(),
-        ),
-    };
-    let serialized = SporeData::from(nft_data);
-    build_create_context_with_cluster_raw(serialized, cluster_id)
-}
-
-pub fn build_create_context_with_cluster_raw(
+pub fn build_single_spore_mint_in_cluster_tx(
+    context: &mut Context,
     nft_data: SporeData,
-    cluster_id: String,
-) -> (Context, TransactionView) {
-    let dummy_cluster_name = "Spore Cluster!";
-    let dummy_cluster_description = "Spore Description!";
-
-    let cluster_data = ClusterData::new_builder()
-        .name(dummy_cluster_name.pack().as_slice().into())
-        .description(dummy_cluster_description.pack().as_slice().into())
-        .build();
-    let mut context = Context::default();
+    cluster_id: [u8; 32],
+) -> TransactionView {
+    let cluster_data = build_serialized_cluster_data("Spore Cluster!", "Spore Description!");
     let nft_bin: Bytes = Loader::default().load_binary("spore");
     let nft_out_point = context.deploy_cell(nft_bin);
     let cluster_bin: Bytes = Loader::default().load_binary("cluster");
     let cluster_out_point = context.deploy_cell(cluster_bin);
-    let input_ckb = { nft_data.total_size() } as u64;
+    let input_ckb = nft_data.total_size() as u64;
 
     let output_ckb = input_ckb;
     let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
 
     // build lock script
-    let lock_script = internal::build_always_success_script(&mut context);
+    let lock_script = internal::build_always_success_script(context);
     let lock_script_dep = CellDep::new_builder()
         .out_point(always_success_out_point)
         .build();
@@ -250,10 +200,6 @@ pub fn build_create_context_with_cluster_raw(
             .build(),
         Bytes::new(),
     );
-
-    let cluster_id = H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x"))
-        .expect("parse cluster id")
-        .0;
 
     let cluster_script = context.build_script_with_hash_type(
         &cluster_out_point,
@@ -346,12 +292,10 @@ pub fn build_create_context_with_cluster_raw(
         ])
         .build();
 
-    let cluster_transfer = co_build::build_cluster_transfer_action(&mut context, cluster_id);
-    let nft_action = co_build::build_mint_action(&mut context, nft_id, nft_data.as_slice());
-    let tx = co_build::complete_co_build_message_with_actions(
+    let cluster_transfer = co_build::build_cluster_transfer_action(context, cluster_id);
+    let nft_action = co_build::build_mint_action(context, nft_id, nft_data.as_slice());
+    co_build::complete_co_build_message_with_actions(
         tx,
         &[(cluster_script, cluster_transfer), (nft_script, nft_action)],
-    );
-
-    (context, tx)
+    )
 }

@@ -44,6 +44,34 @@ table ClusterTransfer {
     to: Address,
 }
 
+/* Actions for Cluster/Proxy */
+
+table ProxyCreate {
+    cluster_id: Byte32,
+    proxy_id: Byte32,
+    to: Address,
+}
+
+table ProxyTransfer {
+    cluster_id: Byte32,
+    proxy_id: Byte32,
+    from: Address,
+    to: Address,
+}
+
+/* Actions for Cluster/Agent */
+
+table AgentCreate {
+    cluster_id: Byte32,
+    to: Address,
+}
+
+table AgentTransfer {
+    cluster_id: Byte32,
+    from: Address,
+    to: Address,
+}
+
 /* Action in ScriptInfo */
 
 union SporeAction {
@@ -53,4 +81,10 @@ union SporeAction {
 
     ClusterCreate,
     ClusterTransfer,
+
+    ProxyCreate,
+    ProxyTransfer,
+
+    AgentCreate,
+    AgentTransfer,
 }

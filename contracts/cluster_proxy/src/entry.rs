@@ -1,12 +1,17 @@
 use alloc::vec::Vec;
+use ckb_std::ckb_types::prelude::Entity;
+use core::result::Result;
+
 // Import from `core` instead of from `std` since we are in no-std mode
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
-use core::result::Result;
+
 use spore_errors::error::Error;
+use spore_types::generated::action;
 use spore_utils::{
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, verify_type_id,
+    check_spore_address, extract_spore_action, find_position_by_lock_hash, find_position_by_type,
+    find_position_by_type_args, load_type_args, verify_type_id,
 };
 
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
@@ -14,33 +19,42 @@ fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
 }
 
 fn process_creation(index: usize) -> Result<(), Error> {
-    let target_cluster_id = load_cell_data(0, GroupOutput)?;
+    let cluster_id = load_cell_data(0, GroupOutput)?;
     // check cluster in Deps
     let cell_dep_index =
-        find_position_by_type_args(&target_cluster_id, CellDep, Some(is_valid_cluster_cell))
+        find_position_by_type_args(&cluster_id, CellDep, Some(is_valid_cluster_cell))
             .ok_or(Error::ClusterCellNotInDep)?;
 
     // verify Proxy ID
-    if verify_type_id(index, Output).is_none() {
+    let Some(proxy_id) = verify_type_id(index, Output) else {
         return Err(Error::InvalidProxyID);
-    }
+    };
 
     // Condition 1: Check if cluster exist in Inputs & Outputs
-    return if find_position_by_type_args(&target_cluster_id, Input, Some(is_valid_cluster_cell))
-        .is_some()
-        && find_position_by_type_args(&target_cluster_id, Output, Some(is_valid_cluster_cell))
-            .is_some()
-    {
-        Ok(())
-    } else {
+    let cluster_cell_in_input =
+        find_position_by_type_args(&cluster_id, Input, Some(is_valid_cluster_cell)).is_some();
+    let cluster_cell_in_output =
+        find_position_by_type_args(&cluster_id, Output, Some(is_valid_cluster_cell)).is_some();
+
+    if !cluster_cell_in_input || !cluster_cell_in_output {
         // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
         let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
         find_position_by_lock_hash(&cluster_lock_hash, Output)
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
         find_position_by_lock_hash(&cluster_lock_hash, Input)
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-        Ok(())
+    }
+
+    // co-build check @lyk
+    let action::SporeActionUnion::ProxyCreate(create) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
     };
+    if proxy_id != create.proxy_id().as_slice() || &cluster_id != create.cluster_id().as_slice() {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupOutput, create.to())?;
+
+    Ok(())
 }
 
 fn process_transfer() -> Result<(), Error> {
@@ -50,6 +64,18 @@ fn process_transfer() -> Result<(), Error> {
     if input_data != output_data {
         return Err(Error::ImmutableProxyFieldModification);
     }
+
+    // co-build check @lyk
+    let action::SporeActionUnion::ProxyTransfer(transfer) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if source_cluster_id != transfer.cluster_id().as_slice()
+        || load_type_args(0, GroupInput).as_ref() != transfer.proxy_id().as_slice()
+    {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, transfer.from())?;
+    check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }

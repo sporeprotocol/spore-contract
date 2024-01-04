@@ -77,6 +77,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         .ok_or(Error::InvalidMultipartContent)?;
     }
 
+    // check in Cluster mode
     if spore_data.cluster_id().to_opt().is_some() {
         // check if cluster cell in deps
         let cluster_id = spore_data
@@ -105,38 +106,41 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
 
         // Condition 1: Check if cluster exist in Inputs & Outputs
-        return if find_position_by_type_args(&cluster_id, Input, Some(cluster_fn)).is_some()
-            && find_position_by_type_args(&cluster_id, Output, Some(cluster_fn)).is_some()
-        {
-            Ok(())
-        }
+        let cluster_cell_in_input =
+            find_position_by_type_args(&cluster_id, Input, Some(cluster_fn)).is_some();
+        let cluster_cell_in_output =
+            find_position_by_type_args(&cluster_id, Output, Some(cluster_fn)).is_some();
+
         // Condition 2: Check if cluster agent in Inputs & Outputs
-        else if find_position_by_type_args(&cluster_id, Input, Some(agent_fn)).is_some()
-            && find_position_by_type_args(&cluster_id, Output, Some(agent_fn)).is_some()
+        let agent_cell_in_input =
+            find_position_by_type_args(&cluster_id, Input, Some(agent_fn)).is_some();
+        let agent_cell_in_output =
+            find_position_by_type_args(&cluster_id, Output, Some(agent_fn)).is_some();
+
+        if (!cluster_cell_in_input || !cluster_cell_in_output)
+            && (!agent_cell_in_input || !agent_cell_in_output)
         {
-            Ok(())
+            // Condition 3: Use cluster agent by lock proxy
+            if let Some(agent_index) =
+                find_position_by_type_args(&cluster_id, CellDep, Some(agent_fn))
+            {
+                let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
+                find_position_by_lock_hash(&agent_lock_hash, Output)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+                find_position_by_lock_hash(&agent_lock_hash, Input)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            } else {
+                // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
+                let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
+                find_position_by_lock_hash(&cluster_lock_hash, Output)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+                find_position_by_lock_hash(&cluster_lock_hash, Input)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            }
         }
-        // Condition 3: Use cluster agent by lock proxy
-        else if let Some(agent_index) =
-            find_position_by_type_args(&cluster_id, CellDep, Some(agent_fn))
-        {
-            let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
-            find_position_by_lock_hash(&agent_lock_hash, Output)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            find_position_by_lock_hash(&agent_lock_hash, Input)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            Ok(())
-        } else {
-            // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
-            let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-            find_position_by_lock_hash(&cluster_lock_hash, Output)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            find_position_by_lock_hash(&cluster_lock_hash, Input)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            Ok(())
-        };
     }
 
+    // check in Mutant mode
     if !mime.mutants.is_empty() {
         verify_extension(&mime, 0, vec![index as u8])?;
     }

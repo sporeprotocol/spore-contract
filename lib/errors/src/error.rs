@@ -13,6 +13,7 @@ pub enum Error {
     ClusterOwnershipVerifyFailed,
     InvliadCoBuildWitnessLayout,
     InvliadCoBuildMessage,
+    SporeActionDuplicated,
     SporeActionMismatch,
     SporeActionFieldMismatch,
 

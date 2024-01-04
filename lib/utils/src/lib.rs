@@ -32,14 +32,15 @@ pub fn load_type_args(index: usize, source: Source) -> Bytes {
         .raw_data()
 }
 
-pub fn verify_type_id(index: usize, source: Source) -> Option<[u8; 32]> {
+// only be avaliable in mint/create like ckb transaction
+pub fn verify_type_id(output_index: usize, source: Source) -> Option<[u8; 32]> {
     let first_input = match load_input(0, Source::Input) {
         Ok(cell_input) => cell_input,
         Err(_) => return None,
     };
 
-    let expected_id = calc_type_id(first_input.as_slice(), index);
-    let type_id_args = load_type_args(index, source);
+    let expected_id = calc_type_id(first_input.as_slice(), output_index);
+    let type_id_args = load_type_args(output_index, source);
 
     debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
     if type_id_args.len() < 32 {
@@ -159,13 +160,20 @@ pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
     let message = ckb_transaction_cobuild::fetch_message()
         .map_err(|_| Error::InvliadCoBuildWitnessLayout)?
         .ok_or(Error::InvliadCoBuildWitnessLayout)?;
-
     let script_hash = load_script_hash()?;
-    let action = message
-        .actions()
-        .into_iter()
-        .find(|v| v.script_hash().as_slice() == script_hash.as_slice())
-        .ok_or(Error::InvliadCoBuildMessage)?;
+
+    let mut action = None;
+    for value in message.actions().into_iter() {
+        if value.script_hash().as_slice() == script_hash.as_slice() {
+            if action.is_some() {
+                return Err(Error::SporeActionDuplicated);
+            }
+            action = Some(value);
+        }
+    }
+    let Some(action) = action else {
+        return Err(Error::InvliadCoBuildMessage);
+    };
     let spore_action = action::SporeAction::from_slice(&action.data().raw_data())
         .map_err(|_| Error::InvliadCoBuildMessage)?;
     Ok(spore_action)

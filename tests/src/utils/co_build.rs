@@ -5,8 +5,9 @@ use ckb_testtool::ckb_types::prelude::*;
 
 use ckb_testtool::context::Context;
 use spore_types::generated::action::{
-    Address, AddressUnion, Burn, Byte32, Bytes, ClusterCreate, ClusterTransfer, Mint, Script,
-    SporeAction, SporeActionUnion, Transfer,
+    Address, AddressUnion, AgentCreate, AgentTransfer, Burn, Byte32, Bytes, ClusterCreate,
+    ClusterTransfer, Mint, ProxyCreate, ProxyTransfer, Script, SporeAction, SporeActionUnion,
+    Transfer,
 };
 use spore_utils::co_build_types::{
     Action, ActionVec, Message, SighashAll, WitnessLayout, WitnessLayoutUnion,
@@ -137,4 +138,57 @@ pub fn build_cluster_transfer_action(
         .to(address)
         .build();
     SporeActionUnion::ClusterTransfer(cluster_transfer)
+}
+
+pub fn build_proxy_create_action(
+    context: &mut Context,
+    cluster_id: [u8; 32],
+    proxy_id: [u8; 32],
+) -> SporeActionUnion {
+    let to = internal::build_always_success_script(context);
+    let proxy_create = ProxyCreate::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .proxy_id(h256_to_byte32(proxy_id))
+        .to(script_to_address(to))
+        .build();
+    SporeActionUnion::ProxyCreate(proxy_create)
+}
+
+pub fn build_proxy_transfer_action(
+    context: &mut Context,
+    cluster_id: [u8; 32],
+    proxy_id: [u8; 32],
+) -> SporeActionUnion {
+    let script = internal::build_always_success_script(context);
+    let address = script_to_address(script);
+    let proxy_transfer = ProxyTransfer::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .proxy_id(h256_to_byte32(proxy_id))
+        .from(address.clone())
+        .to(address)
+        .build();
+    SporeActionUnion::ProxyTransfer(proxy_transfer)
+}
+
+pub fn build_agent_create_action(context: &mut Context, cluster_id: [u8; 32]) -> SporeActionUnion {
+    let to = internal::build_always_success_script(context);
+    let agent_create = AgentCreate::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .to(script_to_address(to))
+        .build();
+    SporeActionUnion::AgentCreate(agent_create)
+}
+
+pub fn build_agent_transfer_action(
+    context: &mut Context,
+    cluster_id: [u8; 32],
+) -> SporeActionUnion {
+    let script = internal::build_always_success_script(context);
+    let address = script_to_address(script);
+    let agent_transfer = AgentTransfer::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .from(address.clone())
+        .to(address)
+        .build();
+    SporeActionUnion::AgentTransfer(agent_transfer)
 }
