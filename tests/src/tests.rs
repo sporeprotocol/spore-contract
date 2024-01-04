@@ -8,50 +8,11 @@ use hex::encode;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_types::NativeNFTData;
 
+use crate::utils::co_build::*;
 use crate::utils::*;
 use crate::Loader;
 
 const MAX_CYCLES: u64 = 10_000_000;
-
-#[test]
-fn test_simple_spore_mint() {
-    let serialized = build_serialized_spore("Hello Spore!", "plain/text");
-    let capacity = serialized.total_size() as u64;
-
-    let mut context = Context::default();
-
-    // always success lock
-    let spore_bin: Bytes = Loader::default().load_binary("spore");
-    let spore_out_point = context.deploy_cell(spore_bin);
-    let spore_script_dep = CellDep::new_builder()
-        .out_point(spore_out_point.clone())
-        .build();
-
-    let input_cell = build_normal_input(&mut context, capacity);
-
-    println!(
-        "input cell hash: {:?}, out_index: {}",
-        input_cell.previous_output().tx_hash().unpack().to_string(),
-        0
-    );
-    let spore_type_id = build_script_args(&input_cell, 0);
-    let type_ = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
-
-    let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, type_.clone());
-
-    let tx = TransactionBuilder::default()
-        .input(input_cell)
-        .output(spore_out_cell)
-        .output_data(serialized.as_slice().pack())
-        .cell_dep(spore_script_dep)
-        .build();
-
-    let tx = context.complete_tx(tx);
-
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("test simple spore mint");
-}
 
 #[test]
 fn test_simple_cluster_mint() {
@@ -70,8 +31,12 @@ fn test_simple_cluster_mint() {
         .out_point(cluster_out_point.clone())
         .build();
     let input_cell = build_normal_input(&mut context, capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let type_ = build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&input_cell, 0);
+    let type_ = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
     let cluster_out_cell = build_output_cell_with_type_id(&mut context, capacity, type_.clone());
 
     let tx = TransactionBuilder::default()
@@ -80,75 +45,10 @@ fn test_simple_cluster_mint() {
         .output_data(cluster.as_slice().pack())
         .cell_dep(cluster_script_dep)
         .build();
-    let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("test simple spore mint");
-}
+    let action = build_cluster_create_action(&mut context, cluster_type_id, cluster.as_slice());
+    let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
 
-#[test]
-fn test_simple_spore_mint_with_cluster() {
-    let mut context = Context::default();
-
-    // cluster
-    let cluster = ClusterData::new_builder()
-        .name("Spore Cluster".as_bytes().into())
-        .description("Test Cluster".as_bytes().into())
-        .build();
-
-    let cluster_capacity = cluster.total_size() as u64;
-    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
-    let cluster_out_point = context.deploy_cell(cluster_bin);
-    let cluster_script_dep = CellDep::new_builder()
-        .out_point(cluster_out_point.clone())
-        .build();
-    let input_cell = build_normal_input(&mut context, cluster_capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
-    let cluster_input_cell =
-        build_cluster_input(&mut context, cluster.clone(), cluster_type.clone());
-    let cluster_output_cell =
-        build_output_cell_with_type_id(&mut context, cluster_capacity, cluster_type.clone());
-
-    // spore
-    let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
-    let spore_type = String::from("plain/text");
-    let spore_data: NativeNFTData = NativeNFTData {
-        content: spore_content.clone(),
-        content_type: spore_type.clone(),
-        cluster_id: Some(cluster_type_id.to_vec().clone()),
-    };
-    let serialized = SporeData::from(spore_data);
-    let capacity = serialized.total_size() as u64;
-    let spore_bin: Bytes = Loader::default().load_binary("spore");
-    let spore_out_point = context.deploy_cell(spore_bin);
-    let spore_script_dep = CellDep::new_builder()
-        .out_point(spore_out_point.clone())
-        .build();
-    let spore_cluster_dep = CellDep::new_builder()
-        .out_point(cluster_input_cell.previous_output())
-        .build();
-
-    let input_cell = build_normal_input(&mut context, capacity);
-    let spore_type_id = build_script_args(&input_cell, 1);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
-    let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
-
-    let tx = TransactionBuilder::default()
-        .inputs(vec![input_cell, cluster_input_cell])
-        .outputs(vec![cluster_output_cell, spore_out_cell])
-        .outputs_data(vec![
-            cluster.as_slice().pack(),
-            serialized.as_slice().pack(),
-        ])
-        .cell_deps(vec![
-            cluster_script_dep,
-            spore_cluster_dep,
-            spore_script_dep,
-        ])
-        .build();
     let tx = context.complete_tx(tx);
 
     context
@@ -173,9 +73,12 @@ fn test_spore_mint_with_lock_proxy() {
         .out_point(cluster_out_point.clone())
         .build();
     let input_cell = build_normal_input(&mut context, cluster_capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&input_cell, 0);
+    let cluster_type = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // spore
@@ -195,8 +98,12 @@ fn test_spore_mint_with_lock_proxy() {
         .build();
 
     let input_cell = build_normal_input(&mut context, capacity);
-    let spore_type_id = build_script_args(&input_cell, 0);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
+    let spore_type_id = build_type_id(&input_cell, 0);
+    let spore_type = build_spore_type_script(
+        &mut context,
+        &spore_out_point,
+        spore_type_id.to_vec().into(),
+    );
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
 
     let tx = TransactionBuilder::default()
@@ -229,9 +136,12 @@ fn test_spore_mint_with_lock_proxy_failure() {
         .out_point(cluster_out_point.clone())
         .build();
     let input_cell = build_normal_input(&mut context, cluster_capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&input_cell, 0);
+    let cluster_type = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
     let cluster_cell = build_cluster_input(&mut context, cluster.clone(), cluster_type.clone());
     // spore
     let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
@@ -253,8 +163,12 @@ fn test_spore_mint_with_lock_proxy_failure() {
         .build();
 
     let input_cell = build_normal_input(&mut context, capacity);
-    let spore_type_id = build_script_args(&input_cell, 0);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
+    let spore_type_id = build_type_id(&input_cell, 0);
+    let spore_type = build_spore_type_script(
+        &mut context,
+        &spore_out_point,
+        spore_type_id.to_vec().into(),
+    );
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
 
     let tx = TransactionBuilder::default()
@@ -294,9 +208,12 @@ fn test_spore_mint_with_cluster_proxy() {
         .out_point(cluster_out_point.clone())
         .build();
     let input_cell = build_normal_input(&mut context, cluster_capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&input_cell, 0);
+    let cluster_type = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
@@ -308,14 +225,18 @@ fn test_spore_mint_with_cluster_proxy() {
         .build();
 
     let input_cell = build_normal_input(&mut context, capacity);
-    let proxy_type_id = build_script_args(&input_cell, 0);
-    let proxy_type = build_spore_type_script(&mut context, &proxy_out_point, proxy_type_id.clone());
+    let proxy_type_id = build_type_id(&input_cell, 0);
+    let proxy_type = build_spore_type_script(
+        &mut context,
+        &proxy_out_point,
+        proxy_type_id.to_vec().into(),
+    );
     let proxy_out_cell = build_output_cell_with_type_id(&mut context, capacity, proxy_type.clone());
 
     let tx = TransactionBuilder::default()
         .inputs(vec![input_cell])
         .outputs(vec![proxy_out_cell])
-        .outputs_data(vec![cluster_type_id.pack()])
+        .outputs_data(vec![cluster_type_id.to_vec().pack()])
         .cell_deps(vec![cluster_script_dep, proxy_script_dep, cluster_dep])
         .build();
     let tx = context.complete_tx(tx);
@@ -342,9 +263,12 @@ fn test_cluster_agent() {
         .out_point(cluster_out_point.clone())
         .build();
     let input_cell = build_normal_input(&mut context, cluster_capacity);
-    let cluster_type_id = build_script_args(&input_cell, 0);
-    let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&input_cell, 0);
+    let cluster_type = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
@@ -356,7 +280,7 @@ fn test_cluster_agent() {
         .build();
 
     let input_cell = build_normal_input(&mut context, capacity);
-    let proxy_type_id = build_script_args(&input_cell, 0);
+    let proxy_type_id = build_type_id(&input_cell, 0);
     let mut proxy_type_arg = proxy_type_id.to_vec();
     let power = 1;
     proxy_type_arg.push(power);
@@ -416,22 +340,24 @@ fn test_simple_spore_transfer() {
 
     // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context);
-    let spore_type_id = build_script_args(&build_normal_input(&mut context, capacity), 0);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
-    let spore_input = build_spore_input(
+    let spore_type_id = build_type_id(&build_normal_input(&mut context, capacity), 0);
+    let spore_type = build_spore_type_script(
         &mut context,
         &spore_out_point,
-        serialized.clone(),
-        spore_type_id.clone(),
+        spore_type_id.to_vec().into(),
     );
+    let spore_input = build_spore_input(&mut context, spore_type.clone(), serialized.clone());
 
-    let spore_output = build_output_cell_with_type_id(&mut context, capacity, spore_type);
+    let spore_output = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
     let tx = build_simple_tx(
         vec![spore_input],
         vec![spore_output],
         vec![spore_script_dep],
         vec![serialized.as_slice().pack()],
     );
+
+    let action = build_transfer_action(&mut context, spore_type_id);
+    let tx = complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
 
     let tx = context.complete_tx(tx);
 
@@ -441,7 +367,7 @@ fn test_simple_spore_transfer() {
 }
 
 #[test]
-fn test_simple_spore_mint2() {
+fn test_simple_spore_mint() {
     let (mut context, tx) = simple_build_context(
         "THIS IS A TEST NFT".as_bytes().to_vec(),
         "plain/text",
@@ -451,11 +377,11 @@ fn test_simple_spore_mint2() {
     let tx = context.complete_tx(tx);
     context
         .verify_tx(&tx, MAX_CYCLES)
-        .expect("test simple spore mint 2");
+        .expect("test simple spore mint");
 }
 
 #[test]
-fn test_simple_spore_mint3() {
+fn test_simple_spore_mint_with_normal_cells() {
     // mint with normal output tx test
     let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
     let spore_type = String::from("plain/text");
@@ -481,8 +407,12 @@ fn test_simple_spore_mint3() {
     let input_cell2 = build_normal_input(&mut context, capacity);
     let input_cell3 = build_normal_input(&mut context, capacity);
 
-    let spore_type_id = build_script_args(&input_cell1, 0);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
+    let spore_type_id = build_type_id(&input_cell1, 0);
+    let spore_type = build_spore_type_script(
+        &mut context,
+        &spore_out_point,
+        spore_type_id.to_vec().into(),
+    );
 
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
     let output_cell1 = build_normal_output(&mut context, capacity);
@@ -494,6 +424,9 @@ fn test_simple_spore_mint3() {
         .cell_dep(spore_script_dep)
         .build();
 
+    let action = build_mint_action(&mut context, spore_type_id, serialized.as_slice());
+    let tx = complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
+
     let tx = context.complete_tx(tx);
 
     context
@@ -502,7 +435,7 @@ fn test_simple_spore_mint3() {
 }
 
 #[test]
-fn test_simple_spore_mint4() {
+fn test_multi_spores_mint_with_normal_cells() {
     // multiple mint tx test
     let spore_content: Vec<u8> = "Hello Spore!".as_bytes().to_vec();
     let spore_type = String::from("plain/text");
@@ -528,15 +461,22 @@ fn test_simple_spore_mint4() {
     let input_cell2 = build_normal_input(&mut context, capacity);
     let input_cell3 = build_normal_input(&mut context, capacity);
 
-    let spore_type_id = build_script_args(&input_cell1, 0);
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, spore_type_id.clone());
+    let spore_type_id = build_type_id(&input_cell1, 0);
+    let spore_type = build_spore_type_script(
+        &mut context,
+        &spore_out_point,
+        spore_type_id.to_vec().into(),
+    );
 
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
     let output_cell1 = build_normal_output(&mut context, capacity);
 
-    let spore_type_id2 = build_script_args(&input_cell1, 2);
-    let spore_type2 =
-        build_spore_type_script(&mut context, &spore_out_point, spore_type_id2.clone());
+    let spore_type_id2 = build_type_id(&input_cell1, 2);
+    let spore_type2 = build_spore_type_script(
+        &mut context,
+        &spore_out_point,
+        spore_type_id2.to_vec().into(),
+    );
 
     let spore_out_cell2 =
         build_output_cell_with_type_id(&mut context, capacity, spore_type2.clone());
@@ -551,6 +491,13 @@ fn test_simple_spore_mint4() {
         ])
         .cell_dep(spore_script_dep)
         .build();
+
+    let action1 = build_mint_action(&mut context, spore_type_id, serialized.as_slice());
+    let action2 = build_mint_action(&mut context, spore_type_id2, serialized.as_slice());
+    let tx = complete_co_build_message_with_actions(
+        tx,
+        &[(spore_type, action1), (spore_type2, action2)],
+    );
 
     let tx = context.complete_tx(tx);
 
@@ -573,8 +520,9 @@ fn test_spore_multipart_mint() {
         .expect("test multipart mint");
 }
 
+#[should_panic]
 #[test]
-fn test_spore_multipart_mint_failure01() {
+fn test_spore_multipart_mint_failed_with_mixed() {
     let (mut context, tx) =
         simple_build_context("THIS IS A TEST MULTIPART NFT\n\n--SporeDefaultBoundary\nThis is an extra message I want to include".as_bytes().to_vec(),
                              "multipart/mixed;",
@@ -584,11 +532,12 @@ fn test_spore_multipart_mint_failure01() {
     let tx = context.complete_tx(tx);
     context
         .verify_tx(&tx, MAX_CYCLES)
-        .expect_err("test multipart failure 01");
+        .expect("test multipart failure mixed");
 }
 
+#[should_panic]
 #[test]
-fn test_spore_multipart_mint_failure02() {
+fn test_spore_multipart_mint_failed_with_boundary() {
     let (mut context, tx) = simple_build_context(
         "THIS IS A TEST MULTIPART NFT\n\nThis is an extra message I want to include"
             .as_bytes()
@@ -600,11 +549,11 @@ fn test_spore_multipart_mint_failure02() {
     let tx = context.complete_tx(tx);
     context
         .verify_tx(&tx, MAX_CYCLES)
-        .expect_err("test multipart failure 02");
+        .expect("test multipart failure boundary");
 }
 
 #[test]
-fn test_simple_with_cluster() {
+fn test_simple_spore_mint_with_cluster() {
     let (mut context, tx) = build_simple_create_context_with_cluster(
         "THIS IS A SIMPLE SPORE".to_string(),
         "plain/text".to_string(),
@@ -660,20 +609,6 @@ fn test_read_base64() {
 }
 
 #[test]
-fn test_decode_hex() {
-    let hex_str = "42020000100000001e000000420200000a000000696d6167652f6a706567200200002f396a2f34414151536b5a4a5267414241514541534142494141442f3277424441416f484277674842676f494341674c43676f4c446867514467304e44683056466845594978386c4a4349664969456d4b7a63764a696b304b5345694d4545784e446b37506a342b4a53354553554d3853446339506a762f3277424441516f4c4377344e44687751454277374b43496f4f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a73374f7a762f774141524341414b41416f444153494141684542417845422f3851414651414241514141414141414141414141414141414141414241662f7841416645414144414149434177454241414141414141414141414241674d4542514152426945785152542f784141554151454141414141414141414141414141414141414141412f38514146424542414141414141414141414141414141414141414141502f61414177444151414345514d52414438415a486337584331766d327774733878386473375934556d6537482b4e305174416f53657071537a7036396c6a454166655550784f31636e773753337656363172723450536a73575a324d314a4a4a2b6b6e393470394e71715975526976724d4e73664b71625a456a42536c6e4a424c4d4f756d627341396e33364845786a4c47684f454a4a4b556c43546d69685652514f6741423841483577502f5a";
-    let data = decode_hex(hex_str).unwrap();
-    let nft = SporeData::from_slice(data.as_slice()).expect("error parse");
-
-    println!(
-        "content-type: {:?}, content: {:?}, cluster: {:?}",
-        nft.content_type(),
-        nft.content(),
-        nft.cluster_id()
-    );
-}
-
-#[test]
 fn test_error_data() {
     let data = vec![0, 0, 0, 0, 0];
     let (mut context, tx) = simple_build_context(data, "plain/text", None, 0);
@@ -684,20 +619,20 @@ fn test_error_data() {
 }
 
 #[test]
-fn test_destroy() {
+fn test_simple_spore_destroy() {
     let serialized = build_serialized_spore("Hello Spore!", "plain/text");
     let capacity = serialized.total_size() as u64;
     let mut context = Context::default();
 
     // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context);
-    let spore_type_id = build_script_args(&build_normal_input(&mut context, capacity), 0);
-    let spore_input = build_spore_input(
+    let spore_type_id = build_type_id(&build_normal_input(&mut context, capacity), 0);
+    let type_ = build_spore_type_script(
         &mut context,
         &spore_out_point,
-        serialized.clone(),
-        spore_type_id.clone(),
+        spore_type_id.to_vec().into(),
     );
+    let spore_input = build_spore_input(&mut context, type_.clone(), serialized.clone());
 
     let output = build_normal_output(&mut context, capacity);
     let tx = build_simple_tx(
@@ -707,6 +642,9 @@ fn test_destroy() {
         vec![serialized.as_slice().pack()],
     );
 
+    let action = build_burn_action(&mut context, spore_type_id);
+    let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
+
     let tx = context.complete_tx(tx);
 
     context
@@ -714,21 +652,22 @@ fn test_destroy() {
         .expect("try destroy immortal");
 }
 
+#[should_panic]
 #[test]
-fn test_destroy_immortal() {
+fn test_simple_spore_destroy_failed_with_immortal() {
     let serialized = build_serialized_spore("Hello Spore!", "plain/text;immortal=true");
     let capacity = serialized.total_size() as u64;
     let mut context = Context::default();
 
     // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context);
-    let spore_type_id = build_script_args(&build_normal_input(&mut context, capacity), 0);
-    let spore_input = build_spore_input(
+    let spore_type_id = build_type_id(&build_normal_input(&mut context, capacity), 0);
+    let spore_type = build_spore_type_script(
         &mut context,
         &spore_out_point,
-        serialized.clone(),
-        spore_type_id.clone(),
+        spore_type_id.to_vec().into(),
     );
+    let spore_input = build_spore_input(&mut context, spore_type.clone(), serialized.clone());
 
     let output = build_normal_output(&mut context, capacity);
     let tx = build_simple_tx(
@@ -738,11 +677,14 @@ fn test_destroy_immortal() {
         vec![packed::Bytes::default()],
     );
 
+    let action = build_burn_action(&mut context, spore_type_id);
+    let tx = complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
+
     let tx = context.complete_tx(tx);
 
     context
         .verify_tx(&tx, MAX_CYCLES)
-        .expect_err("try destroy immortal");
+        .expect("try destroy immortal");
 }
 
 #[test]
@@ -762,8 +704,12 @@ fn test_destroy_cluster() {
     let cluster_script_dep = CellDep::new_builder()
         .out_point(cluster_out_point.clone())
         .build();
-    let cluster_type_id = build_script_args(&build_normal_input(&mut context, capacity), 0);
-    let type_ = build_spore_type_script(&mut context, &cluster_out_point, cluster_type_id.clone());
+    let cluster_type_id = build_type_id(&build_normal_input(&mut context, capacity), 0);
+    let type_ = build_spore_type_script(
+        &mut context,
+        &cluster_out_point,
+        cluster_type_id.to_vec().into(),
+    );
 
     let cluster_input = build_cluster_input(&mut context, cluster, type_.clone());
 
@@ -800,18 +746,15 @@ fn test_error_type() {
 }
 
 #[test]
-fn test_extension_1() {
+fn test_simple_mutant_mint() {
     let mut context = Context::default();
 
     // always success lock
     let lua_lib_bin: Bytes = Loader::default().load_binary("libckblua.so");
     let lua_lib_out_point = context.deploy_cell(lua_lib_bin.clone());
-    let code_hash = CellOutput::calc_data_hash(&lua_lib_bin.clone());
     let lua_lib_dep = CellDep::new_builder()
         .out_point(lua_lib_out_point.clone())
         .build();
-
-    println!("lua lib hash: {}", encode(code_hash.as_slice()));
 
     let spore_extension_bin: Bytes = Loader::default().load_binary("spore_extension_lua");
     println!(
@@ -834,11 +777,11 @@ fn test_extension_1() {
         input_cell.previous_output().tx_hash().unpack().to_string(),
         0
     );
-    let spore_extension_type_id = build_script_args(&input_cell, 0);
+    let spore_extension_type_id = build_type_id(&input_cell, 0);
     let type_ = build_spore_type_script(
         &mut context,
         &spore_extension_out_point,
-        spore_extension_type_id.clone(),
+        spore_extension_type_id.to_vec().into(),
     );
 
     let spore_out_cell = build_output_cell_with_type_id(&mut context, capacity, type_.clone());

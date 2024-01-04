@@ -17,6 +17,10 @@ use spore_errors::error::Error;
 use spore_types::generated::action;
 
 pub use mime::MIME;
+pub mod co_build_types {
+    pub use ckb_transaction_cobuild::schemas::basic::*;
+    pub use ckb_transaction_cobuild::schemas::top_level::*;
+}
 
 mod mime;
 

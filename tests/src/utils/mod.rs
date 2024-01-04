@@ -15,55 +15,8 @@ use spore_types::NativeNFTData;
 
 use crate::Loader;
 
-#[allow(non_snake_case)]
-mod Internal {
-    use super::*;
-
-    pub fn build_always_success_script(context: &mut Context) -> Script {
-        let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
-
-        // build lock script
-        context
-            .build_script(&always_success_out_point, Default::default())
-            .expect("always success script")
-    }
-
-    pub fn build_output(
-        context: &mut Context,
-        capacity: u64,
-        type_script: Option<Script>,
-    ) -> CellOutput {
-        let lock_script = build_always_success_script(context);
-        CellOutput::new_builder()
-            .capacity(capacity.pack())
-            .lock(lock_script)
-            .type_(ScriptOpt::new_builder().set(type_script).build())
-            .build()
-    }
-
-    pub fn build_outpoint(
-        context: &mut Context,
-        capacity: u64,
-        type_script: Option<Script>,
-        data: Bytes,
-    ) -> OutPoint {
-        let output = build_output(context, capacity, type_script);
-        context.create_cell(output, data)
-    }
-
-    pub fn build_input(
-        context: &mut Context,
-        capacity: u64,
-        type_script: Option<Script>,
-        data: Bytes,
-    ) -> CellInput {
-        let outpoint = build_outpoint(context, capacity, type_script, data);
-        CellInput::new_builder()
-            .since(Uint64::default())
-            .previous_output(outpoint)
-            .build()
-    }
-}
+pub mod co_build;
+mod internal;
 
 pub fn build_serialized_spore(nft_content: &str, nft_type: &str) -> SporeData {
     build_serialized_spore_internal(nft_content.as_bytes().to_vec(), nft_type, None)
@@ -82,7 +35,7 @@ pub fn build_serialized_spore_internal(
     SporeData::from(nft)
 }
 
-pub fn build_script_args(first_input: &CellInput, out_index: usize) -> Bytes {
+pub fn build_type_id(first_input: &CellInput, out_index: usize) -> [u8; 32] {
     let mut blake2b = Blake2bBuilder::new(32)
         .personal(b"ckb-default-hash")
         .build();
@@ -90,7 +43,7 @@ pub fn build_script_args(first_input: &CellInput, out_index: usize) -> Bytes {
     blake2b.update(&(out_index).to_le_bytes());
     let mut verify_id = [0; 32];
     blake2b.finalize(&mut verify_id);
-    Bytes::from(verify_id.to_vec())
+    verify_id
 }
 
 pub fn build_spore_type_script(
@@ -103,16 +56,14 @@ pub fn build_spore_type_script(
 
 pub fn build_spore_input(
     context: &mut Context,
-    spore_out_point: &OutPoint,
+    spore_type: Option<Script>,
     spore_data: SporeData,
-    type_id: Bytes,
 ) -> CellInput {
     let input_ckb = spore_data.total_size() as u64;
-    let type_ = build_spore_type_script(context, &spore_out_point, type_id);
-    Internal::build_input(
+    internal::build_input(
         context,
         input_ckb,
-        type_,
+        spore_type,
         Bytes::copy_from_slice(spore_data.as_slice()),
     )
 }
@@ -123,7 +74,7 @@ pub fn build_cluster_input(
     type_: Option<Script>,
 ) -> CellInput {
     let input_ckb = cluster_data.total_size() as u64;
-    Internal::build_input(
+    internal::build_input(
         context,
         input_ckb,
         type_,
@@ -132,7 +83,7 @@ pub fn build_cluster_input(
 }
 
 pub fn build_normal_input(context: &mut Context, capacity: u64) -> CellInput {
-    Internal::build_input(context, capacity, None, Bytes::new())
+    internal::build_input(context, capacity, None, Bytes::new())
 }
 
 pub fn build_output_cell_with_type_id(
@@ -140,15 +91,15 @@ pub fn build_output_cell_with_type_id(
     capacity: u64,
     type_: Option<Script>,
 ) -> CellOutput {
-    Internal::build_output(context, capacity, type_)
+    internal::build_output(context, capacity, type_)
 }
 
 pub fn build_normal_output(context: &mut Context, capasity: u64) -> CellOutput {
-    Internal::build_output(context, capasity, None)
+    internal::build_output(context, capasity, None)
 }
 
 pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<Script>) -> CellDep {
-    let outpoint = Internal::build_outpoint(
+    let outpoint = internal::build_outpoint(
         context,
         data.len() as u64,
         type_,
@@ -195,30 +146,34 @@ pub fn simple_build_context(
     let (input, type_id) = match input_data {
         None => {
             let input = build_normal_input(&mut context, capacity);
-            let spore_type_id = build_script_args(&input, out_index);
+            let spore_type_id = build_type_id(&input, out_index);
             (input, spore_type_id)
         }
         Some(input_data) => {
             let input_capacity = input_data.total_size() as u64;
             let spore_type_id =
-                build_script_args(&build_normal_input(&mut context, input_capacity), out_index);
-            let spore_input = build_spore_input(
+                build_type_id(&build_normal_input(&mut context, input_capacity), out_index);
+            let spore_type = build_spore_type_script(
                 &mut context,
                 &spore_out_point,
-                input_data,
-                spore_type_id.clone(),
+                spore_type_id.to_vec().into(),
             );
+            let spore_input = build_spore_input(&mut context, spore_type, input_data);
             (spore_input, spore_type_id)
         }
     };
-    let spore_type = build_spore_type_script(&mut context, &spore_out_point, type_id.clone());
-    let spore_output = build_output_cell_with_type_id(&mut context, capacity, spore_type);
+    let spore_type =
+        build_spore_type_script(&mut context, &spore_out_point, type_id.to_vec().into());
+    let spore_output = build_output_cell_with_type_id(&mut context, capacity, spore_type.clone());
     let tx = build_simple_tx(
         vec![input],
         vec![spore_output],
         vec![spore_script_dep],
         vec![output_data.as_slice().pack()],
     );
+
+    let action = co_build::build_mint_action(&mut context, type_id, output_data.as_slice());
+    let tx = co_build::complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
 
     (context, tx)
 }
@@ -279,9 +234,7 @@ pub fn build_create_context_with_cluster_raw(
     let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
 
     // build lock script
-    let lock_script = context
-        .build_script(&always_success_out_point, Default::default())
-        .expect("script");
+    let lock_script = internal::build_always_success_script(&mut context);
     let lock_script_dep = CellDep::new_builder()
         .out_point(always_success_out_point)
         .build();
@@ -300,21 +253,19 @@ pub fn build_create_context_with_cluster_raw(
 
     let cluster_id = H256::from_trimmed_str(cluster_id.clone().trim_start_matches("0x"))
         .expect("parse cluster id")
-        .pack();
+        .0;
 
-    let cluster_script = context
-        .build_script_with_hash_type(
-            &cluster_out_point,
-            ScriptHashType::Data1,
-            cluster_id.raw_data(),
-        )
-        .expect("cluster script");
+    let cluster_script = context.build_script_with_hash_type(
+        &cluster_out_point,
+        ScriptHashType::Data1,
+        cluster_id.to_vec().into(),
+    );
 
     let cluster_out_point = context.create_cell(
         CellOutput::new_builder()
             .capacity((cluster_data.total_size() as u64).pack())
             .lock(lock_script.clone())
-            .type_(Some(cluster_script.clone()).pack())
+            .type_(cluster_script.pack())
             .build(),
         Bytes::copy_from_slice(cluster_data.as_slice()),
     );
@@ -331,7 +282,7 @@ pub fn build_create_context_with_cluster_raw(
         .previous_output(
             context.create_cell(
                 CellOutput::new_builder()
-                    .capacity((1000000 as u64).pack())
+                    .capacity(1000000u64.pack())
                     .lock(lock_script.clone())
                     .build(),
                 Bytes::new(),
@@ -343,33 +294,35 @@ pub fn build_create_context_with_cluster_raw(
         .previous_output(input_out_point)
         .build();
 
-    let nft_script_args: Bytes = {
+    let nft_id = {
         let mut blake2b = Blake2bBuilder::new(32)
             .personal(b"ckb-default-hash")
             .build();
         blake2b.update(input.as_slice());
-        blake2b.update(&(1 as u64).to_le_bytes());
+        blake2b.update(&1u64.to_le_bytes());
         let mut verify_id = [0; 32];
         blake2b.finalize(&mut verify_id);
-        verify_id.to_vec().into()
+        verify_id
     };
 
-    let nft_script = context
-        .build_script_with_hash_type(&nft_out_point, ScriptHashType::Data1, nft_script_args)
-        .expect("script");
+    let nft_script = context.build_script_with_hash_type(
+        &nft_out_point,
+        ScriptHashType::Data1,
+        nft_id.to_vec().into(),
+    );
 
     let nft_script_dep = CellDep::new_builder().out_point(nft_out_point).build();
 
     let output = CellOutput::new_builder()
         .capacity((output_ckb + cluster_data.total_size() as u64).pack())
         .lock(lock_script.clone())
-        .type_(Some(nft_script.clone()).pack())
+        .type_(nft_script.pack())
         .build();
 
     let cluster_output = CellOutput::new_builder()
         .capacity(input_ckb.pack())
         .lock(lock_script.clone())
-        .type_(Some(cluster_script.clone()).pack())
+        .type_(cluster_script.pack())
         .build();
 
     let normal_output = CellOutput::new_builder()
@@ -393,7 +346,12 @@ pub fn build_create_context_with_cluster_raw(
         ])
         .build();
 
-    println!("data: {:?}", hex::encode(nft_data.as_slice()));
+    let cluster_transfer = co_build::build_cluster_transfer_action(&mut context, cluster_id);
+    let nft_action = co_build::build_mint_action(&mut context, nft_id, nft_data.as_slice());
+    let tx = co_build::complete_co_build_message_with_actions(
+        tx,
+        &[(cluster_script, cluster_transfer), (nft_script, nft_action)],
+    );
 
     (context, tx)
 }
