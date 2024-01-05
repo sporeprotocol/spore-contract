@@ -1,12 +1,12 @@
 [cluster]
 code_hash_list = [
-    # version v1 (no commit)
+    # version v1 (commit: 457e32d23b5f401cad837e52a568281784943e18)
     "598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080",
 ]
 
 [spore]
 code_hash_list = [
-    # version v1 (no commit)
+    # version v1 (commit: 457e32d23b5f401cad837e52a568281784943e18)
     "bbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494",
 ]
 
