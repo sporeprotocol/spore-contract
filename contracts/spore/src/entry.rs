@@ -219,8 +219,8 @@ fn process_transfer() -> Result<(), Error> {
     if transfer.nft_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
         return Err(Error::SporeActionFieldMismatch);
     }
-    check_spore_address(GroupInput, transfer.to())?;
-    check_spore_address(GroupOutput, transfer.from())?;
+    check_spore_address(GroupInput, transfer.from())?;
+    check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }

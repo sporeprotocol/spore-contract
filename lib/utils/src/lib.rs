@@ -53,7 +53,10 @@ pub fn verify_type_id(output_index: usize, source: Source) -> Option<[u8; 32]> {
     None
 }
 
-pub fn calc_type_id(prevout_hash: &[u8], output_index: usize) -> [u8; 32] {
+/// The type ID is calculated as the blake2b (with CKB's personalization) of
+/// the first CellInput in current transaction, and the created output cell
+/// index(in 64-bit little endian unsigned integer).
+pub fn calc_type_id(tx_first_input: &[u8], output_index: usize) -> [u8; 32] {
     let mut blake2b = Blake2bBuilder::new(32)
         .personal(b"ckb-default-hash")
         .build();
@@ -145,7 +148,7 @@ pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u128 {
 }
 
 pub fn check_spore_address(
-    gourp_source: Source,
+    group_source: Source,
     spore_address: action::Address,
 ) -> Result<(), Error> {
     let address = load_cell_lock(0, gourp_source)?;
@@ -162,19 +165,9 @@ pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
         .ok_or(Error::InvliadCoBuildWitnessLayout)?;
     let script_hash = load_script_hash()?;
 
-    let mut action = None;
-    for value in message.actions().into_iter() {
-        if value.script_hash().as_slice() == script_hash.as_slice() {
-            if action.is_some() {
-                return Err(Error::SporeActionDuplicated);
-            }
-            action = Some(value);
-        }
+    let mut iter = message.actions().into_iter().filter(|value| value.script_hash().as_slice() == script_hash.as_slice());
+    match (iter.next(), iter.next()) {
+        (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data()).map_err(|_| Error::InvliadCoBuildMessage),
+        _ => Err(Error::InvliadCoBuildMessage)
     }
-    let Some(action) = action else {
-        return Err(Error::InvliadCoBuildMessage);
-    };
-    let spore_action = action::SporeAction::from_slice(&action.data().raw_data())
-        .map_err(|_| Error::InvliadCoBuildMessage)?;
-    Ok(spore_action)
 }
