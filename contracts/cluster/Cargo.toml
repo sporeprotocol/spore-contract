@@ -13,6 +13,7 @@ spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]
 ckb-hash = "0.112.1"
+spore-build-tools = { path = "../../lib/build" }
 
 [features]
 default = []
