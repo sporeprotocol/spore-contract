@@ -1,12 +1,9 @@
 use ckb_testtool::ckb_types::H256;
-use ckb_testtool::ckb_types::{
-    bytes::Bytes, core::TransactionBuilder, packed, packed::*, prelude::*,
-};
+use ckb_testtool::ckb_types::{core::TransactionBuilder, packed, prelude::*};
 use ckb_testtool::context::Context;
 
 use crate::utils::co_build::*;
 use crate::utils::*;
-use crate::Loader;
 use crate::MAX_CYCLES;
 
 #[test]
@@ -14,13 +11,7 @@ fn test_simple_cluster_mint() {
     let mut context = Context::default();
 
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-
-    // always success lock
-    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
-    let cluster_out_point = context.deploy_cell(cluster_bin);
-    let cluster_script_dep = CellDep::new_builder()
-        .out_point(cluster_out_point.clone())
-        .build();
+    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
     let input_cell = build_normal_input(&mut context);
     let cluster_type_id = build_type_id(&input_cell, 0);
     let type_ = build_spore_type_script(
@@ -131,23 +122,14 @@ fn test_cluster_proxy_mint() {
 
     // cluster
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
-    let cluster_out_point = context.deploy_cell(cluster_bin);
-    let cluster_script_dep = CellDep::new_builder()
-        .out_point(cluster_out_point.clone())
-        .build();
+    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&input_cell, 0);
     let cluster_type =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
-    let proxy_bin: Bytes = Loader::default().load_binary("cluster_proxy");
-    let proxy_out_point = context.deploy_cell(proxy_bin);
-    let proxy_script_dep = CellDep::new_builder()
-        .out_point(proxy_out_point.clone())
-        .build();
-
+    let (proxy_out_point, proxy_script_dep) = build_spore_materials(&mut context, "cluster_proxy");
     let proxy_id = build_type_id(&input_cell, 0);
     let proxy_type =
         build_spore_type_script(&mut context, &proxy_out_point, proxy_id.to_vec().into());
@@ -177,12 +159,7 @@ fn test_simple_cluster_destroy_failed() {
 
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
 
-    // always success lock
-    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
-    let cluster_out_point = context.deploy_cell(cluster_bin);
-    let cluster_script_dep = CellDep::new_builder()
-        .out_point(cluster_out_point.clone())
-        .build();
+    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&build_normal_input(&mut context), 0);
     let type_ =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());

@@ -59,7 +59,6 @@ fn test_multi_spores_mint() {
     let serialized =
         build_serialized_spore_data("Hello Spore!".as_bytes().to_vec(), "plain/text", None);
 
-    // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
 
     let input_cell_1 = build_normal_input(&mut context);
@@ -127,7 +126,6 @@ fn test_simple_spore_transfer() {
         build_serialized_spore_data("Hello Spore!".as_bytes().to_vec(), "plain/text", None);
     let mut context = Context::default();
 
-    // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
     let spore_type_id = build_type_id(&build_normal_input(&mut context), 0);
     let spore_type = build_spore_type_script(
@@ -191,7 +189,6 @@ fn test_simple_spore_destroy() {
         build_serialized_spore_data("Hello Spore!".as_bytes().to_vec(), "plain/text", None);
     let mut context = Context::default();
 
-    // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
     let input = build_normal_input(&mut context);
     let spore_type_id = build_type_id(&input, 0);
@@ -346,7 +343,6 @@ fn test_simple_spore_destroy_failed_with_immortal() {
     );
     let mut context = Context::default();
 
-    // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
     let input = build_normal_input(&mut context);
     let spore_type_id = build_type_id(&input, 0);

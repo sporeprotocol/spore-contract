@@ -123,7 +123,6 @@ pub fn build_single_spore_mint_tx(
     let output_data =
         build_serialized_spore_data(output_data, content_type, cluster_id.map(|v| v.to_vec()));
 
-    // always success lock
     let (spore_out_point, spore_script_dep) = build_spore_materials(context, "spore");
     let (input, type_id) = match input_data {
         None => {

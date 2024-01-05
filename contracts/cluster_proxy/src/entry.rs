@@ -26,7 +26,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
             .ok_or(Error::ClusterCellNotInDep)?;
 
     // verify Proxy ID
-    let Some(proxy_id) = verify_type_id(index, Output) else {
+    let Some(proxy_id) = verify_type_id(index) else {
         return Err(Error::InvalidProxyID);
     };
 

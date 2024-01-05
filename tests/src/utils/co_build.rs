@@ -160,12 +160,13 @@ pub fn build_proxy_transfer_action(
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
     let script = internal::build_always_success_script(context);
-    let address = script_to_address(script);
+    let from = script_to_address(script);
+    let to = from.clone();
     let proxy_transfer = ProxyTransfer::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .proxy_id(h256_to_byte32(proxy_id))
-        .from(address.clone())
-        .to(address)
+        .from(from)
+        .to(to)
         .build();
     SporeActionUnion::ProxyTransfer(proxy_transfer)
 }
@@ -184,11 +185,12 @@ pub fn build_agent_transfer_action(
     cluster_id: [u8; 32],
 ) -> SporeActionUnion {
     let script = internal::build_always_success_script(context);
-    let address = script_to_address(script);
+    let from = script_to_address(script);
+    let to = from.clone();
     let agent_transfer = AgentTransfer::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
-        .from(address.clone())
-        .to(address)
+        .from(from)
+        .to(to)
         .build();
     SporeActionUnion::AgentTransfer(agent_transfer)
 }

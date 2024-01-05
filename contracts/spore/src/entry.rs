@@ -46,7 +46,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // verify NFT ID
-    let Some(spore_id) = verify_type_id(index, Output) else {
+    let Some(spore_id) = verify_type_id(index) else {
         return Err(Error::InvalidNFTID);
     };
 

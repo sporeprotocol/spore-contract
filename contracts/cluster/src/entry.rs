@@ -71,7 +71,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if cluster_data.name().is_empty() {
         return Err(Error::EmptyName);
     }
-    let Some(cluster_id) = verify_type_id(index, Output) else {
+    let Some(cluster_id) = verify_type_id(index) else {
         return Err(Error::InvalidClusterID);
     };
 

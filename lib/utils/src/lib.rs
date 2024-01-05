@@ -33,14 +33,14 @@ pub fn load_type_args(index: usize, source: Source) -> Bytes {
 }
 
 // only be avaliable in mint/create like ckb transaction
-pub fn verify_type_id(output_index: usize, source: Source) -> Option<[u8; 32]> {
+pub fn verify_type_id(output_index: usize) -> Option<[u8; 32]> {
     let first_input = match load_input(0, Source::Input) {
         Ok(cell_input) => cell_input,
         Err(_) => return None,
     };
 
     let expected_id = calc_type_id(first_input.as_slice(), output_index);
-    let type_id_args = load_type_args(output_index, source);
+    let type_id_args = load_type_args(output_index, Source::Output);
 
     debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
     if type_id_args.len() < 32 {
@@ -60,7 +60,7 @@ pub fn calc_type_id(tx_first_input: &[u8], output_index: usize) -> [u8; 32] {
     let mut blake2b = Blake2bBuilder::new(32)
         .personal(b"ckb-default-hash")
         .build();
-    blake2b.update(prevout_hash);
+    blake2b.update(tx_first_input);
     blake2b.update(&(output_index as u64).to_le_bytes());
     let mut verify_id = [0; 32];
     blake2b.finalize(&mut verify_id);
@@ -151,7 +151,7 @@ pub fn check_spore_address(
     group_source: Source,
     spore_address: action::Address,
 ) -> Result<(), Error> {
-    let address = load_cell_lock(0, gourp_source)?;
+    let address = load_cell_lock(0, group_source)?;
     let action::AddressUnion::Script(expected_script) = spore_address.to_enum();
     if address.as_slice() != expected_script.as_slice() {
         return Err(Error::SporeActionFieldMismatch);
@@ -165,9 +165,13 @@ pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
         .ok_or(Error::InvliadCoBuildWitnessLayout)?;
     let script_hash = load_script_hash()?;
 
-    let mut iter = message.actions().into_iter().filter(|value| value.script_hash().as_slice() == script_hash.as_slice());
+    let mut iter = message
+        .actions()
+        .into_iter()
+        .filter(|value| value.script_hash().as_slice() == script_hash.as_slice());
     match (iter.next(), iter.next()) {
-        (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data()).map_err(|_| Error::InvliadCoBuildMessage),
-        _ => Err(Error::InvliadCoBuildMessage)
+        (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data())
+            .map_err(|_| Error::InvliadCoBuildMessage),
+        _ => Err(Error::InvliadCoBuildMessage),
     }
 }
