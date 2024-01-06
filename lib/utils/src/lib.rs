@@ -172,6 +172,6 @@ pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
     match (iter.next(), iter.next()) {
         (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data())
             .map_err(|_| Error::InvliadCoBuildMessage),
-        _ => Err(Error::InvliadCoBuildMessage),
+        _ => Err(Error::SporeActionDuplicated),
     }
 }

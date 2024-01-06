@@ -14,19 +14,19 @@ union Address {
 /* Actions for Spore */
 
 table Mint {
-    nft_id: Byte32,
+    spore_id: Byte32,
     to: Address,
     data_hash: Byte32,
 }
 
 table Transfer {
-    nft_id: Byte32,
+    spore_id: Byte32,
     from: Address,
     to: Address,
 }
 
 table Burn {
-    nft_id: Byte32,
+    spore_id: Byte32,
     from: Address,
 }
 

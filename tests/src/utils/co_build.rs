@@ -85,7 +85,7 @@ pub fn build_mint_action(
 ) -> SporeActionUnion {
     let to = internal::build_always_success_script(context);
     let mint = Mint::new_builder()
-        .nft_id(h256_to_byte32(nft_id))
+        .spore_id(h256_to_byte32(nft_id))
         .data_hash(h256_to_byte32(blake2b_256(content)))
         .to(script_to_address(to))
         .build();
@@ -96,7 +96,7 @@ pub fn build_transfer_action(context: &mut Context, nft_id: [u8; 32]) -> SporeAc
     let script = internal::build_always_success_script(context);
     let address = script_to_address(script);
     let transfer = Transfer::new_builder()
-        .nft_id(h256_to_byte32(nft_id))
+        .spore_id(h256_to_byte32(nft_id))
         .from(address.clone())
         .to(address)
         .build();
@@ -106,7 +106,7 @@ pub fn build_transfer_action(context: &mut Context, nft_id: [u8; 32]) -> SporeAc
 pub fn build_burn_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
     let from = internal::build_always_success_script(context);
     let burn = Burn::new_builder()
-        .nft_id(h256_to_byte32(nft_id))
+        .spore_id(h256_to_byte32(nft_id))
         .from(script_to_address(from))
         .build();
     SporeActionUnion::Burn(burn)

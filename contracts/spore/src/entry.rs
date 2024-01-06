@@ -149,7 +149,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let action::SporeActionUnion::Mint(mint) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if mint.nft_id().as_slice() != spore_id
+    if mint.spore_id().as_slice() != spore_id
         || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
     {
         return Err(Error::SporeActionFieldMismatch);
@@ -181,7 +181,7 @@ fn process_destruction() -> Result<(), Error> {
     let action::SporeActionUnion::Burn(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if burn.nft_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
+    if burn.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, burn.from())?;
@@ -216,7 +216,7 @@ fn process_transfer() -> Result<(), Error> {
     let action::SporeActionUnion::Transfer(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if transfer.nft_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
+    if transfer.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, transfer.from())?;

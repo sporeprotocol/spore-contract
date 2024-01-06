@@ -1395,7 +1395,7 @@ impl ::core::fmt::Debug for Mint {
 impl ::core::fmt::Display for Mint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "to", self.to())?;
         write!(f, ", {}: {}", "data_hash", self.data_hash())?;
         let extra_count = self.count_extra_fields();
@@ -1436,7 +1436,7 @@ impl Mint {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32 {
+    pub fn spore_id(&self) -> Byte32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -1485,7 +1485,7 @@ impl molecule::prelude::Entity for Mint {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .nft_id(self.nft_id())
+            .spore_id(self.spore_id())
             .to(self.to())
             .data_hash(self.data_hash())
     }
@@ -1509,7 +1509,7 @@ impl<'r> ::core::fmt::Debug for MintReader<'r> {
 impl<'r> ::core::fmt::Display for MintReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "to", self.to())?;
         write!(f, ", {}: {}", "data_hash", self.data_hash())?;
         let extra_count = self.count_extra_fields();
@@ -1537,7 +1537,7 @@ impl<'r> MintReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32Reader<'r> {
+    pub fn spore_id(&self) -> Byte32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -1614,14 +1614,14 @@ impl<'r> molecule::prelude::Reader<'r> for MintReader<'r> {
 }
 #[derive(Clone, Debug, Default)]
 pub struct MintBuilder {
-    pub(crate) nft_id: Byte32,
+    pub(crate) spore_id: Byte32,
     pub(crate) to: Address,
     pub(crate) data_hash: Byte32,
 }
 impl MintBuilder {
     pub const FIELD_COUNT: usize = 3;
-    pub fn nft_id(mut self, v: Byte32) -> Self {
-        self.nft_id = v;
+    pub fn spore_id(mut self, v: Byte32) -> Self {
+        self.spore_id = v;
         self
     }
     pub fn to(mut self, v: Address) -> Self {
@@ -1638,7 +1638,7 @@ impl molecule::prelude::Builder for MintBuilder {
     const NAME: &'static str = "MintBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.nft_id.as_slice().len()
+            + self.spore_id.as_slice().len()
             + self.to.as_slice().len()
             + self.data_hash.as_slice().len()
     }
@@ -1646,7 +1646,7 @@ impl molecule::prelude::Builder for MintBuilder {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
         offsets.push(total_size);
-        total_size += self.nft_id.as_slice().len();
+        total_size += self.spore_id.as_slice().len();
         offsets.push(total_size);
         total_size += self.to.as_slice().len();
         offsets.push(total_size);
@@ -1655,7 +1655,7 @@ impl molecule::prelude::Builder for MintBuilder {
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.nft_id.as_slice())?;
+        writer.write_all(self.spore_id.as_slice())?;
         writer.write_all(self.to.as_slice())?;
         writer.write_all(self.data_hash.as_slice())?;
         Ok(())
@@ -1686,7 +1686,7 @@ impl ::core::fmt::Debug for Transfer {
 impl ::core::fmt::Display for Transfer {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "from", self.from())?;
         write!(f, ", {}: {}", "to", self.to())?;
         let extra_count = self.count_extra_fields();
@@ -1728,7 +1728,7 @@ impl Transfer {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32 {
+    pub fn spore_id(&self) -> Byte32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -1777,7 +1777,7 @@ impl molecule::prelude::Entity for Transfer {
     }
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
-            .nft_id(self.nft_id())
+            .spore_id(self.spore_id())
             .from(self.from())
             .to(self.to())
     }
@@ -1801,7 +1801,7 @@ impl<'r> ::core::fmt::Debug for TransferReader<'r> {
 impl<'r> ::core::fmt::Display for TransferReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "from", self.from())?;
         write!(f, ", {}: {}", "to", self.to())?;
         let extra_count = self.count_extra_fields();
@@ -1829,7 +1829,7 @@ impl<'r> TransferReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32Reader<'r> {
+    pub fn spore_id(&self) -> Byte32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -1906,14 +1906,14 @@ impl<'r> molecule::prelude::Reader<'r> for TransferReader<'r> {
 }
 #[derive(Clone, Debug, Default)]
 pub struct TransferBuilder {
-    pub(crate) nft_id: Byte32,
+    pub(crate) spore_id: Byte32,
     pub(crate) from: Address,
     pub(crate) to: Address,
 }
 impl TransferBuilder {
     pub const FIELD_COUNT: usize = 3;
-    pub fn nft_id(mut self, v: Byte32) -> Self {
-        self.nft_id = v;
+    pub fn spore_id(mut self, v: Byte32) -> Self {
+        self.spore_id = v;
         self
     }
     pub fn from(mut self, v: Address) -> Self {
@@ -1930,7 +1930,7 @@ impl molecule::prelude::Builder for TransferBuilder {
     const NAME: &'static str = "TransferBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.nft_id.as_slice().len()
+            + self.spore_id.as_slice().len()
             + self.from.as_slice().len()
             + self.to.as_slice().len()
     }
@@ -1938,7 +1938,7 @@ impl molecule::prelude::Builder for TransferBuilder {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
         offsets.push(total_size);
-        total_size += self.nft_id.as_slice().len();
+        total_size += self.spore_id.as_slice().len();
         offsets.push(total_size);
         total_size += self.from.as_slice().len();
         offsets.push(total_size);
@@ -1947,7 +1947,7 @@ impl molecule::prelude::Builder for TransferBuilder {
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.nft_id.as_slice())?;
+        writer.write_all(self.spore_id.as_slice())?;
         writer.write_all(self.from.as_slice())?;
         writer.write_all(self.to.as_slice())?;
         Ok(())
@@ -1978,7 +1978,7 @@ impl ::core::fmt::Debug for Burn {
 impl ::core::fmt::Display for Burn {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "from", self.from())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
@@ -2017,7 +2017,7 @@ impl Burn {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32 {
+    pub fn spore_id(&self) -> Byte32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -2059,7 +2059,9 @@ impl molecule::prelude::Entity for Burn {
         ::core::default::Default::default()
     }
     fn as_builder(self) -> Self::Builder {
-        Self::new_builder().nft_id(self.nft_id()).from(self.from())
+        Self::new_builder()
+            .spore_id(self.spore_id())
+            .from(self.from())
     }
 }
 #[derive(Clone, Copy)]
@@ -2081,7 +2083,7 @@ impl<'r> ::core::fmt::Debug for BurnReader<'r> {
 impl<'r> ::core::fmt::Display for BurnReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
-        write!(f, "{}: {}", "nft_id", self.nft_id())?;
+        write!(f, "{}: {}", "spore_id", self.spore_id())?;
         write!(f, ", {}: {}", "from", self.from())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
@@ -2108,7 +2110,7 @@ impl<'r> BurnReader<'r> {
     pub fn has_extra_fields(&self) -> bool {
         Self::FIELD_COUNT != self.field_count()
     }
-    pub fn nft_id(&self) -> Byte32Reader<'r> {
+    pub fn spore_id(&self) -> Byte32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
         let end = molecule::unpack_number(&slice[8..]) as usize;
@@ -2178,13 +2180,13 @@ impl<'r> molecule::prelude::Reader<'r> for BurnReader<'r> {
 }
 #[derive(Clone, Debug, Default)]
 pub struct BurnBuilder {
-    pub(crate) nft_id: Byte32,
+    pub(crate) spore_id: Byte32,
     pub(crate) from: Address,
 }
 impl BurnBuilder {
     pub const FIELD_COUNT: usize = 2;
-    pub fn nft_id(mut self, v: Byte32) -> Self {
-        self.nft_id = v;
+    pub fn spore_id(mut self, v: Byte32) -> Self {
+        self.spore_id = v;
         self
     }
     pub fn from(mut self, v: Address) -> Self {
@@ -2197,21 +2199,21 @@ impl molecule::prelude::Builder for BurnBuilder {
     const NAME: &'static str = "BurnBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
-            + self.nft_id.as_slice().len()
+            + self.spore_id.as_slice().len()
             + self.from.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
         offsets.push(total_size);
-        total_size += self.nft_id.as_slice().len();
+        total_size += self.spore_id.as_slice().len();
         offsets.push(total_size);
         total_size += self.from.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
-        writer.write_all(self.nft_id.as_slice())?;
+        writer.write_all(self.spore_id.as_slice())?;
         writer.write_all(self.from.as_slice())?;
         Ok(())
     }
