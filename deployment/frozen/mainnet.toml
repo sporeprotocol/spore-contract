@@ -1,0 +1,14 @@
+[cluster]
+code_hash_list = []
+
+[spore]
+code_hash_list = []
+
+[cluster_proxy]
+code_hash_list = []
+
+[cluster_agent]
+code_hash_list = []
+
+[mutant]
+code_hash_list = []
