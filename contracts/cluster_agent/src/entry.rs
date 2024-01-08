@@ -12,15 +12,30 @@ use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
 use spore_errors::error::Error;
-use spore_utils::{
-    calc_capacity_sum, check_only_one_self_code_hash_in, find_position_by_type,
-    find_posityion_by_type_hash,
-};
+use spore_utils::{calc_capacity_sum, find_position_by_type, find_posityion_by_type_hash};
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
 fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
+}
+
+fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
+    let script = load_script().unwrap_or_default();
+    let self_code_hash = script.code_hash();
+    let same_agents = QueryIter::new(load_cell_type, source)
+        .enumerate()
+        .filter(|(index, type_)| {
+            if let Some(type_) = type_ {
+                if type_.code_hash().as_slice() == self_code_hash.as_slice() {
+                    let data = load_cell_data(*index, source).unwrap();
+                    return cell_data == data;
+                }
+            }
+            false
+        })
+        .collect::<Vec<_>>();
+    same_agents.len() > 1
 }
 
 fn process_creation(_index: usize) -> Result<(), Error> {
@@ -63,7 +78,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
                 return Err(Error::PaymentNotEnough);
             } else {
                 // Condition 3: Check only one agent in creation
-                check_only_one_self_code_hash_in(Source::Output);
+                if has_conflict_agent(Source::Output, &proxy_type_hash) {
+                    return Err(Error::ConflictAgentCells);
+                }
             }
         } else {
             return Err(Error::PaymentMethodNotSupport);

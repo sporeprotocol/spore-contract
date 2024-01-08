@@ -38,6 +38,7 @@ pub enum Error {
     PaymentNotEnough,
     PaymentMethodNotSupport,
     RefCellNotClusterProxy,
+    ConflictAgentCells,
 
     // cluster errors
     InvalidClusterOperation = 50,

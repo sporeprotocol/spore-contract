@@ -2,7 +2,6 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::prelude::*;
@@ -10,7 +9,7 @@ use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
     load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, load_cell_type_hash,
-    load_input, load_script, QueryIter,
+    load_input, QueryIter,
 };
 
 pub use mime::MIME;
@@ -126,18 +125,4 @@ pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u128 {
         .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
         .map(|cell| cell.capacity().unpack() as u128)
         .sum()
-}
-
-pub fn check_only_one_self_code_hash_in(source: Source) -> bool {
-    let script = load_script().unwrap_or_default();
-    let self_code_hash = script.code_hash();
-    let self_code_hashes = QueryIter::new(load_cell_type, source)
-        .filter(|type_| {
-            if let Some(type_) = type_ {
-                return type_.code_hash().as_slice() == self_code_hash.as_slice();
-            }
-            false
-        })
-        .collect::<Vec<_>>();
-    self_code_hashes.len() > 1
 }
