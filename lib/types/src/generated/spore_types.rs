@@ -8,12 +8,18 @@ pub struct U8(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for U8 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for U8 { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for U8 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for U8 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -34,35 +40,61 @@ impl U8 {
     pub const TOTAL_SIZE: usize = 1;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 1;
-    pub fn nth0(&self) -> Byte { Byte::new_unchecked(self.0.slice(0..1)) }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.as_bytes() }
-    pub fn as_reader<'r>(&'r self) -> U8Reader<'r> { U8Reader::new_unchecked(self.as_slice()) }
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> U8Reader<'r> {
+        U8Reader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for U8 {
     type Builder = U8Builder;
     const NAME: &'static str = "U8";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { U8(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { U8Reader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { U8Reader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set([self.nth0(), ]) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        U8(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U8Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U8Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([self.nth0()])
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct U8Reader<'r> (&'r [u8]);
+pub struct U8Reader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for U8Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for U8Reader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for U8Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for U8Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -76,29 +108,49 @@ impl<'r> U8Reader<'r> {
     pub const TOTAL_SIZE: usize = 1;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 1;
-    pub fn nth0(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[0..1]) }
-    pub fn raw_data(&self) -> &'r [u8] { self.as_slice() }
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for U8Reader<'r> {
     type Entity = U8;
     const NAME: &'static str = "U8Reader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { U8Reader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        U8Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE { return ve!(Self , TotalSizeNotMatch , Self :: TOTAL_SIZE , slice_len); }
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
         Ok(())
     }
 }
 
 pub struct U8Builder(pub(crate) [Byte; 1]);
 
-impl ::core::fmt::Debug for U8Builder { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:?})", Self::NAME, &self.0[..]) } }
+impl ::core::fmt::Debug for U8Builder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
 
-impl ::core::default::Default for U8Builder { fn default() -> Self { U8Builder([Byte::default(), ]) } }
+impl ::core::default::Default for U8Builder {
+    fn default() -> Self {
+        U8Builder([Byte::default()])
+    }
+}
 
 impl U8Builder {
     pub const TOTAL_SIZE: usize = 1;
@@ -117,14 +169,17 @@ impl U8Builder {
 impl molecule::prelude::Builder for U8Builder {
     type Entity = U8;
     const NAME: &'static str = "U8Builder";
-    fn expected_length(&self) -> usize { Self::TOTAL_SIZE }
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         U8::new_unchecked(inner.into())
     }
 }
@@ -135,12 +190,18 @@ pub struct U128(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for U128 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for U128 { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for U128 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for U128 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -161,50 +222,123 @@ impl U128 {
     pub const TOTAL_SIZE: usize = 16;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 16;
-    pub fn nth0(&self) -> Byte { Byte::new_unchecked(self.0.slice(0..1)) }
-    pub fn nth1(&self) -> Byte { Byte::new_unchecked(self.0.slice(1..2)) }
-    pub fn nth2(&self) -> Byte { Byte::new_unchecked(self.0.slice(2..3)) }
-    pub fn nth3(&self) -> Byte { Byte::new_unchecked(self.0.slice(3..4)) }
-    pub fn nth4(&self) -> Byte { Byte::new_unchecked(self.0.slice(4..5)) }
-    pub fn nth5(&self) -> Byte { Byte::new_unchecked(self.0.slice(5..6)) }
-    pub fn nth6(&self) -> Byte { Byte::new_unchecked(self.0.slice(6..7)) }
-    pub fn nth7(&self) -> Byte { Byte::new_unchecked(self.0.slice(7..8)) }
-    pub fn nth8(&self) -> Byte { Byte::new_unchecked(self.0.slice(8..9)) }
-    pub fn nth9(&self) -> Byte { Byte::new_unchecked(self.0.slice(9..10)) }
-    pub fn nth10(&self) -> Byte { Byte::new_unchecked(self.0.slice(10..11)) }
-    pub fn nth11(&self) -> Byte { Byte::new_unchecked(self.0.slice(11..12)) }
-    pub fn nth12(&self) -> Byte { Byte::new_unchecked(self.0.slice(12..13)) }
-    pub fn nth13(&self) -> Byte { Byte::new_unchecked(self.0.slice(13..14)) }
-    pub fn nth14(&self) -> Byte { Byte::new_unchecked(self.0.slice(14..15)) }
-    pub fn nth15(&self) -> Byte { Byte::new_unchecked(self.0.slice(15..16)) }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.as_bytes() }
-    pub fn as_reader<'r>(&'r self) -> U128Reader<'r> { U128Reader::new_unchecked(self.as_slice()) }
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn nth1(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn nth2(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(2..3))
+    }
+    pub fn nth3(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(3..4))
+    }
+    pub fn nth4(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(4..5))
+    }
+    pub fn nth5(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(5..6))
+    }
+    pub fn nth6(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(6..7))
+    }
+    pub fn nth7(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(7..8))
+    }
+    pub fn nth8(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(8..9))
+    }
+    pub fn nth9(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(9..10))
+    }
+    pub fn nth10(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(10..11))
+    }
+    pub fn nth11(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(11..12))
+    }
+    pub fn nth12(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(12..13))
+    }
+    pub fn nth13(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(13..14))
+    }
+    pub fn nth14(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(14..15))
+    }
+    pub fn nth15(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(15..16))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> U128Reader<'r> {
+        U128Reader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for U128 {
     type Builder = U128Builder;
     const NAME: &'static str = "U128";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { U128(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { U128Reader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { U128Reader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set([self.nth0(), self.nth1(), self.nth2(), self.nth3(), self.nth4(), self.nth5(), self.nth6(), self.nth7(), self.nth8(), self.nth9(), self.nth10(), self.nth11(), self.nth12(), self.nth13(), self.nth14(), self.nth15(), ]) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        U128(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U128Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        U128Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([
+            self.nth0(),
+            self.nth1(),
+            self.nth2(),
+            self.nth3(),
+            self.nth4(),
+            self.nth5(),
+            self.nth6(),
+            self.nth7(),
+            self.nth8(),
+            self.nth9(),
+            self.nth10(),
+            self.nth11(),
+            self.nth12(),
+            self.nth13(),
+            self.nth14(),
+            self.nth15(),
+        ])
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct U128Reader<'r> (&'r [u8]);
+pub struct U128Reader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for U128Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for U128Reader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for U128Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for U128Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -218,44 +352,111 @@ impl<'r> U128Reader<'r> {
     pub const TOTAL_SIZE: usize = 16;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 16;
-    pub fn nth0(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[0..1]) }
-    pub fn nth1(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[1..2]) }
-    pub fn nth2(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[2..3]) }
-    pub fn nth3(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[3..4]) }
-    pub fn nth4(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[4..5]) }
-    pub fn nth5(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[5..6]) }
-    pub fn nth6(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[6..7]) }
-    pub fn nth7(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[7..8]) }
-    pub fn nth8(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[8..9]) }
-    pub fn nth9(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[9..10]) }
-    pub fn nth10(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[10..11]) }
-    pub fn nth11(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[11..12]) }
-    pub fn nth12(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[12..13]) }
-    pub fn nth13(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[13..14]) }
-    pub fn nth14(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[14..15]) }
-    pub fn nth15(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[15..16]) }
-    pub fn raw_data(&self) -> &'r [u8] { self.as_slice() }
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn nth1(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+    pub fn nth2(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[2..3])
+    }
+    pub fn nth3(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[3..4])
+    }
+    pub fn nth4(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[4..5])
+    }
+    pub fn nth5(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[5..6])
+    }
+    pub fn nth6(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[6..7])
+    }
+    pub fn nth7(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[7..8])
+    }
+    pub fn nth8(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[8..9])
+    }
+    pub fn nth9(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[9..10])
+    }
+    pub fn nth10(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[10..11])
+    }
+    pub fn nth11(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[11..12])
+    }
+    pub fn nth12(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[12..13])
+    }
+    pub fn nth13(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[13..14])
+    }
+    pub fn nth14(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[14..15])
+    }
+    pub fn nth15(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[15..16])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for U128Reader<'r> {
     type Entity = U128;
     const NAME: &'static str = "U128Reader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { U128Reader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        U128Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE { return ve!(Self , TotalSizeNotMatch , Self :: TOTAL_SIZE , slice_len); }
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
         Ok(())
     }
 }
 
 pub struct U128Builder(pub(crate) [Byte; 16]);
 
-impl ::core::fmt::Debug for U128Builder { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:?})", Self::NAME, &self.0[..]) } }
+impl ::core::fmt::Debug for U128Builder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
 
-impl ::core::default::Default for U128Builder { fn default() -> Self { U128Builder([Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), ]) } }
+impl ::core::default::Default for U128Builder {
+    fn default() -> Self {
+        U128Builder([
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+        ])
+    }
+}
 
 impl U128Builder {
     pub const TOTAL_SIZE: usize = 16;
@@ -334,7 +535,9 @@ impl U128Builder {
 impl molecule::prelude::Builder for U128Builder {
     type Entity = U128;
     const NAME: &'static str = "U128Builder";
-    fn expected_length(&self) -> usize { Self::TOTAL_SIZE }
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         writer.write_all(self.0[1].as_slice())?;
@@ -356,7 +559,8 @@ impl molecule::prelude::Builder for U128Builder {
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         U128::new_unchecked(inner.into())
     }
 }
@@ -367,12 +571,18 @@ pub struct USize(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for USize {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for USize { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for USize {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for USize {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -393,38 +603,70 @@ impl USize {
     pub const TOTAL_SIZE: usize = 4;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 4;
-    pub fn nth0(&self) -> Byte { Byte::new_unchecked(self.0.slice(0..1)) }
-    pub fn nth1(&self) -> Byte { Byte::new_unchecked(self.0.slice(1..2)) }
-    pub fn nth2(&self) -> Byte { Byte::new_unchecked(self.0.slice(2..3)) }
-    pub fn nth3(&self) -> Byte { Byte::new_unchecked(self.0.slice(3..4)) }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.as_bytes() }
-    pub fn as_reader<'r>(&'r self) -> USizeReader<'r> { USizeReader::new_unchecked(self.as_slice()) }
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn nth1(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn nth2(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(2..3))
+    }
+    pub fn nth3(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(3..4))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> USizeReader<'r> {
+        USizeReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for USize {
     type Builder = USizeBuilder;
     const NAME: &'static str = "USize";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { USize(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { USizeReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { USizeReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set([self.nth0(), self.nth1(), self.nth2(), self.nth3(), ]) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        USize(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        USizeReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        USizeReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([self.nth0(), self.nth1(), self.nth2(), self.nth3()])
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct USizeReader<'r> (&'r [u8]);
+pub struct USizeReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for USizeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for USizeReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for USizeReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for USizeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -438,32 +680,63 @@ impl<'r> USizeReader<'r> {
     pub const TOTAL_SIZE: usize = 4;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 4;
-    pub fn nth0(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[0..1]) }
-    pub fn nth1(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[1..2]) }
-    pub fn nth2(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[2..3]) }
-    pub fn nth3(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[3..4]) }
-    pub fn raw_data(&self) -> &'r [u8] { self.as_slice() }
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn nth1(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+    pub fn nth2(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[2..3])
+    }
+    pub fn nth3(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[3..4])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for USizeReader<'r> {
     type Entity = USize;
     const NAME: &'static str = "USizeReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { USizeReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        USizeReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE { return ve!(Self , TotalSizeNotMatch , Self :: TOTAL_SIZE , slice_len); }
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
         Ok(())
     }
 }
 
 pub struct USizeBuilder(pub(crate) [Byte; 4]);
 
-impl ::core::fmt::Debug for USizeBuilder { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:?})", Self::NAME, &self.0[..]) } }
+impl ::core::fmt::Debug for USizeBuilder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
 
-impl ::core::default::Default for USizeBuilder { fn default() -> Self { USizeBuilder([Byte::default(), Byte::default(), Byte::default(), Byte::default(), ]) } }
+impl ::core::default::Default for USizeBuilder {
+    fn default() -> Self {
+        USizeBuilder([
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+        ])
+    }
+}
 
 impl USizeBuilder {
     pub const TOTAL_SIZE: usize = 4;
@@ -494,7 +767,9 @@ impl USizeBuilder {
 impl molecule::prelude::Builder for USizeBuilder {
     type Entity = USize;
     const NAME: &'static str = "USizeBuilder";
-    fn expected_length(&self) -> usize { Self::TOTAL_SIZE }
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         writer.write_all(self.0[1].as_slice())?;
@@ -504,7 +779,8 @@ impl molecule::prelude::Builder for USizeBuilder {
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         USize::new_unchecked(inner.into())
     }
 }
@@ -515,12 +791,18 @@ pub struct Bytes32(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Bytes32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for Bytes32 { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for Bytes32 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for Bytes32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -532,7 +814,10 @@ impl ::core::fmt::Display for Bytes32 {
 
 impl ::core::default::Default for Bytes32 {
     fn default() -> Self {
-        let v: Vec<u8> = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let v: Vec<u8> = vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
         Bytes32::new_unchecked(v.into())
     }
 }
@@ -541,66 +826,187 @@ impl Bytes32 {
     pub const TOTAL_SIZE: usize = 32;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 32;
-    pub fn nth0(&self) -> Byte { Byte::new_unchecked(self.0.slice(0..1)) }
-    pub fn nth1(&self) -> Byte { Byte::new_unchecked(self.0.slice(1..2)) }
-    pub fn nth2(&self) -> Byte { Byte::new_unchecked(self.0.slice(2..3)) }
-    pub fn nth3(&self) -> Byte { Byte::new_unchecked(self.0.slice(3..4)) }
-    pub fn nth4(&self) -> Byte { Byte::new_unchecked(self.0.slice(4..5)) }
-    pub fn nth5(&self) -> Byte { Byte::new_unchecked(self.0.slice(5..6)) }
-    pub fn nth6(&self) -> Byte { Byte::new_unchecked(self.0.slice(6..7)) }
-    pub fn nth7(&self) -> Byte { Byte::new_unchecked(self.0.slice(7..8)) }
-    pub fn nth8(&self) -> Byte { Byte::new_unchecked(self.0.slice(8..9)) }
-    pub fn nth9(&self) -> Byte { Byte::new_unchecked(self.0.slice(9..10)) }
-    pub fn nth10(&self) -> Byte { Byte::new_unchecked(self.0.slice(10..11)) }
-    pub fn nth11(&self) -> Byte { Byte::new_unchecked(self.0.slice(11..12)) }
-    pub fn nth12(&self) -> Byte { Byte::new_unchecked(self.0.slice(12..13)) }
-    pub fn nth13(&self) -> Byte { Byte::new_unchecked(self.0.slice(13..14)) }
-    pub fn nth14(&self) -> Byte { Byte::new_unchecked(self.0.slice(14..15)) }
-    pub fn nth15(&self) -> Byte { Byte::new_unchecked(self.0.slice(15..16)) }
-    pub fn nth16(&self) -> Byte { Byte::new_unchecked(self.0.slice(16..17)) }
-    pub fn nth17(&self) -> Byte { Byte::new_unchecked(self.0.slice(17..18)) }
-    pub fn nth18(&self) -> Byte { Byte::new_unchecked(self.0.slice(18..19)) }
-    pub fn nth19(&self) -> Byte { Byte::new_unchecked(self.0.slice(19..20)) }
-    pub fn nth20(&self) -> Byte { Byte::new_unchecked(self.0.slice(20..21)) }
-    pub fn nth21(&self) -> Byte { Byte::new_unchecked(self.0.slice(21..22)) }
-    pub fn nth22(&self) -> Byte { Byte::new_unchecked(self.0.slice(22..23)) }
-    pub fn nth23(&self) -> Byte { Byte::new_unchecked(self.0.slice(23..24)) }
-    pub fn nth24(&self) -> Byte { Byte::new_unchecked(self.0.slice(24..25)) }
-    pub fn nth25(&self) -> Byte { Byte::new_unchecked(self.0.slice(25..26)) }
-    pub fn nth26(&self) -> Byte { Byte::new_unchecked(self.0.slice(26..27)) }
-    pub fn nth27(&self) -> Byte { Byte::new_unchecked(self.0.slice(27..28)) }
-    pub fn nth28(&self) -> Byte { Byte::new_unchecked(self.0.slice(28..29)) }
-    pub fn nth29(&self) -> Byte { Byte::new_unchecked(self.0.slice(29..30)) }
-    pub fn nth30(&self) -> Byte { Byte::new_unchecked(self.0.slice(30..31)) }
-    pub fn nth31(&self) -> Byte { Byte::new_unchecked(self.0.slice(31..32)) }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.as_bytes() }
-    pub fn as_reader<'r>(&'r self) -> Bytes32Reader<'r> { Bytes32Reader::new_unchecked(self.as_slice()) }
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn nth1(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(1..2))
+    }
+    pub fn nth2(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(2..3))
+    }
+    pub fn nth3(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(3..4))
+    }
+    pub fn nth4(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(4..5))
+    }
+    pub fn nth5(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(5..6))
+    }
+    pub fn nth6(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(6..7))
+    }
+    pub fn nth7(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(7..8))
+    }
+    pub fn nth8(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(8..9))
+    }
+    pub fn nth9(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(9..10))
+    }
+    pub fn nth10(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(10..11))
+    }
+    pub fn nth11(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(11..12))
+    }
+    pub fn nth12(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(12..13))
+    }
+    pub fn nth13(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(13..14))
+    }
+    pub fn nth14(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(14..15))
+    }
+    pub fn nth15(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(15..16))
+    }
+    pub fn nth16(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(16..17))
+    }
+    pub fn nth17(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(17..18))
+    }
+    pub fn nth18(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(18..19))
+    }
+    pub fn nth19(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(19..20))
+    }
+    pub fn nth20(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(20..21))
+    }
+    pub fn nth21(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(21..22))
+    }
+    pub fn nth22(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(22..23))
+    }
+    pub fn nth23(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(23..24))
+    }
+    pub fn nth24(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(24..25))
+    }
+    pub fn nth25(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(25..26))
+    }
+    pub fn nth26(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(26..27))
+    }
+    pub fn nth27(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(27..28))
+    }
+    pub fn nth28(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(28..29))
+    }
+    pub fn nth29(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(29..30))
+    }
+    pub fn nth30(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(30..31))
+    }
+    pub fn nth31(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(31..32))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> Bytes32Reader<'r> {
+        Bytes32Reader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for Bytes32 {
     type Builder = Bytes32Builder;
     const NAME: &'static str = "Bytes32";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { Bytes32(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { Bytes32Reader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { Bytes32Reader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set([self.nth0(), self.nth1(), self.nth2(), self.nth3(), self.nth4(), self.nth5(), self.nth6(), self.nth7(), self.nth8(), self.nth9(), self.nth10(), self.nth11(), self.nth12(), self.nth13(), self.nth14(), self.nth15(), self.nth16(), self.nth17(), self.nth18(), self.nth19(), self.nth20(), self.nth21(), self.nth22(), self.nth23(), self.nth24(), self.nth25(), self.nth26(), self.nth27(), self.nth28(), self.nth29(), self.nth30(), self.nth31(), ]) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Bytes32(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Bytes32Reader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        Bytes32Reader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([
+            self.nth0(),
+            self.nth1(),
+            self.nth2(),
+            self.nth3(),
+            self.nth4(),
+            self.nth5(),
+            self.nth6(),
+            self.nth7(),
+            self.nth8(),
+            self.nth9(),
+            self.nth10(),
+            self.nth11(),
+            self.nth12(),
+            self.nth13(),
+            self.nth14(),
+            self.nth15(),
+            self.nth16(),
+            self.nth17(),
+            self.nth18(),
+            self.nth19(),
+            self.nth20(),
+            self.nth21(),
+            self.nth22(),
+            self.nth23(),
+            self.nth24(),
+            self.nth25(),
+            self.nth26(),
+            self.nth27(),
+            self.nth28(),
+            self.nth29(),
+            self.nth30(),
+            self.nth31(),
+        ])
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct Bytes32Reader<'r> (&'r [u8]);
+pub struct Bytes32Reader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for Bytes32Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for Bytes32Reader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for Bytes32Reader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for Bytes32Reader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -614,60 +1020,175 @@ impl<'r> Bytes32Reader<'r> {
     pub const TOTAL_SIZE: usize = 32;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 32;
-    pub fn nth0(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[0..1]) }
-    pub fn nth1(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[1..2]) }
-    pub fn nth2(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[2..3]) }
-    pub fn nth3(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[3..4]) }
-    pub fn nth4(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[4..5]) }
-    pub fn nth5(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[5..6]) }
-    pub fn nth6(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[6..7]) }
-    pub fn nth7(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[7..8]) }
-    pub fn nth8(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[8..9]) }
-    pub fn nth9(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[9..10]) }
-    pub fn nth10(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[10..11]) }
-    pub fn nth11(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[11..12]) }
-    pub fn nth12(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[12..13]) }
-    pub fn nth13(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[13..14]) }
-    pub fn nth14(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[14..15]) }
-    pub fn nth15(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[15..16]) }
-    pub fn nth16(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[16..17]) }
-    pub fn nth17(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[17..18]) }
-    pub fn nth18(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[18..19]) }
-    pub fn nth19(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[19..20]) }
-    pub fn nth20(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[20..21]) }
-    pub fn nth21(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[21..22]) }
-    pub fn nth22(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[22..23]) }
-    pub fn nth23(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[23..24]) }
-    pub fn nth24(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[24..25]) }
-    pub fn nth25(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[25..26]) }
-    pub fn nth26(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[26..27]) }
-    pub fn nth27(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[27..28]) }
-    pub fn nth28(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[28..29]) }
-    pub fn nth29(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[29..30]) }
-    pub fn nth30(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[30..31]) }
-    pub fn nth31(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[31..32]) }
-    pub fn raw_data(&self) -> &'r [u8] { self.as_slice() }
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn nth1(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[1..2])
+    }
+    pub fn nth2(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[2..3])
+    }
+    pub fn nth3(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[3..4])
+    }
+    pub fn nth4(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[4..5])
+    }
+    pub fn nth5(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[5..6])
+    }
+    pub fn nth6(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[6..7])
+    }
+    pub fn nth7(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[7..8])
+    }
+    pub fn nth8(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[8..9])
+    }
+    pub fn nth9(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[9..10])
+    }
+    pub fn nth10(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[10..11])
+    }
+    pub fn nth11(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[11..12])
+    }
+    pub fn nth12(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[12..13])
+    }
+    pub fn nth13(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[13..14])
+    }
+    pub fn nth14(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[14..15])
+    }
+    pub fn nth15(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[15..16])
+    }
+    pub fn nth16(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[16..17])
+    }
+    pub fn nth17(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[17..18])
+    }
+    pub fn nth18(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[18..19])
+    }
+    pub fn nth19(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[19..20])
+    }
+    pub fn nth20(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[20..21])
+    }
+    pub fn nth21(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[21..22])
+    }
+    pub fn nth22(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[22..23])
+    }
+    pub fn nth23(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[23..24])
+    }
+    pub fn nth24(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[24..25])
+    }
+    pub fn nth25(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[25..26])
+    }
+    pub fn nth26(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[26..27])
+    }
+    pub fn nth27(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[27..28])
+    }
+    pub fn nth28(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[28..29])
+    }
+    pub fn nth29(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[29..30])
+    }
+    pub fn nth30(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[30..31])
+    }
+    pub fn nth31(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[31..32])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for Bytes32Reader<'r> {
     type Entity = Bytes32;
     const NAME: &'static str = "Bytes32Reader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { Bytes32Reader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        Bytes32Reader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE { return ve!(Self , TotalSizeNotMatch , Self :: TOTAL_SIZE , slice_len); }
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
         Ok(())
     }
 }
 
 pub struct Bytes32Builder(pub(crate) [Byte; 32]);
 
-impl ::core::fmt::Debug for Bytes32Builder { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:?})", Self::NAME, &self.0[..]) } }
+impl ::core::fmt::Debug for Bytes32Builder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
 
-impl ::core::default::Default for Bytes32Builder { fn default() -> Self { Bytes32Builder([Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), Byte::default(), ]) } }
+impl ::core::default::Default for Bytes32Builder {
+    fn default() -> Self {
+        Bytes32Builder([
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+            Byte::default(),
+        ])
+    }
+}
 
 impl Bytes32Builder {
     pub const TOTAL_SIZE: usize = 32;
@@ -810,7 +1331,9 @@ impl Bytes32Builder {
 impl molecule::prelude::Builder for Bytes32Builder {
     type Entity = Bytes32;
     const NAME: &'static str = "Bytes32Builder";
-    fn expected_length(&self) -> usize { Self::TOTAL_SIZE }
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         writer.write_all(self.0[1].as_slice())?;
@@ -848,7 +1371,8 @@ impl molecule::prelude::Builder for Bytes32Builder {
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         Bytes32::new_unchecked(inner.into())
     }
 }
@@ -859,12 +1383,18 @@ pub struct Bytes(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Bytes {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for Bytes { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for Bytes {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for Bytes {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -883,44 +1413,82 @@ impl ::core::default::Default for Bytes {
 
 impl Bytes {
     pub const ITEM_SIZE: usize = 1;
-    pub fn total_size(&self) -> usize { molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count() }
-    pub fn item_count(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn len(&self) -> usize { self.item_count() }
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
-    pub fn get(&self, idx: usize) -> Option<Byte> { if idx >= self.len() { None } else { Some(self.get_unchecked(idx)) } }
+    pub fn total_size(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count()
+    }
+    pub fn item_count(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<Byte> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
     pub fn get_unchecked(&self, idx: usize) -> Byte {
         let start = molecule::NUMBER_SIZE + Self::ITEM_SIZE * idx;
         let end = start + Self::ITEM_SIZE;
         Byte::new_unchecked(self.0.slice(start..end))
     }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.0.slice(molecule::NUMBER_SIZE..) }
-    pub fn as_reader<'r>(&'r self) -> BytesReader<'r> { BytesReader::new_unchecked(self.as_slice()) }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.0.slice(molecule::NUMBER_SIZE..)
+    }
+    pub fn as_reader<'r>(&'r self) -> BytesReader<'r> {
+        BytesReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for Bytes {
     type Builder = BytesBuilder;
     const NAME: &'static str = "Bytes";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { Bytes(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().extend(self.into_iter()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Bytes(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().extend(self.into_iter())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct BytesReader<'r> (&'r [u8]);
+pub struct BytesReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for BytesReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for BytesReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for BytesReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for BytesReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -932,36 +1500,64 @@ impl<'r> ::core::fmt::Display for BytesReader<'r> {
 
 impl<'r> BytesReader<'r> {
     pub const ITEM_SIZE: usize = 1;
-    pub fn total_size(&self) -> usize { molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count() }
-    pub fn item_count(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn len(&self) -> usize { self.item_count() }
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
-    pub fn get(&self, idx: usize) -> Option<ByteReader<'r>> { if idx >= self.len() { None } else { Some(self.get_unchecked(idx)) } }
+    pub fn total_size(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.item_count()
+    }
+    pub fn item_count(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<ByteReader<'r>> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
     pub fn get_unchecked(&self, idx: usize) -> ByteReader<'r> {
         let start = molecule::NUMBER_SIZE + Self::ITEM_SIZE * idx;
         let end = start + Self::ITEM_SIZE;
         ByteReader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn raw_data(&self) -> &'r [u8] { &self.as_slice()[molecule::NUMBER_SIZE..] }
+    pub fn raw_data(&self) -> &'r [u8] {
+        &self.as_slice()[molecule::NUMBER_SIZE..]
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for BytesReader<'r> {
     type Entity = Bytes;
     const NAME: &'static str = "BytesReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { BytesReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BytesReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len < molecule::NUMBER_SIZE { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE , slice_len); }
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
         let item_count = molecule::unpack_number(slice) as usize;
         if item_count == 0 {
-            if slice_len != molecule::NUMBER_SIZE { return ve!(Self , TotalSizeNotMatch , molecule :: NUMBER_SIZE , slice_len); }
+            if slice_len != molecule::NUMBER_SIZE {
+                return ve!(Self, TotalSizeNotMatch, molecule::NUMBER_SIZE, slice_len);
+            }
             return Ok(());
         }
         let total_size = molecule::NUMBER_SIZE + Self::ITEM_SIZE * item_count;
-        if slice_len != total_size { return ve!(Self , TotalSizeNotMatch , total_size , slice_len); }
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
         Ok(())
     }
 }
@@ -979,25 +1575,36 @@ impl BytesBuilder {
         self.0.push(v);
         self
     }
-    pub fn extend<T: ::core::iter::IntoIterator<Item=Byte>>(mut self, iter: T) -> Self {
-        for elem in iter { self.0.push(elem); }
+    pub fn extend<T: ::core::iter::IntoIterator<Item = Byte>>(mut self, iter: T) -> Self {
+        for elem in iter {
+            self.0.push(elem);
+        }
         self
     }
-    pub fn replace(&mut self, index: usize, v: Byte) -> Option<Byte> { self.0.get_mut(index).map(|item| ::core::mem::replace(item, v)) }
+    pub fn replace(&mut self, index: usize, v: Byte) -> Option<Byte> {
+        self.0
+            .get_mut(index)
+            .map(|item| ::core::mem::replace(item, v))
+    }
 }
 
 impl molecule::prelude::Builder for BytesBuilder {
     type Entity = Bytes;
     const NAME: &'static str = "BytesBuilder";
-    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.0.len() }
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE + Self::ITEM_SIZE * self.0.len()
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(&molecule::pack_number(self.0.len() as molecule::Number))?;
-        for inner in &self.0[..] { writer.write_all(inner.as_slice())?; }
+        for inner in &self.0[..] {
+            writer.write_all(inner.as_slice())?;
+        }
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         Bytes::new_unchecked(inner.into())
     }
 }
@@ -1007,7 +1614,9 @@ pub struct BytesIterator(Bytes, usize, usize);
 impl ::core::iter::Iterator for BytesIterator {
     type Item = Byte;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.1 >= self.2 { None } else {
+        if self.1 >= self.2 {
+            None
+        } else {
             let ret = self.0.get_unchecked(self.1);
             self.1 += 1;
             Some(ret)
@@ -1015,7 +1624,11 @@ impl ::core::iter::Iterator for BytesIterator {
     }
 }
 
-impl ::core::iter::ExactSizeIterator for BytesIterator { fn len(&self) -> usize { self.2 - self.1 } }
+impl ::core::iter::ExactSizeIterator for BytesIterator {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
 
 impl ::core::iter::IntoIterator for Bytes {
     type Item = Byte;
@@ -1032,17 +1645,29 @@ pub struct BytesVec(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for BytesVec {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for BytesVec { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for BytesVec {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for BytesVec {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} [", Self::NAME)?;
-        for i in 0..self.len() { if i == 0 { write!(f, "{}", self.get_unchecked(i))?; } else { write!(f, ", {}", self.get_unchecked(i))?; } }
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
         write!(f, "]")
     }
 }
@@ -1055,68 +1680,136 @@ impl ::core::default::Default for BytesVec {
 }
 
 impl BytesVec {
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn item_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn len(&self) -> usize { self.item_count() }
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
-    pub fn get(&self, idx: usize) -> Option<Bytes> { if idx >= self.len() { None } else { Some(self.get_unchecked(idx)) } }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<Bytes> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
     pub fn get_unchecked(&self, idx: usize) -> Bytes {
         let slice = self.as_slice();
         let start_idx = molecule::NUMBER_SIZE * (1 + idx);
         let start = molecule::unpack_number(&slice[start_idx..]) as usize;
-        if idx == self.len() - 1 { Bytes::new_unchecked(self.0.slice(start..)) } else {
+        if idx == self.len() - 1 {
+            Bytes::new_unchecked(self.0.slice(start..))
+        } else {
             let end_idx = start_idx + molecule::NUMBER_SIZE;
             let end = molecule::unpack_number(&slice[end_idx..]) as usize;
             Bytes::new_unchecked(self.0.slice(start..end))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> BytesVecReader<'r> { BytesVecReader::new_unchecked(self.as_slice()) }
+    pub fn as_reader<'r>(&'r self) -> BytesVecReader<'r> {
+        BytesVecReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for BytesVec {
     type Builder = BytesVecBuilder;
     const NAME: &'static str = "BytesVec";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { BytesVec(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesVecReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesVecReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().extend(self.into_iter()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BytesVec(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesVecReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesVecReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().extend(self.into_iter())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct BytesVecReader<'r> (&'r [u8]);
+pub struct BytesVecReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for BytesVecReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for BytesVecReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for BytesVecReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for BytesVecReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} [", Self::NAME)?;
-        for i in 0..self.len() { if i == 0 { write!(f, "{}", self.get_unchecked(i))?; } else { write!(f, ", {}", self.get_unchecked(i))?; } }
+        for i in 0..self.len() {
+            if i == 0 {
+                write!(f, "{}", self.get_unchecked(i))?;
+            } else {
+                write!(f, ", {}", self.get_unchecked(i))?;
+            }
+        }
         write!(f, "]")
     }
 }
 
 impl<'r> BytesVecReader<'r> {
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn item_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn len(&self) -> usize { self.item_count() }
-    pub fn is_empty(&self) -> bool { self.len() == 0 }
-    pub fn get(&self, idx: usize) -> Option<BytesReader<'r>> { if idx >= self.len() { None } else { Some(self.get_unchecked(idx)) } }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn item_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn len(&self) -> usize {
+        self.item_count()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+    pub fn get(&self, idx: usize) -> Option<BytesReader<'r>> {
+        if idx >= self.len() {
+            None
+        } else {
+            Some(self.get_unchecked(idx))
+        }
+    }
     pub fn get_unchecked(&self, idx: usize) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start_idx = molecule::NUMBER_SIZE * (1 + idx);
         let start = molecule::unpack_number(&slice[start_idx..]) as usize;
-        if idx == self.len() - 1 { BytesReader::new_unchecked(&self.as_slice()[start..]) } else {
+        if idx == self.len() - 1 {
+            BytesReader::new_unchecked(&self.as_slice()[start..])
+        } else {
             let end_idx = start_idx + molecule::NUMBER_SIZE;
             let end = molecule::unpack_number(&slice[end_idx..]) as usize;
             BytesReader::new_unchecked(&self.as_slice()[start..end])
@@ -1127,23 +1820,51 @@ impl<'r> BytesVecReader<'r> {
 impl<'r> molecule::prelude::Reader<'r> for BytesVecReader<'r> {
     type Entity = BytesVec;
     const NAME: &'static str = "BytesVecReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { BytesVecReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BytesVecReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len < molecule::NUMBER_SIZE { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE , slice_len); }
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
         let total_size = molecule::unpack_number(slice) as usize;
-        if slice_len != total_size { return ve!(Self , TotalSizeNotMatch , total_size , slice_len); }
-        if slice_len == molecule::NUMBER_SIZE { return Ok(()); }
-        if slice_len < molecule::NUMBER_SIZE * 2 { return ve!(Self , TotalSizeNotMatch , molecule :: NUMBER_SIZE * 2 , slice_len); }
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len == molecule::NUMBER_SIZE {
+            return Ok(());
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(
+                Self,
+                TotalSizeNotMatch,
+                molecule::NUMBER_SIZE * 2,
+                slice_len
+            );
+        }
         let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
-        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 { return ve!(Self , OffsetsNotMatch); }
-        if slice_len < offset_first { return ve!(Self , HeaderIsBroken , offset_first , slice_len); }
-        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first].chunks_exact(molecule::NUMBER_SIZE).map(|x| molecule::unpack_number(x) as usize).collect();
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
         offsets.push(total_size);
-        if offsets.windows(2).any(|i| i[0] > i[1]) { return ve!(Self , OffsetsNotMatch); }
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
         for pair in offsets.windows(2) {
             let start = pair[0];
             let end = pair[1];
@@ -1165,33 +1886,61 @@ impl BytesVecBuilder {
         self.0.push(v);
         self
     }
-    pub fn extend<T: ::core::iter::IntoIterator<Item=Bytes>>(mut self, iter: T) -> Self {
-        for elem in iter { self.0.push(elem); }
+    pub fn extend<T: ::core::iter::IntoIterator<Item = Bytes>>(mut self, iter: T) -> Self {
+        for elem in iter {
+            self.0.push(elem);
+        }
         self
     }
-    pub fn replace(&mut self, index: usize, v: Bytes) -> Option<Bytes> { self.0.get_mut(index).map(|item| ::core::mem::replace(item, v)) }
+    pub fn replace(&mut self, index: usize, v: Bytes) -> Option<Bytes> {
+        self.0
+            .get_mut(index)
+            .map(|item| ::core::mem::replace(item, v))
+    }
 }
 
 impl molecule::prelude::Builder for BytesVecBuilder {
     type Entity = BytesVec;
     const NAME: &'static str = "BytesVecBuilder";
-    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE * (self.0.len() + 1) + self.0.iter().map(|inner| inner.as_slice().len()).sum::<usize>() }
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (self.0.len() + 1)
+            + self
+                .0
+                .iter()
+                .map(|inner| inner.as_slice().len())
+                .sum::<usize>()
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let item_count = self.0.len();
-        if item_count == 0 { writer.write_all(&molecule::pack_number(molecule::NUMBER_SIZE as molecule::Number))?; } else {
-            let (total_size, offsets) = self.0.iter().fold((molecule::NUMBER_SIZE * (item_count + 1), Vec::with_capacity(item_count), ), |(start, mut offsets), inner| {
-                offsets.push(start);
-                (start + inner.as_slice().len(), offsets)
-            }, );
+        if item_count == 0 {
+            writer.write_all(&molecule::pack_number(
+                molecule::NUMBER_SIZE as molecule::Number,
+            ))?;
+        } else {
+            let (total_size, offsets) = self.0.iter().fold(
+                (
+                    molecule::NUMBER_SIZE * (item_count + 1),
+                    Vec::with_capacity(item_count),
+                ),
+                |(start, mut offsets), inner| {
+                    offsets.push(start);
+                    (start + inner.as_slice().len(), offsets)
+                },
+            );
             writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
-            for offset in offsets.into_iter() { writer.write_all(&molecule::pack_number(offset as molecule::Number))?; }
-            for inner in self.0.iter() { writer.write_all(inner.as_slice())?; }
+            for offset in offsets.into_iter() {
+                writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+            }
+            for inner in self.0.iter() {
+                writer.write_all(inner.as_slice())?;
+            }
         }
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         BytesVec::new_unchecked(inner.into())
     }
 }
@@ -1201,7 +1950,9 @@ pub struct BytesVecIterator(BytesVec, usize, usize);
 impl ::core::iter::Iterator for BytesVecIterator {
     type Item = Bytes;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.1 >= self.2 { None } else {
+        if self.1 >= self.2 {
+            None
+        } else {
             let ret = self.0.get_unchecked(self.1);
             self.1 += 1;
             Some(ret)
@@ -1209,7 +1960,11 @@ impl ::core::iter::Iterator for BytesVecIterator {
     }
 }
 
-impl ::core::iter::ExactSizeIterator for BytesVecIterator { fn len(&self) -> usize { self.2 - self.1 } }
+impl ::core::iter::ExactSizeIterator for BytesVecIterator {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
 
 impl ::core::iter::IntoIterator for BytesVec {
     type Item = Bytes;
@@ -1220,14 +1975,20 @@ impl ::core::iter::IntoIterator for BytesVec {
     }
 }
 
-impl<'r> BytesVecReader<'r> { pub fn iter<'t>(&'t self) -> BytesVecReaderIterator<'t, 'r> { BytesVecReaderIterator(&self, 0, self.len()) } }
+impl<'r> BytesVecReader<'r> {
+    pub fn iter<'t>(&'t self) -> BytesVecReaderIterator<'t, 'r> {
+        BytesVecReaderIterator(&self, 0, self.len())
+    }
+}
 
-pub struct BytesVecReaderIterator<'t, 'r> (&'t BytesVecReader<'r>, usize, usize);
+pub struct BytesVecReaderIterator<'t, 'r>(&'t BytesVecReader<'r>, usize, usize);
 
-impl<'t : 'r, 'r> ::core::iter::Iterator for BytesVecReaderIterator<'t, 'r> {
+impl<'t: 'r, 'r> ::core::iter::Iterator for BytesVecReaderIterator<'t, 'r> {
     type Item = BytesReader<'t>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.1 >= self.2 { None } else {
+        if self.1 >= self.2 {
+            None
+        } else {
             let ret = self.0.get_unchecked(self.1);
             self.1 += 1;
             Some(ret)
@@ -1235,7 +1996,11 @@ impl<'t : 'r, 'r> ::core::iter::Iterator for BytesVecReaderIterator<'t, 'r> {
     }
 }
 
-impl<'t : 'r, 'r> ::core::iter::ExactSizeIterator for BytesVecReaderIterator<'t, 'r> { fn len(&self) -> usize { self.2 - self.1 } }
+impl<'t: 'r, 'r> ::core::iter::ExactSizeIterator for BytesVecReaderIterator<'t, 'r> {
+    fn len(&self) -> usize {
+        self.2 - self.1
+    }
+}
 
 #[derive(Clone)]
 pub struct Bool(molecule::bytes::Bytes);
@@ -1243,12 +2008,18 @@ pub struct Bool(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for Bool {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for Bool { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for Bool {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for Bool {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1269,35 +2040,61 @@ impl Bool {
     pub const TOTAL_SIZE: usize = 1;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 1;
-    pub fn nth0(&self) -> Byte { Byte::new_unchecked(self.0.slice(0..1)) }
-    pub fn raw_data(&self) -> molecule::bytes::Bytes { self.as_bytes() }
-    pub fn as_reader<'r>(&'r self) -> BoolReader<'r> { BoolReader::new_unchecked(self.as_slice()) }
+    pub fn nth0(&self) -> Byte {
+        Byte::new_unchecked(self.0.slice(0..1))
+    }
+    pub fn raw_data(&self) -> molecule::bytes::Bytes {
+        self.as_bytes()
+    }
+    pub fn as_reader<'r>(&'r self) -> BoolReader<'r> {
+        BoolReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for Bool {
     type Builder = BoolBuilder;
     const NAME: &'static str = "Bool";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { Bool(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BoolReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BoolReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set([self.nth0(), ]) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        Bool(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BoolReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BoolReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set([self.nth0()])
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct BoolReader<'r> (&'r [u8]);
+pub struct BoolReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for BoolReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for BoolReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for BoolReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for BoolReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1311,29 +2108,49 @@ impl<'r> BoolReader<'r> {
     pub const TOTAL_SIZE: usize = 1;
     pub const ITEM_SIZE: usize = 1;
     pub const ITEM_COUNT: usize = 1;
-    pub fn nth0(&self) -> ByteReader<'r> { ByteReader::new_unchecked(&self.as_slice()[0..1]) }
-    pub fn raw_data(&self) -> &'r [u8] { self.as_slice() }
+    pub fn nth0(&self) -> ByteReader<'r> {
+        ByteReader::new_unchecked(&self.as_slice()[0..1])
+    }
+    pub fn raw_data(&self) -> &'r [u8] {
+        self.as_slice()
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for BoolReader<'r> {
     type Entity = Bool;
     const NAME: &'static str = "BoolReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { BoolReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BoolReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], _compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len != Self::TOTAL_SIZE { return ve!(Self , TotalSizeNotMatch , Self :: TOTAL_SIZE , slice_len); }
+        if slice_len != Self::TOTAL_SIZE {
+            return ve!(Self, TotalSizeNotMatch, Self::TOTAL_SIZE, slice_len);
+        }
         Ok(())
     }
 }
 
 pub struct BoolBuilder(pub(crate) [Byte; 1]);
 
-impl ::core::fmt::Debug for BoolBuilder { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:?})", Self::NAME, &self.0[..]) } }
+impl ::core::fmt::Debug for BoolBuilder {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:?})", Self::NAME, &self.0[..])
+    }
+}
 
-impl ::core::default::Default for BoolBuilder { fn default() -> Self { BoolBuilder([Byte::default(), ]) } }
+impl ::core::default::Default for BoolBuilder {
+    fn default() -> Self {
+        BoolBuilder([Byte::default()])
+    }
+}
 
 impl BoolBuilder {
     pub const TOTAL_SIZE: usize = 1;
@@ -1352,14 +2169,17 @@ impl BoolBuilder {
 impl molecule::prelude::Builder for BoolBuilder {
     type Entity = Bool;
     const NAME: &'static str = "BoolBuilder";
-    fn expected_length(&self) -> usize { Self::TOTAL_SIZE }
+    fn expected_length(&self) -> usize {
+        Self::TOTAL_SIZE
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         writer.write_all(self.0[0].as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         Bool::new_unchecked(inner.into())
     }
 }
@@ -1370,14 +2190,28 @@ pub struct BoolOpt(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for BoolOpt {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for BoolOpt { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for BoolOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
-impl ::core::fmt::Display for BoolOpt { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { if let Some(v) = self.to_opt() { write!(f, "{}(Some({}))", Self::NAME, v) } else { write!(f, "{}(None)", Self::NAME) } } }
+impl ::core::fmt::Display for BoolOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
 
 impl ::core::default::Default for BoolOpt {
     fn default() -> Self {
@@ -1387,53 +2221,111 @@ impl ::core::default::Default for BoolOpt {
 }
 
 impl BoolOpt {
-    pub fn is_none(&self) -> bool { self.0.is_empty() }
-    pub fn is_some(&self) -> bool { !self.0.is_empty() }
-    pub fn to_opt(&self) -> Option<Bool> { if self.is_none() { None } else { Some(Bool::new_unchecked(self.0.clone())) } }
-    pub fn as_reader<'r>(&'r self) -> BoolOptReader<'r> { BoolOptReader::new_unchecked(self.as_slice()) }
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<Bool> {
+        if self.is_none() {
+            None
+        } else {
+            Some(Bool::new_unchecked(self.0.clone()))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> BoolOptReader<'r> {
+        BoolOptReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for BoolOpt {
     type Builder = BoolOptBuilder;
     const NAME: &'static str = "BoolOpt";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { BoolOpt(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BoolOptReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BoolOptReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set(self.to_opt()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BoolOpt(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BoolOptReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BoolOptReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set(self.to_opt())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct BoolOptReader<'r> (&'r [u8]);
+pub struct BoolOptReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for BoolOptReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for BoolOptReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for BoolOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
-impl<'r> ::core::fmt::Display for BoolOptReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { if let Some(v) = self.to_opt() { write!(f, "{}(Some({}))", Self::NAME, v) } else { write!(f, "{}(None)", Self::NAME) } } }
+impl<'r> ::core::fmt::Display for BoolOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
 
 impl<'r> BoolOptReader<'r> {
-    pub fn is_none(&self) -> bool { self.0.is_empty() }
-    pub fn is_some(&self) -> bool { !self.0.is_empty() }
-    pub fn to_opt(&self) -> Option<BoolReader<'r>> { if self.is_none() { None } else { Some(BoolReader::new_unchecked(self.as_slice())) } }
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<BoolReader<'r>> {
+        if self.is_none() {
+            None
+        } else {
+            Some(BoolReader::new_unchecked(self.as_slice()))
+        }
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for BoolOptReader<'r> {
     type Entity = BoolOpt;
     const NAME: &'static str = "BoolOptReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { BoolOptReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BoolOptReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
-        if !slice.is_empty() { BoolReader::verify(&slice[..], compatible)?; }
+        if !slice.is_empty() {
+            BoolReader::verify(&slice[..], compatible)?;
+        }
         Ok(())
     }
 }
@@ -1451,11 +2343,22 @@ impl BoolOptBuilder {
 impl molecule::prelude::Builder for BoolOptBuilder {
     type Entity = BoolOpt;
     const NAME: &'static str = "BoolOptBuilder";
-    fn expected_length(&self) -> usize { self.0.as_ref().map(|ref inner| inner.as_slice().len()).unwrap_or(0) }
-    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> { self.0.as_ref().map(|ref inner| writer.write_all(inner.as_slice())).unwrap_or(Ok(())) }
+    fn expected_length(&self) -> usize {
+        self.0
+            .as_ref()
+            .map(|ref inner| inner.as_slice().len())
+            .unwrap_or(0)
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        self.0
+            .as_ref()
+            .map(|ref inner| writer.write_all(inner.as_slice()))
+            .unwrap_or(Ok(()))
+    }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         BoolOpt::new_unchecked(inner.into())
     }
 }
@@ -1466,14 +2369,28 @@ pub struct BytesOpt(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for BytesOpt {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for BytesOpt { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for BytesOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
-impl ::core::fmt::Display for BytesOpt { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { if let Some(v) = self.to_opt() { write!(f, "{}(Some({}))", Self::NAME, v) } else { write!(f, "{}(None)", Self::NAME) } } }
+impl ::core::fmt::Display for BytesOpt {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
 
 impl ::core::default::Default for BytesOpt {
     fn default() -> Self {
@@ -1483,53 +2400,111 @@ impl ::core::default::Default for BytesOpt {
 }
 
 impl BytesOpt {
-    pub fn is_none(&self) -> bool { self.0.is_empty() }
-    pub fn is_some(&self) -> bool { !self.0.is_empty() }
-    pub fn to_opt(&self) -> Option<Bytes> { if self.is_none() { None } else { Some(Bytes::new_unchecked(self.0.clone())) } }
-    pub fn as_reader<'r>(&'r self) -> BytesOptReader<'r> { BytesOptReader::new_unchecked(self.as_slice()) }
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<Bytes> {
+        if self.is_none() {
+            None
+        } else {
+            Some(Bytes::new_unchecked(self.0.clone()))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> BytesOptReader<'r> {
+        BytesOptReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for BytesOpt {
     type Builder = BytesOptBuilder;
     const NAME: &'static str = "BytesOpt";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { BytesOpt(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesOptReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { BytesOptReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().set(self.to_opt()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BytesOpt(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesOptReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BytesOptReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder().set(self.to_opt())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct BytesOptReader<'r> (&'r [u8]);
+pub struct BytesOptReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for BytesOptReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for BytesOptReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for BytesOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
-impl<'r> ::core::fmt::Display for BytesOptReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { if let Some(v) = self.to_opt() { write!(f, "{}(Some({}))", Self::NAME, v) } else { write!(f, "{}(None)", Self::NAME) } } }
+impl<'r> ::core::fmt::Display for BytesOptReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        if let Some(v) = self.to_opt() {
+            write!(f, "{}(Some({}))", Self::NAME, v)
+        } else {
+            write!(f, "{}(None)", Self::NAME)
+        }
+    }
+}
 
 impl<'r> BytesOptReader<'r> {
-    pub fn is_none(&self) -> bool { self.0.is_empty() }
-    pub fn is_some(&self) -> bool { !self.0.is_empty() }
-    pub fn to_opt(&self) -> Option<BytesReader<'r>> { if self.is_none() { None } else { Some(BytesReader::new_unchecked(self.as_slice())) } }
+    pub fn is_none(&self) -> bool {
+        self.0.is_empty()
+    }
+    pub fn is_some(&self) -> bool {
+        !self.0.is_empty()
+    }
+    pub fn to_opt(&self) -> Option<BytesReader<'r>> {
+        if self.is_none() {
+            None
+        } else {
+            Some(BytesReader::new_unchecked(self.as_slice()))
+        }
+    }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for BytesOptReader<'r> {
     type Entity = BytesOpt;
     const NAME: &'static str = "BytesOptReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { BytesOptReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BytesOptReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
-        if !slice.is_empty() { BytesReader::verify(&slice[..], compatible)?; }
+        if !slice.is_empty() {
+            BytesReader::verify(&slice[..], compatible)?;
+        }
         Ok(())
     }
 }
@@ -1547,11 +2522,22 @@ impl BytesOptBuilder {
 impl molecule::prelude::Builder for BytesOptBuilder {
     type Entity = BytesOpt;
     const NAME: &'static str = "BytesOptBuilder";
-    fn expected_length(&self) -> usize { self.0.as_ref().map(|ref inner| inner.as_slice().len()).unwrap_or(0) }
-    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> { self.0.as_ref().map(|ref inner| writer.write_all(inner.as_slice())).unwrap_or(Ok(())) }
+    fn expected_length(&self) -> usize {
+        self.0
+            .as_ref()
+            .map(|ref inner| inner.as_slice().len())
+            .unwrap_or(0)
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        self.0
+            .as_ref()
+            .map(|ref inner| writer.write_all(inner.as_slice()))
+            .unwrap_or(Ok(()))
+    }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         BytesOpt::new_unchecked(inner.into())
     }
 }
@@ -1562,12 +2548,18 @@ pub struct SporeData(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for SporeData {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for SporeData { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for SporeData {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for SporeData {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1576,24 +2568,40 @@ impl ::core::fmt::Display for SporeData {
         write!(f, ", {}: {}", "content", self.content())?;
         write!(f, ", {}: {}", "cluster_id", self.cluster_id())?;
         let extra_count = self.count_extra_fields();
-        if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
 
 impl ::core::default::Default for SporeData {
     fn default() -> Self {
-        let v: Vec<u8> = vec![24, 0, 0, 0, 16, 0, 0, 0, 20, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let v: Vec<u8> = vec![
+            24, 0, 0, 0, 16, 0, 0, 0, 20, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
         SporeData::new_unchecked(v.into())
     }
 }
 
 impl SporeData {
     pub const FIELD_COUNT: usize = 3;
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
-    pub fn has_extra_fields(&self) -> bool { Self::FIELD_COUNT != self.field_count() }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
     pub fn content_type(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
@@ -1612,35 +2620,62 @@ impl SporeData {
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[16..]) as usize;
             BytesOpt::new_unchecked(self.0.slice(start..end))
-        } else { BytesOpt::new_unchecked(self.0.slice(start..)) }
+        } else {
+            BytesOpt::new_unchecked(self.0.slice(start..))
+        }
     }
-    pub fn as_reader<'r>(&'r self) -> SporeDataReader<'r> { SporeDataReader::new_unchecked(self.as_slice()) }
+    pub fn as_reader<'r>(&'r self) -> SporeDataReader<'r> {
+        SporeDataReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for SporeData {
     type Builder = SporeDataBuilder;
     const NAME: &'static str = "SporeData";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { SporeData(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { SporeDataReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { SporeDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().content_type(self.content_type()).content(self.content()).cluster_id(self.cluster_id()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        SporeData(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SporeDataReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        SporeDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .content_type(self.content_type())
+            .content(self.content())
+            .cluster_id(self.cluster_id())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct SporeDataReader<'r> (&'r [u8]);
+pub struct SporeDataReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for SporeDataReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for SporeDataReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for SporeDataReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for SporeDataReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1649,17 +2684,31 @@ impl<'r> ::core::fmt::Display for SporeDataReader<'r> {
         write!(f, ", {}: {}", "content", self.content())?;
         write!(f, ", {}: {}", "cluster_id", self.cluster_id())?;
         let extra_count = self.count_extra_fields();
-        if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
 
 impl<'r> SporeDataReader<'r> {
     pub const FIELD_COUNT: usize = 3;
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
-    pub fn has_extra_fields(&self) -> bool { Self::FIELD_COUNT != self.field_count() }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
     pub fn content_type(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
@@ -1678,32 +2727,61 @@ impl<'r> SporeDataReader<'r> {
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[16..]) as usize;
             BytesOptReader::new_unchecked(&self.as_slice()[start..end])
-        } else { BytesOptReader::new_unchecked(&self.as_slice()[start..]) }
+        } else {
+            BytesOptReader::new_unchecked(&self.as_slice()[start..])
+        }
     }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for SporeDataReader<'r> {
     type Entity = SporeData;
     const NAME: &'static str = "SporeDataReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { SporeDataReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        SporeDataReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len < molecule::NUMBER_SIZE { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE , slice_len); }
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
         let total_size = molecule::unpack_number(slice) as usize;
-        if slice_len != total_size { return ve!(Self , TotalSizeNotMatch , total_size , slice_len); }
-        if slice_len == molecule::NUMBER_SIZE && Self::FIELD_COUNT == 0 { return Ok(()); }
-        if slice_len < molecule::NUMBER_SIZE * 2 { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE * 2 , slice_len); }
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len == molecule::NUMBER_SIZE && Self::FIELD_COUNT == 0 {
+            return Ok(());
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
         let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
-        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 { return ve!(Self , OffsetsNotMatch); }
-        if slice_len < offset_first { return ve!(Self , HeaderIsBroken , offset_first , slice_len); }
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
         let field_count = offset_first / molecule::NUMBER_SIZE - 1;
-        if field_count < Self::FIELD_COUNT { return ve!(Self , FieldCountNotMatch , Self :: FIELD_COUNT , field_count); } else if !compatible && field_count > Self::FIELD_COUNT { return ve!(Self , FieldCountNotMatch , Self :: FIELD_COUNT , field_count); };
-        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first].chunks_exact(molecule::NUMBER_SIZE).map(|x| molecule::unpack_number(x) as usize).collect();
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
         offsets.push(total_size);
-        if offsets.windows(2).any(|i| i[0] > i[1]) { return ve!(Self , OffsetsNotMatch); }
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
         BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
         BytesReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
         BytesOptReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
@@ -1737,7 +2815,12 @@ impl SporeDataBuilder {
 impl molecule::prelude::Builder for SporeDataBuilder {
     type Entity = SporeData;
     const NAME: &'static str = "SporeDataBuilder";
-    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.content_type.as_slice().len() + self.content.as_slice().len() + self.cluster_id.as_slice().len() }
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.content_type.as_slice().len()
+            + self.content.as_slice().len()
+            + self.cluster_id.as_slice().len()
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
@@ -1748,7 +2831,9 @@ impl molecule::prelude::Builder for SporeDataBuilder {
         offsets.push(total_size);
         total_size += self.cluster_id.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
-        for offset in offsets.into_iter() { writer.write_all(&molecule::pack_number(offset as molecule::Number))?; }
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
         writer.write_all(self.content_type.as_slice())?;
         writer.write_all(self.content.as_slice())?;
         writer.write_all(self.cluster_id.as_slice())?;
@@ -1756,7 +2841,8 @@ impl molecule::prelude::Builder for SporeDataBuilder {
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         SporeData::new_unchecked(inner.into())
     }
 }
@@ -1767,12 +2853,18 @@ pub struct ClusterData(molecule::bytes::Bytes);
 impl ::core::fmt::LowerHex for ClusterData {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl ::core::fmt::Debug for ClusterData { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl ::core::fmt::Debug for ClusterData {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl ::core::fmt::Display for ClusterData {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1781,24 +2873,40 @@ impl ::core::fmt::Display for ClusterData {
         write!(f, ", {}: {}", "description", self.description())?;
         write!(f, ", {}: {}", "mutant_id", self.mutant_id())?;
         let extra_count = self.count_extra_fields();
-        if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
 
 impl ::core::default::Default for ClusterData {
     fn default() -> Self {
-        let v: Vec<u8> = vec![24, 0, 0, 0, 16, 0, 0, 0, 20, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let v: Vec<u8> = vec![
+            24, 0, 0, 0, 16, 0, 0, 0, 20, 0, 0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
         ClusterData::new_unchecked(v.into())
     }
 }
 
 impl ClusterData {
     pub const FIELD_COUNT: usize = 3;
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
-    pub fn has_extra_fields(&self) -> bool { Self::FIELD_COUNT != self.field_count() }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
     pub fn name(&self) -> Bytes {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
@@ -1817,35 +2925,62 @@ impl ClusterData {
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[16..]) as usize;
             BytesOpt::new_unchecked(self.0.slice(start..end))
-        } else { BytesOpt::new_unchecked(self.0.slice(start..)) }
+        } else {
+            BytesOpt::new_unchecked(self.0.slice(start..))
+        }
     }
-    pub fn as_reader<'r>(&'r self) -> ClusterDataReader<'r> { ClusterDataReader::new_unchecked(self.as_slice()) }
+    pub fn as_reader<'r>(&'r self) -> ClusterDataReader<'r> {
+        ClusterDataReader::new_unchecked(self.as_slice())
+    }
 }
 
 impl molecule::prelude::Entity for ClusterData {
     type Builder = ClusterDataBuilder;
     const NAME: &'static str = "ClusterData";
-    fn new_unchecked(data: molecule::bytes::Bytes) -> Self { ClusterData(data) }
-    fn as_bytes(&self) -> molecule::bytes::Bytes { self.0.clone() }
-    fn as_slice(&self) -> &[u8] { &self.0[..] }
-    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { ClusterDataReader::from_slice(slice).map(|reader| reader.to_entity()) }
-    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> { ClusterDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity()) }
-    fn new_builder() -> Self::Builder { ::core::default::Default::default() }
-    fn as_builder(self) -> Self::Builder { Self::new_builder().name(self.name()).description(self.description()).mutant_id(self.mutant_id()) }
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        ClusterData(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ClusterDataReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        ClusterDataReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .name(self.name())
+            .description(self.description())
+            .mutant_id(self.mutant_id())
+    }
 }
 
 #[derive(Clone, Copy)]
-pub struct ClusterDataReader<'r> (&'r [u8]);
+pub struct ClusterDataReader<'r>(&'r [u8]);
 
 impl<'r> ::core::fmt::LowerHex for ClusterDataReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
-        if f.alternate() { write!(f, "0x")?; }
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
 
-impl<'r> ::core::fmt::Debug for ClusterDataReader<'r> { fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result { write!(f, "{}({:#x})", Self::NAME, self) } }
+impl<'r> ::core::fmt::Debug for ClusterDataReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
 
 impl<'r> ::core::fmt::Display for ClusterDataReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -1854,17 +2989,31 @@ impl<'r> ::core::fmt::Display for ClusterDataReader<'r> {
         write!(f, ", {}: {}", "description", self.description())?;
         write!(f, ", {}: {}", "mutant_id", self.mutant_id())?;
         let extra_count = self.count_extra_fields();
-        if extra_count != 0 { write!(f, ", .. ({} fields)", extra_count)?; }
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
         write!(f, " }}")
     }
 }
 
 impl<'r> ClusterDataReader<'r> {
     pub const FIELD_COUNT: usize = 3;
-    pub fn total_size(&self) -> usize { molecule::unpack_number(self.as_slice()) as usize }
-    pub fn field_count(&self) -> usize { if self.total_size() == molecule::NUMBER_SIZE { 0 } else { (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1 } }
-    pub fn count_extra_fields(&self) -> usize { self.field_count() - Self::FIELD_COUNT }
-    pub fn has_extra_fields(&self) -> bool { Self::FIELD_COUNT != self.field_count() }
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
     pub fn name(&self) -> BytesReader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[4..]) as usize;
@@ -1883,32 +3032,61 @@ impl<'r> ClusterDataReader<'r> {
         if self.has_extra_fields() {
             let end = molecule::unpack_number(&slice[16..]) as usize;
             BytesOptReader::new_unchecked(&self.as_slice()[start..end])
-        } else { BytesOptReader::new_unchecked(&self.as_slice()[start..]) }
+        } else {
+            BytesOptReader::new_unchecked(&self.as_slice()[start..])
+        }
     }
 }
 
 impl<'r> molecule::prelude::Reader<'r> for ClusterDataReader<'r> {
     type Entity = ClusterData;
     const NAME: &'static str = "ClusterDataReader";
-    fn to_entity(&self) -> Self::Entity { Self::Entity::new_unchecked(self.as_slice().to_owned().into()) }
-    fn new_unchecked(slice: &'r [u8]) -> Self { ClusterDataReader(slice) }
-    fn as_slice(&self) -> &'r [u8] { self.0 }
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        ClusterDataReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
     fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
         use molecule::verification_error as ve;
         let slice_len = slice.len();
-        if slice_len < molecule::NUMBER_SIZE { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE , slice_len); }
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
         let total_size = molecule::unpack_number(slice) as usize;
-        if slice_len != total_size { return ve!(Self , TotalSizeNotMatch , total_size , slice_len); }
-        if slice_len == molecule::NUMBER_SIZE && Self::FIELD_COUNT == 0 { return Ok(()); }
-        if slice_len < molecule::NUMBER_SIZE * 2 { return ve!(Self , HeaderIsBroken , molecule :: NUMBER_SIZE * 2 , slice_len); }
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len == molecule::NUMBER_SIZE && Self::FIELD_COUNT == 0 {
+            return Ok(());
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
         let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
-        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 { return ve!(Self , OffsetsNotMatch); }
-        if slice_len < offset_first { return ve!(Self , HeaderIsBroken , offset_first , slice_len); }
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
         let field_count = offset_first / molecule::NUMBER_SIZE - 1;
-        if field_count < Self::FIELD_COUNT { return ve!(Self , FieldCountNotMatch , Self :: FIELD_COUNT , field_count); } else if !compatible && field_count > Self::FIELD_COUNT { return ve!(Self , FieldCountNotMatch , Self :: FIELD_COUNT , field_count); };
-        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first].chunks_exact(molecule::NUMBER_SIZE).map(|x| molecule::unpack_number(x) as usize).collect();
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
         offsets.push(total_size);
-        if offsets.windows(2).any(|i| i[0] > i[1]) { return ve!(Self , OffsetsNotMatch); }
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
         BytesReader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
         BytesReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
         BytesOptReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
@@ -1942,7 +3120,12 @@ impl ClusterDataBuilder {
 impl molecule::prelude::Builder for ClusterDataBuilder {
     type Entity = ClusterData;
     const NAME: &'static str = "ClusterDataBuilder";
-    fn expected_length(&self) -> usize { molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1) + self.name.as_slice().len() + self.description.as_slice().len() + self.mutant_id.as_slice().len() }
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.name.as_slice().len()
+            + self.description.as_slice().len()
+            + self.mutant_id.as_slice().len()
+    }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
         let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
@@ -1953,7 +3136,9 @@ impl molecule::prelude::Builder for ClusterDataBuilder {
         offsets.push(total_size);
         total_size += self.mutant_id.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
-        for offset in offsets.into_iter() { writer.write_all(&molecule::pack_number(offset as molecule::Number))?; }
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
         writer.write_all(self.name.as_slice())?;
         writer.write_all(self.description.as_slice())?;
         writer.write_all(self.mutant_id.as_slice())?;
@@ -1961,7 +3146,8 @@ impl molecule::prelude::Builder for ClusterDataBuilder {
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
-        self.write(&mut inner).unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
         ClusterData::new_unchecked(inner.into())
     }
 }
