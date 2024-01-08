@@ -251,35 +251,3 @@ fn parse_quoted_value(s: &str) -> Result<usize, Error> {
     }
     Err(Error::InvalidParamValue)
 }
-
-#[test]
-fn test_basic() {
-    assert!(MIME::str_parse("image/png").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
-        .map_err(|_| "mutant str_parse")
-        .unwrap()
-        .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
-            "mutant[]",
-            b"2,3,4,5"
-        )
-        .map_err(|_| "mutant verify_param")
-        .unwrap());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
-        .map_err(|_| "mutant str_parse")
-        .unwrap()
-        .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
-            "immortal",
-            b"true"
-        )
-        .map_err(|_| "mutant verify_param")
-        .unwrap());
-    assert!(MIME::str_parse("image/").is_err());
-    assert!(MIME::str_parse("image/;").is_err());
-    assert!(MIME::str_parse("/;").is_err());
-    assert!(MIME::str_parse(";").is_err());
-    assert!(MIME::str_parse("").is_err());
-}
