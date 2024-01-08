@@ -9,8 +9,6 @@ use spore_utils::{
     find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, verify_type_id,
 };
 
-const CLUSTER_PROXY_ID_LEN: usize = 32;
-
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_CODE_HASHES.contains(script_hash)
 }
@@ -46,13 +44,10 @@ fn process_creation(index: usize) -> Result<(), Error> {
 }
 
 fn process_transfer() -> Result<(), Error> {
-    let input_proxy_type = load_cell_type(0, GroupInput)?.unwrap_or_default();
-    let output_proxy_type = load_cell_type(0, GroupOutput)?.unwrap_or_default();
+    let input_data = load_cell_data(0, GroupInput)?;
+    let output_data = load_cell_data(0, GroupOutput)?;
 
-    // NOTE: We allow minimal payment modification during transfer
-    if input_proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN]
-        != output_proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN]
-    {
+    if input_data != output_data {
         return Err(Error::ImmutableProxyFieldModification);
     }
 

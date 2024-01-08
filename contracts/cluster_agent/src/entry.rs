@@ -7,12 +7,15 @@ use alloc::vec::Vec;
 
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
-use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
+use ckb_std::ckb_constants::Source::{self, CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
 use spore_errors::error::Error;
-use spore_utils::{calc_capacity_sum, find_position_by_type, find_posityion_by_type_hash};
+use spore_utils::{
+    calc_capacity_sum, check_only_one_self_code_hash_in, find_position_by_type,
+    find_posityion_by_type_hash,
+};
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
@@ -58,6 +61,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             let output_capacity = calc_capacity_sum(&lock, Output);
             if input_capacity + minimal_payment < output_capacity {
                 return Err(Error::PaymentNotEnough);
+            } else {
+                // Condition 3: Check only one agent in creation
+                check_only_one_self_code_hash_in(Source::Output);
             }
         } else {
             return Err(Error::PaymentMethodNotSupport);
@@ -70,7 +76,7 @@ fn process_transfer() -> Result<(), Error> {
     let input_agent_data = load_cell_data(0, GroupInput)?;
     let output_agent_data = load_cell_data(0, GroupOutput)?;
 
-    if input_agent_data.as_slice()[..] != output_agent_data.as_slice()[..] {
+    if input_agent_data != output_agent_data {
         return Err(Error::ImmutableAgentFieldModification);
     }
 

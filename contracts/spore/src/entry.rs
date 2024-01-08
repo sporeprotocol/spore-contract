@@ -42,7 +42,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidContentType);
     }
 
-    // verify NFT ID
+    // verify Spore ID
     if !verify_type_id(index, Output) {
         return Err(Error::InvalidNFTID);
     }
@@ -184,22 +184,28 @@ fn process_transfer() -> Result<(), Error> {
 fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
     for mutant in mime.mutants.iter() {
         let ext_pos = QueryIter::new(load_cell_type, CellDep).position(|script| match script {
-            Some(script) => mutant[..] == script.args().raw_data()[..32],
+            Some(script) => {
+                if crate::hash::MUTANT_CODE_HASHES.contains(&script.code_hash().unpack()) {
+                    return mutant[..] == script.args().raw_data()[..32];
+                }
+                false
+            }
             None => false,
         });
         match ext_pos {
             None => return Err(Error::ExtensionCellNotInDep),
             Some(ext_pos) => {
+                // creation operator
                 if op == 0 {
                     check_payment(ext_pos)?;
                 }
 
                 let ext_pos = ext_pos as u8;
-                let code_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
+                let lua_programe_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
                 match op {
                     0 | 2 => {
                         ckb_std::high_level::exec_cell(
-                            &code_hash,
+                            &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
@@ -212,7 +218,7 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
                     }
                     1 => {
                         ckb_std::high_level::exec_cell(
-                            &code_hash,
+                            &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
@@ -236,13 +242,14 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
 fn check_payment(ext_pos: usize) -> Result<(), Error> {
     let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
     let ext_args = ext_script.args().raw_data();
-    // CAUTION: only check 33 size pattern, leave room for user customizing
+    // CAUTION: only check 33 size pattern, leave room for user customization
     if ext_args.len() > 32 {
         // we need a payment
-        let lock = load_cell_lock_hash(ext_pos, CellDep)?;
+        let self_lock_hash = load_cell_lock_hash(0, GroupOutput)?;
+        let mutant_lock_hash = load_cell_lock_hash(ext_pos, CellDep)?;
 
-        let input_capacity = calc_capacity_sum(&lock, Input);
-        let output_capacity = calc_capacity_sum(&lock, Output);
+        let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
+        let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
         let minimal_payment = 10u128.pow(ext_args.get(32).cloned().unwrap_or(0) as u32);
         if input_capacity + minimal_payment < output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
