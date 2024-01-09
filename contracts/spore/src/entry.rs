@@ -250,7 +250,9 @@ fn check_payment(ext_pos: usize) -> Result<(), Error> {
 
         let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
         let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
-        let minimal_payment = 10u128.pow(ext_args.get(32).cloned().unwrap_or(0) as u32);
+        let payment_power = ext_args.get(32).cloned().unwrap_or(0);
+        let minimal_payment = 10u128.pow(payment_power as u32);
+
         if input_capacity + minimal_payment < output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }

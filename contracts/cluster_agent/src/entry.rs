@@ -23,7 +23,7 @@ fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
 fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
     let script = load_script().unwrap_or_default();
     let self_code_hash = script.code_hash();
-    let same_agents = QueryIter::new(load_cell_type, source)
+    let agents_count = QueryIter::new(load_cell_type, source)
         .enumerate()
         .filter(|(index, type_)| {
             if let Some(type_) = type_ {
@@ -34,8 +34,8 @@ fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
             }
             false
         })
-        .collect::<Vec<_>>();
-    same_agents.len() > 1
+        .count();
+    agents_count > 1
 }
 
 fn process_creation(_index: usize) -> Result<(), Error> {
@@ -77,7 +77,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             if input_capacity + minimal_payment < output_capacity {
                 return Err(Error::PaymentNotEnough);
             } else {
-                // Condition 3: Check only one agent in creation
+                // Condition 3: Check no same agent in creation
                 if has_conflict_agent(Source::Output, &proxy_type_hash) {
                     return Err(Error::ConflictAgentCells);
                 }
