@@ -17,6 +17,7 @@ pub struct PublishedCodeHash {
 }
 
 fn hex_to_byte32(hex: &str) -> [u8; 32] {
+    assert!(hex.len() == 64, "only accept [u8; 32] as hex string");
     let mut byte32 = [0u8; 32];
     hex_decode(hex.as_bytes(), &mut byte32).expect("hex to byte32");
     byte32

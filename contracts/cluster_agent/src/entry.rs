@@ -74,7 +74,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock, Input);
             let output_capacity = calc_capacity_sum(&lock, Output);
-            if input_capacity + minimal_payment < output_capacity {
+            if input_capacity + minimal_payment > output_capacity {
                 return Err(Error::PaymentNotEnough);
             } else {
                 // Condition 3: Check no same agent in creation
