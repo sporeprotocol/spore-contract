@@ -232,25 +232,28 @@ pub fn parse_quoted_value(s: &str) -> Result<usize, Error> {
 
 #[test]
 fn test_basic() {
+    use alloc::format;
     assert!(MIME::str_parse("image/png").is_ok());
     assert!(MIME::str_parse("image/png;immortal=true").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
+    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_err());
+    let content_type = format!(
+        "image/png;immortal=true;mutant[]={:064x},{:064x},{:064x},{:064x}",
+        2, 3, 4, 5
+    );
+    let mutants_value = format!("{:064x},{:064x},{:064x},{:064x}", 2, 3, 4, 5);
+    assert!(MIME::str_parse(&content_type).is_ok());
+    assert!(MIME::str_parse(&content_type)
         .map_err(|_| "mutant verify_param")
         .unwrap()
         .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
+            content_type.as_bytes(),
             "mutant[]",
-            b"2,3,4,5"
+            mutants_value.as_bytes(),
         ));
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
+    assert!(MIME::str_parse(&content_type)
         .map_err(|_| "mutant verify_param")
         .unwrap()
-        .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
-            "immortal",
-            b"true"
-        ));
+        .verify_param(content_type.as_bytes(), "immortal", b"true"));
     assert!(MIME::str_parse("image/").is_err());
     assert!(MIME::str_parse("image/;").is_err());
     assert!(MIME::str_parse("/;").is_err());
