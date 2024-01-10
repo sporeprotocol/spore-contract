@@ -70,6 +70,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         if proxy_type_args.len() > CLUSTER_PROXY_ID_LEN {
             let minimal_payment_args = proxy_type_args.get(CLUSTER_PROXY_ID_LEN).unwrap_or(&0);
             debug!("Minimal payment is: {}", minimal_payment_args);
+
             let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock, Input);

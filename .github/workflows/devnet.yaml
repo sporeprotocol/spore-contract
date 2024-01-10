@@ -53,7 +53,7 @@ jobs:
 
       - name: Prepare spore-devenv (contracts and stuff)
         working-directory: spore-devenv
-        run: sh prepare.sh
+        run: bash prepare.sh -b $GITHUB_HEAD_REF
 
       - name: Start devenv services
         working-directory: spore-devenv
