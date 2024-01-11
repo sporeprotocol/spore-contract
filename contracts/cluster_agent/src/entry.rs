@@ -15,7 +15,7 @@ use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
 use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_utils::{
-    calc_capacity_sum, find_position_by_type, find_posityion_by_type_hash, load_type_args,
+    calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_type_args,
 };
 use spore_utils::{check_spore_address, extract_spore_action};
 
@@ -46,7 +46,7 @@ fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
 fn process_creation(_index: usize) -> Result<(), Error> {
     let proxy_type_hash = load_cell_data(0, GroupOutput)?;
     // check cluster proxy in Deps
-    let cell_dep_index = find_posityion_by_type_hash(proxy_type_hash.as_slice(), CellDep)
+    let cell_dep_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
         .ok_or(Error::ProxyCellNotInDep)?;
     let target_cell_type_hash = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default();
     if !is_valid_cluster_proxy_cell(&target_cell_type_hash.code_hash().unpack()) {
@@ -62,9 +62,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
 
     // Condition 1: Check if cluster proxy exist in Inputs & Outputs
     let proxy_cell_in_input =
-        find_posityion_by_type_hash(proxy_type_hash.as_slice(), Input).is_some();
+        find_position_by_type_hash(proxy_type_hash.as_slice(), Input).is_some();
     let proxy_cell_in_output =
-        find_posityion_by_type_hash(proxy_type_hash.as_slice(), Output).is_some();
+        find_position_by_type_hash(proxy_type_hash.as_slice(), Output).is_some();
 
     if !proxy_cell_in_input || !proxy_cell_in_output {
         // Condition 2: Check for minimal payment

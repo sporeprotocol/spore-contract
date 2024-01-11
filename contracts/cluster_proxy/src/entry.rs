@@ -66,6 +66,9 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // co-build check @lyk
+    let input_proxy_type = load_cell_type(0, GroupInput)?.unwrap_or_default();
+    let source_cluster_id = &input_proxy_type.args().raw_data()[..32];
+
     let action::SporeActionUnion::ProxyTransfer(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };

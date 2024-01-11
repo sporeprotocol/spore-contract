@@ -99,7 +99,7 @@ pub fn find_position_by_type(type_script: &Script, source: Source) -> Option<usi
     })
 }
 
-pub fn find_posityion_by_type_hash(type_hash: &[u8], source: Source) -> Option<usize> {
+pub fn find_position_by_type_hash(type_hash: &[u8], source: Source) -> Option<usize> {
     QueryIter::new(load_cell_type_hash, source).position(|cell_type_hash| match cell_type_hash {
         None => false,
         Some(cell_type_hash) => {

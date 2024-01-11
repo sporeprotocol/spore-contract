@@ -4,6 +4,9 @@ name: Devnet Test
 
 on:
   push:
+    branches: master
+      - contracts/**
+      - lib/**
   pull_request:
     paths:
       - contracts/**

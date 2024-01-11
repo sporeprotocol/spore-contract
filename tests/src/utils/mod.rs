@@ -17,6 +17,8 @@ use crate::Loader;
 pub mod co_build;
 mod internal;
 
+pub const UNIFORM_CAPACITY: u64 = 1000u64;
+
 pub fn build_serialized_cluster_data(name: &str, description: &str) -> ClusterData {
     ClusterData::new_builder()
         .name(name.as_bytes().into())
@@ -85,15 +87,15 @@ pub fn build_cluster_input(
 }
 
 pub fn build_normal_input(context: &mut Context) -> CellInput {
-    internal::build_input(context, 1000u64, None, Bytes::new())
+    internal::build_input(context, UNIFORM_CAPACITY, None, Bytes::new())
 }
 
 pub fn build_output_cell_with_type_id(context: &mut Context, type_: Option<Script>) -> CellOutput {
-    internal::build_output(context, 1000u64, type_)
+    internal::build_output(context, UNIFORM_CAPACITY, type_)
 }
 
 pub fn build_normal_output(context: &mut Context) -> CellOutput {
-    internal::build_output(context, 1000u64, None)
+    internal::build_output(context, UNIFORM_CAPACITY, None)
 }
 
 pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<Script>) -> CellDep {

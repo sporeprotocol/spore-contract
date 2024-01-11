@@ -20,9 +20,9 @@ enum ParamType {
 pub struct MIME {
     pub main_type: RangePair,
     pub sub_type: RangePair,
-    params: Vec<(RangePair, RangePair)>,
     pub mutants: Vec<[u8; 32]>,
     pub immortal: bool,
+    params: Vec<(RangePair, RangePair)>,
 }
 
 impl MIME {
@@ -143,7 +143,7 @@ impl MIME {
 fn check_range_validate(array: &[u8], range: &Range<usize>) -> Result<(), Error> {
     let end: usize = range.end;
     debug!("len = {}, end = {end}", array.len());
-    if array.len() <= end {
+    if array.len() < end {
         return Err(Error::ContentOutOfRange);
     }
     Ok(())

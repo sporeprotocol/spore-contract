@@ -75,7 +75,7 @@ fn test_cluster_agent_mint() {
 
     // proxy
     let (proxy_out_point, proxy_script_dep) = build_spore_materials(&mut context, "cluster_proxy");
-    let proxy_id = build_type_id(&input_cell, 0);
+    let proxy_id = build_type_id(&input_cell, 1);
     let proxy_type_arg = vec![proxy_id.to_vec(), vec![1]].concat();
     let proxy_type = build_spore_type_script(
         &mut context,
@@ -89,7 +89,10 @@ fn test_cluster_agent_mint() {
     let (agent_out_point, agent_script_dep) = build_spore_materials(&mut context, "cluster_agent");
     let agent_type =
         build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
-    let agent_out_cell = build_output_cell_with_type_id(&mut context, agent_type.clone());
+    let agent_out_cell = build_output_cell_with_type_id(&mut context, agent_type.clone())
+        .as_builder()
+        .capacity((UNIFORM_CAPACITY + 10).pack())
+        .build();
 
     let tx = TransactionBuilder::default()
         .input(input_cell)
@@ -123,7 +126,7 @@ fn test_cluster_proxy_mint() {
     // cluster
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
     let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
-    let cluster_id = build_type_id(&input_cell, 0);
+    let cluster_id = build_type_id(&input_cell, 1);
     let cluster_type =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
