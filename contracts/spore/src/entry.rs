@@ -1,3 +1,4 @@
+use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
 use core::ffi::CStr;
 use core::result::Result;
@@ -54,7 +55,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
         let boundary_range = mime
-            .get_param(content_type, "boundary")
+            .get_param(content_type, "boundary")?
             .ok_or(Error::InvalidContentType)?;
         kmp::kmp_find(
             format!(
@@ -182,6 +183,7 @@ fn process_transfer() -> Result<(), Error> {
 }
 
 fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
+    let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
     for mutant in mime.mutants.iter() {
         let ext_pos = QueryIter::new(load_cell_type, CellDep).position(|script| match script {
             Some(script) => {
@@ -197,7 +199,7 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
             Some(ext_pos) => {
                 // creation operator
                 if op == 0 {
-                    check_payment(ext_pos)?;
+                    check_payment(ext_pos, &mut payment_map)?;
                 }
 
                 let ext_pos = ext_pos as u8;
@@ -239,7 +241,7 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
     Ok(())
 }
 
-fn check_payment(ext_pos: usize) -> Result<(), Error> {
+fn check_payment(ext_pos: usize, payment_map: &mut BTreeMap<[u8; 32], u8>) -> Result<(), Error> {
     let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
     let ext_args = ext_script.args().raw_data();
     // CAUTION: only check 33 size pattern, leave room for user customization
@@ -250,7 +252,13 @@ fn check_payment(ext_pos: usize) -> Result<(), Error> {
 
         let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
         let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
-        let payment_power = ext_args.get(32).cloned().unwrap_or(0);
+        let payment_power = {
+            let previous_power = payment_map.entry(mutant_lock_hash).or_default();
+            let current_power = ext_args.get(32).cloned().unwrap_or(0);
+            let power = *previous_power + current_power;
+            *previous_power = power;
+            power
+        };
         let minimal_payment = 10u128.pow(payment_power as u32);
 
         if input_capacity + minimal_payment > output_capacity {

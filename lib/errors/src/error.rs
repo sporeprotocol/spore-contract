@@ -70,6 +70,8 @@ pub enum Error {
     InvalidParams,
     InvalidParamValue,
     MutantIDNotValid,
+    DuplicateMutantId,
+    ContentOutOfRange,
 
     Unknown,
 }
