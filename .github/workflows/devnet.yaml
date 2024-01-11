@@ -3,6 +3,7 @@
 name: Devnet Test
 
 on:
+  push:
   pull_request:
     paths:
       - contracts/**

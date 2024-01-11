@@ -141,9 +141,7 @@ impl MIME {
 }
 
 fn check_range_validate(array: &[u8], range: &Range<usize>) -> Result<(), Error> {
-    let Some(end) = range.clone().last() else {
-        return Err(Error::ContentOutOfRange);
-    };
+    let end: usize = range.end;
     debug!("len = {}, end = {end}", array.len());
     if array.len() <= end {
         return Err(Error::ContentOutOfRange);
