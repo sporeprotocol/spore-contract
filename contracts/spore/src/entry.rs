@@ -1,3 +1,4 @@
+use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
 use core::ffi::CStr;
 use core::result::Result;
@@ -42,7 +43,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidContentType);
     }
 
-    // verify NFT ID
+    // verify Spore ID
     if !verify_type_id(index, Output) {
         return Err(Error::InvalidNFTID);
     }
@@ -51,10 +52,17 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let content_type = raw_content_type.unpack();
 
     let mime = MIME::parse(content_type)?; // content_type validation
+    // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
+    //
+    // The Multipart Content-Type is used to represent a document that is comprised of multiple
+    // parts, each of which may have its own individual MIME type
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
+        // The Content-Type field for multipart entities requires one parameter, "boundary", which
+        // is used to specify the encapsulation boundary. See Appendix C of rfc1521 for a complex
+        // multipart example.
         let boundary_range = mime
-            .get_param(content_type, "boundary")
+            .get_param(content_type, "boundary")?
             .ok_or(Error::InvalidContentType)?;
         kmp::kmp_find(
             format!(
@@ -182,24 +190,31 @@ fn process_transfer() -> Result<(), Error> {
 }
 
 fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
+    let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
     for mutant in mime.mutants.iter() {
         let ext_pos = QueryIter::new(load_cell_type, CellDep).position(|script| match script {
-            Some(script) => mutant[..] == script.args().raw_data()[..32],
+            Some(script) => {
+                if crate::hash::MUTANT_CODE_HASHES.contains(&script.code_hash().unpack()) {
+                    return mutant[..] == script.args().raw_data()[..32];
+                }
+                false
+            }
             None => false,
         });
         match ext_pos {
             None => return Err(Error::ExtensionCellNotInDep),
             Some(ext_pos) => {
+                // creation operator
                 if op == 0 {
-                    check_payment(ext_pos)?;
+                    check_payment(ext_pos, &mut payment_map)?;
                 }
 
                 let ext_pos = ext_pos as u8;
-                let code_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
+                let lua_programe_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
                 match op {
                     0 | 2 => {
                         ckb_std::high_level::exec_cell(
-                            &code_hash,
+                            &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
@@ -212,7 +227,7 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
                     }
                     1 => {
                         ckb_std::high_level::exec_cell(
-                            &code_hash,
+                            &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
@@ -233,18 +248,27 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
     Ok(())
 }
 
-fn check_payment(ext_pos: usize) -> Result<(), Error> {
+fn check_payment(ext_pos: usize, payment_map: &mut BTreeMap<[u8; 32], u8>) -> Result<(), Error> {
     let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
     let ext_args = ext_script.args().raw_data();
-    // CAUTION: only check 33 size pattern, leave room for user customizing
+    // CAUTION: only check 33 size pattern, leave room for user customization
     if ext_args.len() > 32 {
         // we need a payment
-        let lock = load_cell_lock_hash(ext_pos, CellDep)?;
+        let self_lock_hash = load_cell_lock_hash(0, GroupOutput)?;
+        let mutant_lock_hash = load_cell_lock_hash(ext_pos, CellDep)?;
 
-        let input_capacity = calc_capacity_sum(&lock, Input);
-        let output_capacity = calc_capacity_sum(&lock, Output);
-        let minimal_payment = 10u128.pow(ext_args.get(32).cloned().unwrap_or(0) as u32);
-        if input_capacity + minimal_payment < output_capacity {
+        let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
+        let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
+        let payment_power = {
+            let previous_power = payment_map.entry(mutant_lock_hash).or_default();
+            let current_power = ext_args.get(32).cloned().unwrap_or(0);
+            let power = *previous_power + current_power;
+            *previous_power = power;
+            power
+        };
+        let minimal_payment = 10u128.pow(payment_power as u32);
+
+        if input_capacity + minimal_payment > output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }
     }

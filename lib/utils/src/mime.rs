@@ -1,3 +1,5 @@
+use core::ops::Range;
+
 use alloc::ffi::CString;
 use alloc::str;
 use alloc::vec::Vec;
@@ -75,6 +77,9 @@ impl MIME {
                             .map_err(|_| Error::MutantIDNotValid)?
                             .try_into()
                             .unwrap();
+                        if mutants.contains(&mutant_id) {
+                            return Err(Error::DuplicateMutantId);
+                        }
                         mutants.push(mutant_id);
                     }
                 }
@@ -108,34 +113,51 @@ impl MIME {
         &mut self.params
     }
 
-    pub fn get_param(&self, content_type: &[u8], param: &str) -> Option<RangePair> {
+    pub fn get_param(&self, content_type: &[u8], param: &str) -> Result<Option<RangePair>, Error> {
         for (param_range, value_range) in self.params.iter() {
+            check_range_validate(content_type, param_range)?;
             if content_type[param_range.clone()] == param.as_bytes()[..] {
-                return Some(value_range.clone());
+                return Ok(Some(value_range.clone()));
             }
         }
-        None
+        Ok(None)
     }
 
-    pub fn verify_param(&self, content_type: &[u8], param: &str, value: &[u8]) -> bool {
+    pub fn verify_param(
+        &self,
+        content_type: &[u8],
+        param: &str,
+        value: &[u8],
+    ) -> Result<bool, Error> {
         for (param_range, value_range) in self.params.iter() {
+            check_range_validate(content_type, param_range)?;
             if content_type[param_range.clone()] == param.as_bytes()[..] {
-                return content_type[value_range.clone()] == value[..];
+                check_range_validate(content_type, value_range)?;
+                return Ok(content_type[value_range.clone()] == value[..]);
             }
         }
-        false
+        Ok(false)
     }
 }
 
-pub fn is_restricted_name(s: &str) -> bool {
+fn check_range_validate(array: &[u8], range: &Range<usize>) -> Result<(), Error> {
+    let end: usize = range.end;
+    debug!("len = {}, end = {end}", array.len());
+    if array.len() <= end {
+        return Err(Error::ContentOutOfRange);
+    }
+    Ok(())
+}
+
+fn is_restricted_name(s: &str) -> bool {
     s.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '*') && is_restricted_str(s)
 }
 
-pub fn is_restricted_name_patched(s: &str) -> bool {
+fn is_restricted_name_patched(s: &str) -> bool {
     s == "mutant[]" || is_restricted_name(s)
 }
 
-pub fn is_restricted_value_char(c: char) -> bool {
+fn is_restricted_value_char(c: char) -> bool {
     c.is_ascii_alphanumeric()
         || matches!(
             c,
@@ -143,11 +165,11 @@ pub fn is_restricted_value_char(c: char) -> bool {
         )
 }
 
-pub fn is_restricted_str(s: &str) -> bool {
+fn is_restricted_str(s: &str) -> bool {
     s.chars().all(is_restricted_char)
 }
 
-pub fn is_restricted_char(c: char) -> bool {
+fn is_restricted_char(c: char) -> bool {
     c.is_ascii_alphanumeric()
         || matches!(
             c,
@@ -155,7 +177,7 @@ pub fn is_restricted_char(c: char) -> bool {
         )
 }
 
-pub const fn is_ows(c: char) -> bool {
+const fn is_ows(c: char) -> bool {
     c == ' ' || c == '\t'
 }
 
@@ -210,7 +232,7 @@ fn parse_param(
     }
 }
 
-pub fn parse_quoted_value(s: &str) -> Result<usize, Error> {
+fn parse_quoted_value(s: &str) -> Result<usize, Error> {
     let mut len = 0;
     let mut escaped = false;
     for c in s.chars() {
@@ -236,21 +258,25 @@ fn test_basic() {
     assert!(MIME::str_parse("image/png;immortal=true").is_ok());
     assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_ok());
     assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
-        .map_err(|_| "mutant verify_param")
+        .map_err(|_| "mutant str_parse")
         .unwrap()
         .verify_param(
             b"image/png;immortal=true;mutant[]=2,3,4,5",
             "mutant[]",
             b"2,3,4,5"
-        ));
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
+        )
         .map_err(|_| "mutant verify_param")
+        .unwrap());
+    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
+        .map_err(|_| "mutant str_parse")
         .unwrap()
         .verify_param(
             b"image/png;immortal=true;mutant[]=2,3,4,5",
             "immortal",
             b"true"
-        ));
+        )
+        .map_err(|_| "mutant verify_param")
+        .unwrap());
     assert!(MIME::str_parse("image/").is_err());
     assert!(MIME::str_parse("image/;").is_err());
     assert!(MIME::str_parse("/;").is_err());

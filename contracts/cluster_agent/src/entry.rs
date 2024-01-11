@@ -7,7 +7,7 @@ use alloc::vec::Vec;
 
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
-use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
+use ckb_std::ckb_constants::Source::{self, CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
@@ -18,6 +18,24 @@ const CLUSTER_PROXY_ID_LEN: usize = 32;
 
 fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
+}
+
+fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
+    let script = load_script().unwrap_or_default();
+    let self_code_hash = script.code_hash();
+    let agents_count = QueryIter::new(load_cell_type, source)
+        .enumerate()
+        .filter(|(index, type_)| {
+            if let Some(type_) = type_ {
+                if type_.code_hash().as_slice() == self_code_hash.as_slice() {
+                    let data = load_cell_data(*index, source).unwrap();
+                    return cell_data == data;
+                }
+            }
+            false
+        })
+        .count();
+    agents_count > 1
 }
 
 fn process_creation(_index: usize) -> Result<(), Error> {
@@ -52,12 +70,18 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         if proxy_type_args.len() > CLUSTER_PROXY_ID_LEN {
             let minimal_payment_args = proxy_type_args.get(CLUSTER_PROXY_ID_LEN).unwrap_or(&0);
             debug!("Minimal payment is: {}", minimal_payment_args);
+
             let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
             let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock, Input);
             let output_capacity = calc_capacity_sum(&lock, Output);
-            if input_capacity + minimal_payment < output_capacity {
+            if input_capacity + minimal_payment > output_capacity {
                 return Err(Error::PaymentNotEnough);
+            } else {
+                // Condition 3: Check no same agent in creation
+                if has_conflict_agent(Source::Output, &proxy_type_hash) {
+                    return Err(Error::ConflictAgentCells);
+                }
             }
         } else {
             return Err(Error::PaymentMethodNotSupport);
@@ -70,7 +94,7 @@ fn process_transfer() -> Result<(), Error> {
     let input_agent_data = load_cell_data(0, GroupInput)?;
     let output_agent_data = load_cell_data(0, GroupOutput)?;
 
-    if input_agent_data.as_slice()[..] != output_agent_data.as_slice()[..] {
+    if input_agent_data != output_agent_data {
         return Err(Error::ImmutableAgentFieldModification);
     }
 

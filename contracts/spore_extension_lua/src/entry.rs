@@ -139,14 +139,11 @@ fn process_creation(index: usize) -> Result<(), WrappedError> {
 fn process_transfer() -> Result<(), WrappedError> {
     let input_data = load_cell_data(0, GroupInput)?;
     let output_data = load_cell_data(0, GroupOutput)?;
-    if input_data.len() != output_data.len()
-        && input_data
-            .iter()
-            .zip(output_data.iter())
-            .all(|(i, o)| i == o)
-    {
+
+    if input_data != output_data {
         return Err(Error::ModifyExtensionPermanentField.into());
     }
+
     Ok(())
 }
 

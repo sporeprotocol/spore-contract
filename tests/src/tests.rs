@@ -358,7 +358,8 @@ fn test_cluster_agent() {
     let input_cell = build_normal_input(&mut context, capacity);
     let proxy_type_id = build_script_args(&input_cell, 0);
     let mut proxy_type_arg = proxy_type_id.to_vec();
-    proxy_type_arg.push(1);
+    let power = 1;
+    proxy_type_arg.push(power);
     println!("Proxy_type_arg len: {}", proxy_type_arg.len());
     let proxy_type = build_spore_type_script(
         &mut context,
@@ -378,7 +379,11 @@ fn test_cluster_agent() {
     let input_cell = build_normal_input(&mut context, agent_capacity);
 
     let agent_type = build_spore_type_script(&mut context, &agent_out_point, cluster_type_id);
-    let agent_out_cell = build_output_cell_with_type_id(&mut context, capacity, agent_type.clone());
+    let agent_out_cell = build_output_cell_with_type_id(
+        &mut context,
+        capacity + 10u64.pow(power as u32),
+        agent_type.clone(),
+    );
 
     let tx = TransactionBuilder::default()
         .inputs(vec![input_cell])
