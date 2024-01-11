@@ -52,8 +52,15 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let content_type = raw_content_type.unpack();
 
     let mime = MIME::parse(content_type)?; // content_type validation
+    // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
+    //
+    // The Multipart Content-Type is used to represent a document that is comprised of multiple
+    // parts, each of which may have its own individual MIME type
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
+        // The Content-Type field for multipart entities requires one parameter, "boundary", which
+        // is used to specify the encapsulation boundary. See Appendix C of rfc1521 for a complex
+        // multipart example.
         let boundary_range = mime
             .get_param(content_type, "boundary")?
             .ok_or(Error::InvalidContentType)?;
