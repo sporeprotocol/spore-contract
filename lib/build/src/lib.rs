@@ -3,17 +3,24 @@ use std::env;
 use std::fs;
 
 #[derive(serde::Deserialize)]
-struct CodeHashList {
-    code_hash_list: Vec<String>,
+pub struct FrozenVersions {
+    code_hash_list: Vec<PublishedCodeHash>,
 }
 
 #[derive(serde::Deserialize)]
 pub struct PublishedCodeHash {
-    spore: CodeHashList,
-    cluster: CodeHashList,
-    cluster_proxy: CodeHashList,
-    cluster_agent: CodeHashList,
-    mutant: CodeHashList,
+    #[serde(rename(deserialize = "commit_hash"))]
+    _commit_hash: String,
+    #[serde(default)]
+    spore: String,
+    #[serde(default)]
+    cluster: String,
+    #[serde(default)]
+    cluster_proxy: String,
+    #[serde(default)]
+    cluster_agent: String,
+    #[serde(default)]
+    mutant: String,
 }
 
 fn hex_to_byte32(hex: &str) -> [u8; 32] {
@@ -23,49 +30,74 @@ fn hex_to_byte32(hex: &str) -> [u8; 32] {
     byte32
 }
 
-impl PublishedCodeHash {
+impl FrozenVersions {
     pub fn spore_code_hashes(&self) -> Vec<[u8; 32]> {
-        self.spore
-            .code_hash_list
+        self.code_hash_list
             .iter()
-            .map(|v| hex_to_byte32(v))
+            .filter_map(|v| {
+                if !v.spore.is_empty() {
+                    Some(hex_to_byte32(&v.spore))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     pub fn cluster_code_hashes(&self) -> Vec<[u8; 32]> {
-        self.cluster
-            .code_hash_list
+        self.code_hash_list
             .iter()
-            .map(|v| hex_to_byte32(v))
+            .filter_map(|v| {
+                if !v.cluster.is_empty() {
+                    Some(hex_to_byte32(&v.cluster))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     pub fn cluster_proxy_code_hashes(&self) -> Vec<[u8; 32]> {
-        self.cluster_proxy
-            .code_hash_list
+        self.code_hash_list
             .iter()
-            .map(|v| hex_to_byte32(v))
+            .filter_map(|v| {
+                if !v.cluster_proxy.is_empty() {
+                    Some(hex_to_byte32(&v.cluster_proxy))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     pub fn cluster_agent_code_hashes(&self) -> Vec<[u8; 32]> {
-        self.cluster_agent
-            .code_hash_list
+        self.code_hash_list
             .iter()
-            .map(|v| hex_to_byte32(v))
+            .filter_map(|v| {
+                if !v.cluster_agent.is_empty() {
+                    Some(hex_to_byte32(&v.cluster_agent))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
     pub fn mutant_code_hashes(&self) -> Vec<[u8; 32]> {
-        self.mutant
-            .code_hash_list
+        self.code_hash_list
             .iter()
-            .map(|v| hex_to_byte32(v))
+            .filter_map(|v| {
+                if !v.mutant.is_empty() {
+                    Some(hex_to_byte32(&v.mutant))
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 }
 
-pub fn load_frozen_toml() -> PublishedCodeHash {
+pub fn load_frozen_toml() -> FrozenVersions {
     let net_type = if env::var("CARGO_FEATURE_RELEASE_EXPORT").is_ok() {
         "mainnet"
     } else {
