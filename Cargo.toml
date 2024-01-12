@@ -18,5 +18,5 @@ members = [
 overflow-checks = true
 strip = true
 opt-level = 's'
-lto = false
+lto = true
 codegen-units = 1
