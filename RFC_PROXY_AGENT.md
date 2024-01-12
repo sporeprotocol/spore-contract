@@ -27,7 +27,7 @@ Cluster Proxy Cell:
     Data: REFERENCED_CLUSTER_ID
     Type:
         code_hash: CLUSTER_PROXY_TYPE_HASH
-	      args: <cluster_proxy_id> [<min_payment>]
+        args: <cluster_proxy_id> [<min_payment>]
     Lock:
         <user_defined>
 ```
@@ -35,7 +35,7 @@ Cluster Proxy Cell:
 The Type args can be:
 
 - args: <cluster_proxy_id>
-- args: <cluster_proxy_id> <minimal payment in 10^n ckybytes: uint16>
+- args: <cluster_proxy_id> <minimal payment in 10^n ckbytes: uint8>
 
 Where `cluster_proxy_id = hash(Inputs[0], Output_Index)`
 
@@ -69,7 +69,7 @@ Outputs:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: CLUSTER_PROXY_ID_A
+            args: CLUSTER_PROXY_ID_A
         Lock:
             <user_defined> # for example, acp
 ```
@@ -98,7 +98,7 @@ Outputs:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: CLUSTER_PROXY_ID
+            args: CLUSTER_PROXY_ID
         Lock:
             <user_defined> # for example, acp
      <...any other cells>
@@ -113,7 +113,7 @@ Cluster Agent Cell:
     Data: Type Hash of Referenced Cluster Proxy
     Type:
         code_hash: CLUSTER_AGENT_TYPE_HASH
-	      args: REFERENCED_CLUSTER_ID
+        args: REFERENCED_CLUSTER_ID
     Lock:
         <user_defined>
 ```
@@ -129,7 +129,7 @@ CellDeps:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: CLUSTER_PROXY_ID
+            args: CLUSTER_PROXY_ID
         Lock:
             <user_defined>
 Inputs:
@@ -137,7 +137,7 @@ Inputs:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: CLUSTER_PROXY_ID
+            args: CLUSTER_PROXY_ID
         Lock:
             <user_defined>
     <...any other cells>
@@ -146,7 +146,7 @@ Outputs:
         Data: Hash(ClusterProxyCell.Type)
         Type:
             code_hash: CLUSTER_AGENT_TYPE_HASH
-	          args: CLUSTER_ID_A
+            args: CLUSTER_ID_A
         Lock:
             <user_defined>
 
@@ -154,7 +154,7 @@ Outputs:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: CLUSTER_PROXY_ID
+            args: CLUSTER_PROXY_ID
         Lock:
             <user_defined>
      <...any other cells>
@@ -170,7 +170,7 @@ CellDeps:
         Data: CLUSTER_ID_A
         Type:
             code_hash: CLUSTER_PROXY_TYPE_HASH
-	          args: <CLUSTER_PROXY_ID_A> <MINIMAY_PAYMENT_A>
+             args: <CLUSTER_PROXY_ID_A> <MINIMAY_PAYMENT_A>
         Lock:
             code_hash: CODE_HASH_A
             args: PUBKEY_A
@@ -184,7 +184,7 @@ Outputs:
         Data: Hash(ClusterProxyCell.Type)
         Type:
             code_hash: CLUSTER_AGENT_TYPE_HASH
-	          args: CLUSTER_ID_A
+            args: CLUSTER_ID_A
         Lock:
             <user_defined>
 
@@ -223,20 +223,20 @@ Outputs:
             cluster: CLUSTER_ID_A
         Type:
             hash_type: "data1"
-				    code_hash: SPORE_TYPE_DATA_HASH # hash of Spore's type script data hash
-				    args: SPORE_ID
+   			code_hash: SPORE_TYPE_DATA_HASH # hash of Spore's type script data hash
+   			args: SPORE_ID
         Lock:
             <user-defined>
     Cluster Agent Cell A:
         Data: Hash(ClusterProxyCell.Type)
         Type:
             code_hash: CLUSTER_AGENT_TYPE_HASH
-	          args: CLUSTER_ID_A
+            args: CLUSTER_ID_A
         Lock:
             <user_defined> # for example, acp
 ```
 
-1. **Mint with Lock Proxy**
+2. **Mint with Lock Proxy**
 
 ```yaml
 CellDeps:
@@ -264,13 +264,13 @@ Outputs:
             cluster: CLUSTER_ID_A
         Type:
             hash_type: "data1"
-				    code_hash: SPORE_TYPE_DATA_HASH # hash of Spore's type script data hash
-				    args: SPORE_ID
+            code_hash: SPORE_TYPE_DATA_HASH # hash of Spore's type script data hash
+            args: SPORE_ID
         Lock:
             <user-defined>
 ```
 
-1. **Mint with Signature**
+3. **Mint with Signature** (not implemented)
 
 ```yaml
 CellDeps:
@@ -293,8 +293,8 @@ Outputs:
             cluster: CLUSTER_ID_A
         Type:
             hash_type: "data1"
-				    code_hash: SPORE_V1_DATA_HASH # hash of Spore's type script data hash
-				    args: SPORE_ID
+            code_hash: SPORE_V1_DATA_HASH # hash of Spore's type script data hash
+            args: SPORE_ID
         Lock:
             <user-defined>
 Witnesses:
