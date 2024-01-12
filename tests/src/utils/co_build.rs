@@ -4,10 +4,12 @@ use ckb_testtool::ckb_types::packed;
 use ckb_testtool::ckb_types::prelude::*;
 
 use ckb_testtool::context::Context;
+use spore_types::generated::action::BurnAgent;
+use spore_types::generated::action::BurnProxy;
 use spore_types::generated::action::{
-    Address, AddressUnion, AgentCreate, AgentTransfer, Burn, Byte32, Bytes, ClusterCreate,
-    ClusterTransfer, Mint, ProxyCreate, ProxyTransfer, Script, SporeAction, SporeActionUnion,
-    Transfer,
+    Address, AddressUnion, BurnSpore, Byte32, Bytes, MintAgent, MintCluster, MintProxy, MintSpore,
+    Script, SporeAction, SporeActionUnion, TransferAgent, TransferCluster, TransferProxy,
+    TransferSpore,
 };
 use spore_utils::co_build_types::{
     Action, ActionVec, Message, SighashAll, WitnessLayout, WitnessLayoutUnion,
@@ -78,83 +80,83 @@ pub fn complete_co_build_message_with_actions(
         .build()
 }
 
-pub fn build_mint_action(
+pub fn build_mint_spore_action(
     context: &mut Context,
     nft_id: [u8; 32],
     content: &[u8],
 ) -> SporeActionUnion {
     let to = internal::build_always_success_script(context);
-    let mint = Mint::new_builder()
+    let mint = MintSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
         .data_hash(h256_to_byte32(blake2b_256(content)))
         .to(script_to_address(to))
         .build();
-    SporeActionUnion::Mint(mint)
+    SporeActionUnion::MintSpore(mint)
 }
 
-pub fn build_transfer_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
+pub fn build_transfer_spore_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
     let script = internal::build_always_success_script(context);
     let address = script_to_address(script);
-    let transfer = Transfer::new_builder()
+    let transfer = TransferSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
         .from(address.clone())
         .to(address)
         .build();
-    SporeActionUnion::Transfer(transfer)
+    SporeActionUnion::TransferSpore(transfer)
 }
 
-pub fn build_burn_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
+pub fn build_burn_spore_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
     let from = internal::build_always_success_script(context);
-    let burn = Burn::new_builder()
+    let burn = BurnSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
         .from(script_to_address(from))
         .build();
-    SporeActionUnion::Burn(burn)
+    SporeActionUnion::BurnSpore(burn)
 }
 
-pub fn build_cluster_create_action(
+pub fn build_mint_cluster_action(
     context: &mut Context,
     cluster_id: [u8; 32],
     content: &[u8],
 ) -> SporeActionUnion {
     let to = internal::build_always_success_script(context);
-    let cluster_create = ClusterCreate::new_builder()
+    let cluster_create = MintCluster::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .data_hash(h256_to_byte32(blake2b_256(content)))
         .to(script_to_address(to))
         .build();
-    SporeActionUnion::ClusterCreate(cluster_create)
+    SporeActionUnion::MintCluster(cluster_create)
 }
 
-pub fn build_cluster_transfer_action(
+pub fn build_transfer_cluster_action(
     context: &mut Context,
     cluster_id: [u8; 32],
 ) -> SporeActionUnion {
     let script = internal::build_always_success_script(context);
     let address = script_to_address(script);
-    let cluster_transfer = ClusterTransfer::new_builder()
+    let cluster_transfer = TransferCluster::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .from(address.clone())
         .to(address)
         .build();
-    SporeActionUnion::ClusterTransfer(cluster_transfer)
+    SporeActionUnion::TransferCluster(cluster_transfer)
 }
 
-pub fn build_proxy_create_action(
+pub fn build_mint_proxy_action(
     context: &mut Context,
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
     let to = internal::build_always_success_script(context);
-    let proxy_create = ProxyCreate::new_builder()
+    let proxy_create = MintProxy::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .proxy_id(h256_to_byte32(proxy_id))
         .to(script_to_address(to))
         .build();
-    SporeActionUnion::ProxyCreate(proxy_create)
+    SporeActionUnion::MintProxy(proxy_create)
 }
 
-pub fn build_proxy_transfer_action(
+pub fn build_transfer_proxy_action(
     context: &mut Context,
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
@@ -162,35 +164,65 @@ pub fn build_proxy_transfer_action(
     let script = internal::build_always_success_script(context);
     let from = script_to_address(script);
     let to = from.clone();
-    let proxy_transfer = ProxyTransfer::new_builder()
+    let proxy_transfer = TransferProxy::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .proxy_id(h256_to_byte32(proxy_id))
         .from(from)
         .to(to)
         .build();
-    SporeActionUnion::ProxyTransfer(proxy_transfer)
+    SporeActionUnion::TransferProxy(proxy_transfer)
 }
 
-pub fn build_agent_create_action(context: &mut Context, cluster_id: [u8; 32]) -> SporeActionUnion {
-    let to = internal::build_always_success_script(context);
-    let agent_create = AgentCreate::new_builder()
+pub fn build_burn_proxy_action(
+    context: &mut Context,
+    cluster_id: [u8; 32],
+    proxy_id: [u8; 32],
+) -> SporeActionUnion {
+    let script = internal::build_always_success_script(context);
+    let from = script_to_address(script);
+    let proxy_burn = BurnProxy::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
+        .proxy_id(h256_to_byte32(proxy_id))
+        .from(from)
+        .build();
+    SporeActionUnion::BurnProxy(proxy_burn)
+}
+
+pub fn build_mint_agent_action(
+    context: &mut Context,
+    cluster_id: [u8; 32],
+    proxy_id: [u8; 32],
+) -> SporeActionUnion {
+    let to = internal::build_always_success_script(context);
+    let agent_create = MintAgent::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .proxy_id(h256_to_byte32(proxy_id))
         .to(script_to_address(to))
         .build();
-    SporeActionUnion::AgentCreate(agent_create)
+    SporeActionUnion::MintAgent(agent_create)
 }
 
-pub fn build_agent_transfer_action(
+pub fn build_transfer_agent_action(
     context: &mut Context,
     cluster_id: [u8; 32],
 ) -> SporeActionUnion {
     let script = internal::build_always_success_script(context);
     let from = script_to_address(script);
     let to = from.clone();
-    let agent_transfer = AgentTransfer::new_builder()
+    let agent_transfer = TransferAgent::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .from(from)
         .to(to)
         .build();
-    SporeActionUnion::AgentTransfer(agent_transfer)
+    SporeActionUnion::TransferAgent(agent_transfer)
+}
+
+pub fn build_burn_agent_action(context: &mut Context, cluster_id: [u8; 32]) -> SporeActionUnion {
+    let script = internal::build_always_success_script(context);
+    let from = script_to_address(script);
+    let agent_burn = BurnAgent::new_builder()
+        .cluster_id(h256_to_byte32(cluster_id))
+        .from(from)
+        .build();
+    SporeActionUnion::BurnAgent(agent_burn)
 }

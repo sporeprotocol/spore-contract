@@ -13,32 +13,32 @@ union Address {
 
 /* Actions for Spore */
 
-table Mint {
+table MintSpore {
     spore_id: Byte32,
     to: Address,
     data_hash: Byte32,
 }
 
-table Transfer {
+table TransferSpore {
     spore_id: Byte32,
     from: Address,
     to: Address,
 }
 
-table Burn {
+table BurnSpore {
     spore_id: Byte32,
     from: Address,
 }
 
 /* Actions for Cluster */
 
-table ClusterCreate {
+table MintCluster {
     cluster_id: Byte32,
     to: Address,
     data_hash: Byte32,
 }
 
-table ClusterTransfer {
+table TransferCluster {
     cluster_id: Byte32,
     from: Address,
     to: Address,
@@ -46,45 +46,59 @@ table ClusterTransfer {
 
 /* Actions for Cluster/Proxy */
 
-table ProxyCreate {
+table MintProxy {
     cluster_id: Byte32,
     proxy_id: Byte32,
     to: Address,
 }
 
-table ProxyTransfer {
+table TransferProxy {
     cluster_id: Byte32,
     proxy_id: Byte32,
     from: Address,
     to: Address,
+}
+
+table BurnProxy {
+    cluster_id: Byte32,
+    proxy_id: Byte32,
+    from: Address,
 }
 
 /* Actions for Cluster/Agent */
 
-table AgentCreate {
+table MintAgent {
     cluster_id: Byte32,
+    proxy_id: Byte32,
     to: Address,
 }
 
-table AgentTransfer {
+table TransferAgent {
     cluster_id: Byte32,
     from: Address,
     to: Address,
+}
+
+table BurnAgent {
+    cluster_id: Byte32,
+    from: Address,
 }
 
 /* Action in ScriptInfo */
 
 union SporeAction {
-    Mint,
-    Transfer,
-    Burn,
+    MintSpore,
+    TransferSpore,
+    BurnSpore,
 
-    ClusterCreate,
-    ClusterTransfer,
+    MintCluster,
+    TransferCluster,
 
-    ProxyCreate,
-    ProxyTransfer,
+    MintProxy,
+    TransferProxy,
+    BurnProxy,
 
-    AgentCreate,
-    AgentTransfer,
+    MintAgent,
+    TransferAgent,
+    BurnAgent,
 }

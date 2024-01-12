@@ -46,7 +46,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // co-build check @lyk
-    let action::SporeActionUnion::ProxyCreate(create) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::MintProxy(create) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if proxy_id != create.proxy_id().as_slice() || &cluster_id != create.cluster_id().as_slice() {
@@ -66,13 +66,10 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // co-build check @lyk
-    let input_proxy_type = load_cell_type(0, GroupInput)?.unwrap_or_default();
-    let source_cluster_id = &input_proxy_type.args().raw_data()[..32];
-
-    let action::SporeActionUnion::ProxyTransfer(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if source_cluster_id != transfer.cluster_id().as_slice()
+    if input_data.as_slice() != transfer.cluster_id().as_slice()
         || load_type_args(0, GroupInput).as_ref() != transfer.proxy_id().as_slice()
     {
         return Err(Error::SporeActionFieldMismatch);
@@ -80,6 +77,23 @@ fn process_transfer() -> Result<(), Error> {
     check_spore_address(GroupInput, transfer.from())?;
     check_spore_address(GroupOutput, transfer.to())?;
 
+    Ok(())
+}
+
+fn process_destruction() -> Result<(), Error> {
+    let cluster_id = load_cell_data(0, GroupInput)?;
+    let proxy_id = load_type_args(0, GroupInput);
+
+    // co-build check @lyk
+    let action::SporeActionUnion::BurnProxy(burn) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if cluster_id.as_slice() != burn.cluster_id().as_slice()
+        || proxy_id.as_ref() != burn.proxy_id().as_slice()
+    {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, burn.from())?;
     Ok(())
 }
 
@@ -109,7 +123,7 @@ pub fn main() -> Result<(), Error> {
                 find_position_by_type(&proxy_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);
         }
-        (1, 0) => Ok(()), // There's no limitation to destroy a proxy except lock
+        (1, 0) => process_destruction(),
         (1, 1) => process_transfer(),
         _ => unreachable!(),
     };

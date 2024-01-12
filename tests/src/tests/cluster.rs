@@ -28,7 +28,7 @@ fn test_simple_cluster_mint() {
         .cell_dep(cluster_script_dep)
         .build();
 
-    let action = build_cluster_create_action(&mut context, cluster_type_id, cluster.as_slice());
+    let action = build_mint_cluster_action(&mut context, cluster_type_id, cluster.as_slice());
     let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
 
     let tx = context.complete_tx(tx);
@@ -107,7 +107,7 @@ fn test_cluster_agent_mint() {
         ])
         .build();
 
-    let action = build_agent_create_action(&mut context, cluster_id);
+    let action = build_mint_agent_action(&mut context, cluster_id, proxy_id);
     let tx = complete_co_build_message_with_actions(tx, &[(agent_type, action)]);
 
     let tx = context.complete_tx(tx);
@@ -145,7 +145,7 @@ fn test_cluster_proxy_mint() {
         .cell_deps(vec![cluster_script_dep, proxy_script_dep, cluster_dep])
         .build();
 
-    let action = build_proxy_create_action(&mut context, cluster_id, proxy_id);
+    let action = build_mint_proxy_action(&mut context, cluster_id, proxy_id);
     let tx = complete_co_build_message_with_actions(tx, &[(proxy_type, action)]);
 
     let tx = context.complete_tx(tx);

@@ -150,7 +150,7 @@ pub fn build_single_spore_mint_tx(
         .cell_dep(spore_script_dep)
         .build();
 
-    let action = co_build::build_mint_action(context, type_id, output_data.as_slice());
+    let action = co_build::build_mint_spore_action(context, type_id, output_data.as_slice());
     co_build::complete_co_build_message_with_actions(tx, &[(spore_type, action)])
 }
 
@@ -293,8 +293,8 @@ pub fn build_single_spore_mint_in_cluster_tx(
         ])
         .build();
 
-    let cluster_transfer = co_build::build_cluster_transfer_action(context, cluster_id);
-    let nft_action = co_build::build_mint_action(context, nft_id, nft_data.as_slice());
+    let cluster_transfer = co_build::build_transfer_cluster_action(context, cluster_id);
+    let nft_action = co_build::build_mint_spore_action(context, nft_id, nft_data.as_slice());
     co_build::complete_co_build_message_with_actions(
         tx,
         &[(cluster_script, cluster_transfer), (nft_script, nft_action)],

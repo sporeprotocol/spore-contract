@@ -88,8 +88,8 @@ fn test_multi_spores_mint() {
         .cell_dep(spore_script_dep)
         .build();
 
-    let action1 = build_mint_action(&mut context, spore_id_1, serialized.as_slice());
-    let action2 = build_mint_action(&mut context, spore_id_2, serialized.as_slice());
+    let action1 = build_mint_spore_action(&mut context, spore_id_1, serialized.as_slice());
+    let action2 = build_mint_spore_action(&mut context, spore_id_2, serialized.as_slice());
     let tx = complete_co_build_message_with_actions(
         tx,
         &[(spore_type_1, action1), (spore_type_2, action2)],
@@ -143,7 +143,7 @@ fn test_simple_spore_transfer() {
         .cell_dep(spore_script_dep)
         .build();
 
-    let action = build_transfer_action(&mut context, spore_type_id);
+    let action = build_transfer_spore_action(&mut context, spore_type_id);
     let tx = complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
 
     let tx = context.complete_tx(tx);
@@ -207,7 +207,7 @@ fn test_simple_spore_destroy() {
         .cell_dep(spore_script_dep)
         .build();
 
-    let action = build_burn_action(&mut context, spore_type_id);
+    let action = build_burn_spore_action(&mut context, spore_type_id);
     let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
 
     let tx = context.complete_tx(tx);
@@ -361,7 +361,7 @@ fn test_simple_spore_destroy_failed_with_immortal() {
         .cell_dep(spore_script_dep)
         .build();
 
-    let action = build_burn_action(&mut context, spore_type_id);
+    let action = build_burn_spore_action(&mut context, spore_type_id);
     let tx = complete_co_build_message_with_actions(tx, &[(spore_type, action)]);
 
     let tx = context.complete_tx(tx);

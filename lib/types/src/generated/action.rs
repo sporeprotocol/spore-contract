@@ -1377,8 +1377,8 @@ impl<'r> AddressUnionReader<'r> {
     }
 }
 #[derive(Clone)]
-pub struct Mint(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for Mint {
+pub struct MintSpore(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for MintSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -1387,12 +1387,12 @@ impl ::core::fmt::LowerHex for Mint {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for Mint {
+impl ::core::fmt::Debug for MintSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for Mint {
+impl ::core::fmt::Display for MintSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -1405,13 +1405,13 @@ impl ::core::fmt::Display for Mint {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for Mint {
+impl ::core::default::Default for MintSpore {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        Mint::new_unchecked(v)
+        MintSpore::new_unchecked(v)
     }
 }
-impl Mint {
+impl MintSpore {
     const DEFAULT_VALUE: [u8; 137] = [
         137, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0,
@@ -1458,15 +1458,15 @@ impl Mint {
             Byte32::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> MintReader<'r> {
-        MintReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> MintSporeReader<'r> {
+        MintSporeReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for Mint {
-    type Builder = MintBuilder;
-    const NAME: &'static str = "Mint";
+impl molecule::prelude::Entity for MintSpore {
+    type Builder = MintSporeBuilder;
+    const NAME: &'static str = "MintSpore";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        Mint(data)
+        MintSpore(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -1475,10 +1475,10 @@ impl molecule::prelude::Entity for Mint {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        MintReader::from_slice(slice).map(|reader| reader.to_entity())
+        MintSporeReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        MintReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        MintSporeReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -1491,8 +1491,8 @@ impl molecule::prelude::Entity for Mint {
     }
 }
 #[derive(Clone, Copy)]
-pub struct MintReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for MintReader<'r> {
+pub struct MintSporeReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for MintSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -1501,12 +1501,12 @@ impl<'r> ::core::fmt::LowerHex for MintReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for MintReader<'r> {
+impl<'r> ::core::fmt::Debug for MintSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for MintReader<'r> {
+impl<'r> ::core::fmt::Display for MintSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -1519,7 +1519,7 @@ impl<'r> ::core::fmt::Display for MintReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> MintReader<'r> {
+impl<'r> MintSporeReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -1560,14 +1560,14 @@ impl<'r> MintReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for MintReader<'r> {
-    type Entity = Mint;
-    const NAME: &'static str = "MintReader";
+impl<'r> molecule::prelude::Reader<'r> for MintSporeReader<'r> {
+    type Entity = MintSpore;
+    const NAME: &'static str = "MintSporeReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        MintReader(slice)
+        MintSporeReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -1613,12 +1613,12 @@ impl<'r> molecule::prelude::Reader<'r> for MintReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct MintBuilder {
+pub struct MintSporeBuilder {
     pub(crate) spore_id: Byte32,
     pub(crate) to: Address,
     pub(crate) data_hash: Byte32,
 }
-impl MintBuilder {
+impl MintSporeBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn spore_id(mut self, v: Byte32) -> Self {
         self.spore_id = v;
@@ -1633,9 +1633,9 @@ impl MintBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for MintBuilder {
-    type Entity = Mint;
-    const NAME: &'static str = "MintBuilder";
+impl molecule::prelude::Builder for MintSporeBuilder {
+    type Entity = MintSpore;
+    const NAME: &'static str = "MintSporeBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.spore_id.as_slice().len()
@@ -1664,12 +1664,12 @@ impl molecule::prelude::Builder for MintBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        Mint::new_unchecked(inner.into())
+        MintSpore::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct Transfer(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for Transfer {
+pub struct TransferSpore(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for TransferSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -1678,12 +1678,12 @@ impl ::core::fmt::LowerHex for Transfer {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for Transfer {
+impl ::core::fmt::Debug for TransferSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for Transfer {
+impl ::core::fmt::Display for TransferSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -1696,13 +1696,13 @@ impl ::core::fmt::Display for Transfer {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for Transfer {
+impl ::core::default::Default for TransferSpore {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        Transfer::new_unchecked(v)
+        TransferSpore::new_unchecked(v)
     }
 }
-impl Transfer {
+impl TransferSpore {
     const DEFAULT_VALUE: [u8; 162] = [
         162, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0,
@@ -1750,15 +1750,15 @@ impl Transfer {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> TransferReader<'r> {
-        TransferReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> TransferSporeReader<'r> {
+        TransferSporeReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for Transfer {
-    type Builder = TransferBuilder;
-    const NAME: &'static str = "Transfer";
+impl molecule::prelude::Entity for TransferSpore {
+    type Builder = TransferSporeBuilder;
+    const NAME: &'static str = "TransferSpore";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        Transfer(data)
+        TransferSpore(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -1767,10 +1767,10 @@ impl molecule::prelude::Entity for Transfer {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        TransferReader::from_slice(slice).map(|reader| reader.to_entity())
+        TransferSporeReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        TransferReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        TransferSporeReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -1783,8 +1783,8 @@ impl molecule::prelude::Entity for Transfer {
     }
 }
 #[derive(Clone, Copy)]
-pub struct TransferReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for TransferReader<'r> {
+pub struct TransferSporeReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for TransferSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -1793,12 +1793,12 @@ impl<'r> ::core::fmt::LowerHex for TransferReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for TransferReader<'r> {
+impl<'r> ::core::fmt::Debug for TransferSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for TransferReader<'r> {
+impl<'r> ::core::fmt::Display for TransferSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -1811,7 +1811,7 @@ impl<'r> ::core::fmt::Display for TransferReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> TransferReader<'r> {
+impl<'r> TransferSporeReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -1852,14 +1852,14 @@ impl<'r> TransferReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for TransferReader<'r> {
-    type Entity = Transfer;
-    const NAME: &'static str = "TransferReader";
+impl<'r> molecule::prelude::Reader<'r> for TransferSporeReader<'r> {
+    type Entity = TransferSpore;
+    const NAME: &'static str = "TransferSporeReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        TransferReader(slice)
+        TransferSporeReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -1905,12 +1905,12 @@ impl<'r> molecule::prelude::Reader<'r> for TransferReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct TransferBuilder {
+pub struct TransferSporeBuilder {
     pub(crate) spore_id: Byte32,
     pub(crate) from: Address,
     pub(crate) to: Address,
 }
-impl TransferBuilder {
+impl TransferSporeBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn spore_id(mut self, v: Byte32) -> Self {
         self.spore_id = v;
@@ -1925,9 +1925,9 @@ impl TransferBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for TransferBuilder {
-    type Entity = Transfer;
-    const NAME: &'static str = "TransferBuilder";
+impl molecule::prelude::Builder for TransferSporeBuilder {
+    type Entity = TransferSpore;
+    const NAME: &'static str = "TransferSporeBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.spore_id.as_slice().len()
@@ -1956,12 +1956,12 @@ impl molecule::prelude::Builder for TransferBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        Transfer::new_unchecked(inner.into())
+        TransferSpore::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct Burn(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for Burn {
+pub struct BurnSpore(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for BurnSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -1970,12 +1970,12 @@ impl ::core::fmt::LowerHex for Burn {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for Burn {
+impl ::core::fmt::Debug for BurnSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for Burn {
+impl ::core::fmt::Display for BurnSpore {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -1987,13 +1987,13 @@ impl ::core::fmt::Display for Burn {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for Burn {
+impl ::core::default::Default for BurnSpore {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        Burn::new_unchecked(v)
+        BurnSpore::new_unchecked(v)
     }
 }
-impl Burn {
+impl BurnSpore {
     const DEFAULT_VALUE: [u8; 101] = [
         101, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0, 0, 0, 48, 0,
@@ -2033,15 +2033,15 @@ impl Burn {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> BurnReader<'r> {
-        BurnReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> BurnSporeReader<'r> {
+        BurnSporeReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for Burn {
-    type Builder = BurnBuilder;
-    const NAME: &'static str = "Burn";
+impl molecule::prelude::Entity for BurnSpore {
+    type Builder = BurnSporeBuilder;
+    const NAME: &'static str = "BurnSpore";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        Burn(data)
+        BurnSpore(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -2050,10 +2050,10 @@ impl molecule::prelude::Entity for Burn {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        BurnReader::from_slice(slice).map(|reader| reader.to_entity())
+        BurnSporeReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        BurnReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        BurnSporeReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -2065,8 +2065,8 @@ impl molecule::prelude::Entity for Burn {
     }
 }
 #[derive(Clone, Copy)]
-pub struct BurnReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for BurnReader<'r> {
+pub struct BurnSporeReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for BurnSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2075,12 +2075,12 @@ impl<'r> ::core::fmt::LowerHex for BurnReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for BurnReader<'r> {
+impl<'r> ::core::fmt::Debug for BurnSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for BurnReader<'r> {
+impl<'r> ::core::fmt::Display for BurnSporeReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "spore_id", self.spore_id())?;
@@ -2092,7 +2092,7 @@ impl<'r> ::core::fmt::Display for BurnReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> BurnReader<'r> {
+impl<'r> BurnSporeReader<'r> {
     pub const FIELD_COUNT: usize = 2;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -2127,14 +2127,14 @@ impl<'r> BurnReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for BurnReader<'r> {
-    type Entity = Burn;
-    const NAME: &'static str = "BurnReader";
+impl<'r> molecule::prelude::Reader<'r> for BurnSporeReader<'r> {
+    type Entity = BurnSpore;
+    const NAME: &'static str = "BurnSporeReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        BurnReader(slice)
+        BurnSporeReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -2179,11 +2179,11 @@ impl<'r> molecule::prelude::Reader<'r> for BurnReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct BurnBuilder {
+pub struct BurnSporeBuilder {
     pub(crate) spore_id: Byte32,
     pub(crate) from: Address,
 }
-impl BurnBuilder {
+impl BurnSporeBuilder {
     pub const FIELD_COUNT: usize = 2;
     pub fn spore_id(mut self, v: Byte32) -> Self {
         self.spore_id = v;
@@ -2194,9 +2194,9 @@ impl BurnBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for BurnBuilder {
-    type Entity = Burn;
-    const NAME: &'static str = "BurnBuilder";
+impl molecule::prelude::Builder for BurnSporeBuilder {
+    type Entity = BurnSpore;
+    const NAME: &'static str = "BurnSporeBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.spore_id.as_slice().len()
@@ -2221,12 +2221,12 @@ impl molecule::prelude::Builder for BurnBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        Burn::new_unchecked(inner.into())
+        BurnSpore::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct ClusterCreate(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for ClusterCreate {
+pub struct MintCluster(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for MintCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2235,12 +2235,12 @@ impl ::core::fmt::LowerHex for ClusterCreate {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for ClusterCreate {
+impl ::core::fmt::Debug for MintCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for ClusterCreate {
+impl ::core::fmt::Display for MintCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2253,13 +2253,13 @@ impl ::core::fmt::Display for ClusterCreate {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for ClusterCreate {
+impl ::core::default::Default for MintCluster {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        ClusterCreate::new_unchecked(v)
+        MintCluster::new_unchecked(v)
     }
 }
-impl ClusterCreate {
+impl MintCluster {
     const DEFAULT_VALUE: [u8; 137] = [
         137, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0,
@@ -2306,15 +2306,15 @@ impl ClusterCreate {
             Byte32::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> ClusterCreateReader<'r> {
-        ClusterCreateReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> MintClusterReader<'r> {
+        MintClusterReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for ClusterCreate {
-    type Builder = ClusterCreateBuilder;
-    const NAME: &'static str = "ClusterCreate";
+impl molecule::prelude::Entity for MintCluster {
+    type Builder = MintClusterBuilder;
+    const NAME: &'static str = "MintCluster";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        ClusterCreate(data)
+        MintCluster(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -2323,10 +2323,10 @@ impl molecule::prelude::Entity for ClusterCreate {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ClusterCreateReader::from_slice(slice).map(|reader| reader.to_entity())
+        MintClusterReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ClusterCreateReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        MintClusterReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -2339,8 +2339,8 @@ impl molecule::prelude::Entity for ClusterCreate {
     }
 }
 #[derive(Clone, Copy)]
-pub struct ClusterCreateReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for ClusterCreateReader<'r> {
+pub struct MintClusterReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for MintClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2349,12 +2349,12 @@ impl<'r> ::core::fmt::LowerHex for ClusterCreateReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for ClusterCreateReader<'r> {
+impl<'r> ::core::fmt::Debug for MintClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for ClusterCreateReader<'r> {
+impl<'r> ::core::fmt::Display for MintClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2367,7 +2367,7 @@ impl<'r> ::core::fmt::Display for ClusterCreateReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> ClusterCreateReader<'r> {
+impl<'r> MintClusterReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -2408,14 +2408,14 @@ impl<'r> ClusterCreateReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for ClusterCreateReader<'r> {
-    type Entity = ClusterCreate;
-    const NAME: &'static str = "ClusterCreateReader";
+impl<'r> molecule::prelude::Reader<'r> for MintClusterReader<'r> {
+    type Entity = MintCluster;
+    const NAME: &'static str = "MintClusterReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        ClusterCreateReader(slice)
+        MintClusterReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -2461,12 +2461,12 @@ impl<'r> molecule::prelude::Reader<'r> for ClusterCreateReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct ClusterCreateBuilder {
+pub struct MintClusterBuilder {
     pub(crate) cluster_id: Byte32,
     pub(crate) to: Address,
     pub(crate) data_hash: Byte32,
 }
-impl ClusterCreateBuilder {
+impl MintClusterBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
@@ -2481,9 +2481,9 @@ impl ClusterCreateBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for ClusterCreateBuilder {
-    type Entity = ClusterCreate;
-    const NAME: &'static str = "ClusterCreateBuilder";
+impl molecule::prelude::Builder for MintClusterBuilder {
+    type Entity = MintCluster;
+    const NAME: &'static str = "MintClusterBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
@@ -2512,12 +2512,12 @@ impl molecule::prelude::Builder for ClusterCreateBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        ClusterCreate::new_unchecked(inner.into())
+        MintCluster::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct ClusterTransfer(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for ClusterTransfer {
+pub struct TransferCluster(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for TransferCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2526,12 +2526,12 @@ impl ::core::fmt::LowerHex for ClusterTransfer {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for ClusterTransfer {
+impl ::core::fmt::Debug for TransferCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for ClusterTransfer {
+impl ::core::fmt::Display for TransferCluster {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2544,13 +2544,13 @@ impl ::core::fmt::Display for ClusterTransfer {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for ClusterTransfer {
+impl ::core::default::Default for TransferCluster {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        ClusterTransfer::new_unchecked(v)
+        TransferCluster::new_unchecked(v)
     }
 }
-impl ClusterTransfer {
+impl TransferCluster {
     const DEFAULT_VALUE: [u8; 162] = [
         162, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0,
@@ -2598,15 +2598,15 @@ impl ClusterTransfer {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> ClusterTransferReader<'r> {
-        ClusterTransferReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> TransferClusterReader<'r> {
+        TransferClusterReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for ClusterTransfer {
-    type Builder = ClusterTransferBuilder;
-    const NAME: &'static str = "ClusterTransfer";
+impl molecule::prelude::Entity for TransferCluster {
+    type Builder = TransferClusterBuilder;
+    const NAME: &'static str = "TransferCluster";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        ClusterTransfer(data)
+        TransferCluster(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -2615,10 +2615,10 @@ impl molecule::prelude::Entity for ClusterTransfer {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ClusterTransferReader::from_slice(slice).map(|reader| reader.to_entity())
+        TransferClusterReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ClusterTransferReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        TransferClusterReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -2631,8 +2631,8 @@ impl molecule::prelude::Entity for ClusterTransfer {
     }
 }
 #[derive(Clone, Copy)]
-pub struct ClusterTransferReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for ClusterTransferReader<'r> {
+pub struct TransferClusterReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for TransferClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2641,12 +2641,12 @@ impl<'r> ::core::fmt::LowerHex for ClusterTransferReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for ClusterTransferReader<'r> {
+impl<'r> ::core::fmt::Debug for TransferClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for ClusterTransferReader<'r> {
+impl<'r> ::core::fmt::Display for TransferClusterReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2659,7 +2659,7 @@ impl<'r> ::core::fmt::Display for ClusterTransferReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> ClusterTransferReader<'r> {
+impl<'r> TransferClusterReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -2700,14 +2700,14 @@ impl<'r> ClusterTransferReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for ClusterTransferReader<'r> {
-    type Entity = ClusterTransfer;
-    const NAME: &'static str = "ClusterTransferReader";
+impl<'r> molecule::prelude::Reader<'r> for TransferClusterReader<'r> {
+    type Entity = TransferCluster;
+    const NAME: &'static str = "TransferClusterReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        ClusterTransferReader(slice)
+        TransferClusterReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -2753,12 +2753,12 @@ impl<'r> molecule::prelude::Reader<'r> for ClusterTransferReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct ClusterTransferBuilder {
+pub struct TransferClusterBuilder {
     pub(crate) cluster_id: Byte32,
     pub(crate) from: Address,
     pub(crate) to: Address,
 }
-impl ClusterTransferBuilder {
+impl TransferClusterBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
@@ -2773,9 +2773,9 @@ impl ClusterTransferBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for ClusterTransferBuilder {
-    type Entity = ClusterTransfer;
-    const NAME: &'static str = "ClusterTransferBuilder";
+impl molecule::prelude::Builder for TransferClusterBuilder {
+    type Entity = TransferCluster;
+    const NAME: &'static str = "TransferClusterBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
@@ -2804,12 +2804,12 @@ impl molecule::prelude::Builder for ClusterTransferBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        ClusterTransfer::new_unchecked(inner.into())
+        TransferCluster::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct ProxyCreate(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for ProxyCreate {
+pub struct MintProxy(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for MintProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2818,12 +2818,12 @@ impl ::core::fmt::LowerHex for ProxyCreate {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for ProxyCreate {
+impl ::core::fmt::Debug for MintProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for ProxyCreate {
+impl ::core::fmt::Display for MintProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2836,13 +2836,13 @@ impl ::core::fmt::Display for ProxyCreate {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for ProxyCreate {
+impl ::core::default::Default for MintProxy {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        ProxyCreate::new_unchecked(v)
+        MintProxy::new_unchecked(v)
     }
 }
-impl ProxyCreate {
+impl MintProxy {
     const DEFAULT_VALUE: [u8; 137] = [
         137, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2889,15 +2889,15 @@ impl ProxyCreate {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> ProxyCreateReader<'r> {
-        ProxyCreateReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> MintProxyReader<'r> {
+        MintProxyReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for ProxyCreate {
-    type Builder = ProxyCreateBuilder;
-    const NAME: &'static str = "ProxyCreate";
+impl molecule::prelude::Entity for MintProxy {
+    type Builder = MintProxyBuilder;
+    const NAME: &'static str = "MintProxy";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        ProxyCreate(data)
+        MintProxy(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -2906,10 +2906,10 @@ impl molecule::prelude::Entity for ProxyCreate {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ProxyCreateReader::from_slice(slice).map(|reader| reader.to_entity())
+        MintProxyReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ProxyCreateReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        MintProxyReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -2922,8 +2922,8 @@ impl molecule::prelude::Entity for ProxyCreate {
     }
 }
 #[derive(Clone, Copy)]
-pub struct ProxyCreateReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for ProxyCreateReader<'r> {
+pub struct MintProxyReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for MintProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -2932,12 +2932,12 @@ impl<'r> ::core::fmt::LowerHex for ProxyCreateReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for ProxyCreateReader<'r> {
+impl<'r> ::core::fmt::Debug for MintProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for ProxyCreateReader<'r> {
+impl<'r> ::core::fmt::Display for MintProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -2950,7 +2950,7 @@ impl<'r> ::core::fmt::Display for ProxyCreateReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> ProxyCreateReader<'r> {
+impl<'r> MintProxyReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -2991,14 +2991,14 @@ impl<'r> ProxyCreateReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for ProxyCreateReader<'r> {
-    type Entity = ProxyCreate;
-    const NAME: &'static str = "ProxyCreateReader";
+impl<'r> molecule::prelude::Reader<'r> for MintProxyReader<'r> {
+    type Entity = MintProxy;
+    const NAME: &'static str = "MintProxyReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        ProxyCreateReader(slice)
+        MintProxyReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -3044,12 +3044,12 @@ impl<'r> molecule::prelude::Reader<'r> for ProxyCreateReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct ProxyCreateBuilder {
+pub struct MintProxyBuilder {
     pub(crate) cluster_id: Byte32,
     pub(crate) proxy_id: Byte32,
     pub(crate) to: Address,
 }
-impl ProxyCreateBuilder {
+impl MintProxyBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
@@ -3064,9 +3064,9 @@ impl ProxyCreateBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for ProxyCreateBuilder {
-    type Entity = ProxyCreate;
-    const NAME: &'static str = "ProxyCreateBuilder";
+impl molecule::prelude::Builder for MintProxyBuilder {
+    type Entity = MintProxy;
+    const NAME: &'static str = "MintProxyBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
@@ -3095,12 +3095,12 @@ impl molecule::prelude::Builder for ProxyCreateBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        ProxyCreate::new_unchecked(inner.into())
+        MintProxy::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct ProxyTransfer(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for ProxyTransfer {
+pub struct TransferProxy(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for TransferProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3109,12 +3109,12 @@ impl ::core::fmt::LowerHex for ProxyTransfer {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for ProxyTransfer {
+impl ::core::fmt::Debug for TransferProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for ProxyTransfer {
+impl ::core::fmt::Display for TransferProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -3128,13 +3128,13 @@ impl ::core::fmt::Display for ProxyTransfer {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for ProxyTransfer {
+impl ::core::default::Default for TransferProxy {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        ProxyTransfer::new_unchecked(v)
+        TransferProxy::new_unchecked(v)
     }
 }
-impl ProxyTransfer {
+impl TransferProxy {
     const DEFAULT_VALUE: [u8; 198] = [
         198, 0, 0, 0, 20, 0, 0, 0, 52, 0, 0, 0, 84, 0, 0, 0, 141, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3189,15 +3189,15 @@ impl ProxyTransfer {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> ProxyTransferReader<'r> {
-        ProxyTransferReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> TransferProxyReader<'r> {
+        TransferProxyReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for ProxyTransfer {
-    type Builder = ProxyTransferBuilder;
-    const NAME: &'static str = "ProxyTransfer";
+impl molecule::prelude::Entity for TransferProxy {
+    type Builder = TransferProxyBuilder;
+    const NAME: &'static str = "TransferProxy";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        ProxyTransfer(data)
+        TransferProxy(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -3206,10 +3206,10 @@ impl molecule::prelude::Entity for ProxyTransfer {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ProxyTransferReader::from_slice(slice).map(|reader| reader.to_entity())
+        TransferProxyReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        ProxyTransferReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        TransferProxyReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -3223,8 +3223,8 @@ impl molecule::prelude::Entity for ProxyTransfer {
     }
 }
 #[derive(Clone, Copy)]
-pub struct ProxyTransferReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for ProxyTransferReader<'r> {
+pub struct TransferProxyReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for TransferProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3233,12 +3233,12 @@ impl<'r> ::core::fmt::LowerHex for ProxyTransferReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for ProxyTransferReader<'r> {
+impl<'r> ::core::fmt::Debug for TransferProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for ProxyTransferReader<'r> {
+impl<'r> ::core::fmt::Display for TransferProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -3252,7 +3252,7 @@ impl<'r> ::core::fmt::Display for ProxyTransferReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> ProxyTransferReader<'r> {
+impl<'r> TransferProxyReader<'r> {
     pub const FIELD_COUNT: usize = 4;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -3299,14 +3299,14 @@ impl<'r> ProxyTransferReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for ProxyTransferReader<'r> {
-    type Entity = ProxyTransfer;
-    const NAME: &'static str = "ProxyTransferReader";
+impl<'r> molecule::prelude::Reader<'r> for TransferProxyReader<'r> {
+    type Entity = TransferProxy;
+    const NAME: &'static str = "TransferProxyReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        ProxyTransferReader(slice)
+        TransferProxyReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -3353,13 +3353,13 @@ impl<'r> molecule::prelude::Reader<'r> for ProxyTransferReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct ProxyTransferBuilder {
+pub struct TransferProxyBuilder {
     pub(crate) cluster_id: Byte32,
     pub(crate) proxy_id: Byte32,
     pub(crate) from: Address,
     pub(crate) to: Address,
 }
-impl ProxyTransferBuilder {
+impl TransferProxyBuilder {
     pub const FIELD_COUNT: usize = 4;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
@@ -3378,9 +3378,9 @@ impl ProxyTransferBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for ProxyTransferBuilder {
-    type Entity = ProxyTransfer;
-    const NAME: &'static str = "ProxyTransferBuilder";
+impl molecule::prelude::Builder for TransferProxyBuilder {
+    type Entity = TransferProxy;
+    const NAME: &'static str = "TransferProxyBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
@@ -3413,12 +3413,12 @@ impl molecule::prelude::Builder for ProxyTransferBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        ProxyTransfer::new_unchecked(inner.into())
+        TransferProxy::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct AgentCreate(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for AgentCreate {
+pub struct BurnProxy(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for BurnProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3427,16 +3427,17 @@ impl ::core::fmt::LowerHex for AgentCreate {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for AgentCreate {
+impl ::core::fmt::Debug for BurnProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for AgentCreate {
+impl ::core::fmt::Display for BurnProxy {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
-        write!(f, ", {}: {}", "to", self.to())?;
+        write!(f, ", {}: {}", "proxy_id", self.proxy_id())?;
+        write!(f, ", {}: {}", "from", self.from())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -3444,20 +3445,21 @@ impl ::core::fmt::Display for AgentCreate {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for AgentCreate {
+impl ::core::default::Default for BurnProxy {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        AgentCreate::new_unchecked(v)
+        BurnProxy::new_unchecked(v)
     }
 }
-impl AgentCreate {
-    const DEFAULT_VALUE: [u8; 101] = [
-        101, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0, 0, 0, 48, 0,
-        0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+impl BurnProxy {
+    const DEFAULT_VALUE: [u8; 137] = [
+        137, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16,
+        0, 0, 0, 48, 0, 0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    pub const FIELD_COUNT: usize = 2;
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -3480,25 +3482,31 @@ impl AgentCreate {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32::new_unchecked(self.0.slice(start..end))
     }
-    pub fn to(&self) -> Address {
+    pub fn proxy_id(&self) -> Byte32 {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn from(&self) -> Address {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
+            let end = molecule::unpack_number(&slice[16..]) as usize;
             Address::new_unchecked(self.0.slice(start..end))
         } else {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> AgentCreateReader<'r> {
-        AgentCreateReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> BurnProxyReader<'r> {
+        BurnProxyReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for AgentCreate {
-    type Builder = AgentCreateBuilder;
-    const NAME: &'static str = "AgentCreate";
+impl molecule::prelude::Entity for BurnProxy {
+    type Builder = BurnProxyBuilder;
+    const NAME: &'static str = "BurnProxy";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        AgentCreate(data)
+        BurnProxy(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -3507,10 +3515,10 @@ impl molecule::prelude::Entity for AgentCreate {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        AgentCreateReader::from_slice(slice).map(|reader| reader.to_entity())
+        BurnProxyReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        AgentCreateReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        BurnProxyReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -3518,12 +3526,13 @@ impl molecule::prelude::Entity for AgentCreate {
     fn as_builder(self) -> Self::Builder {
         Self::new_builder()
             .cluster_id(self.cluster_id())
-            .to(self.to())
+            .proxy_id(self.proxy_id())
+            .from(self.from())
     }
 }
 #[derive(Clone, Copy)]
-pub struct AgentCreateReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for AgentCreateReader<'r> {
+pub struct BurnProxyReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for BurnProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3532,16 +3541,17 @@ impl<'r> ::core::fmt::LowerHex for AgentCreateReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for AgentCreateReader<'r> {
+impl<'r> ::core::fmt::Debug for BurnProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for AgentCreateReader<'r> {
+impl<'r> ::core::fmt::Display for BurnProxyReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
-        write!(f, ", {}: {}", "to", self.to())?;
+        write!(f, ", {}: {}", "proxy_id", self.proxy_id())?;
+        write!(f, ", {}: {}", "from", self.from())?;
         let extra_count = self.count_extra_fields();
         if extra_count != 0 {
             write!(f, ", .. ({} fields)", extra_count)?;
@@ -3549,8 +3559,8 @@ impl<'r> ::core::fmt::Display for AgentCreateReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> AgentCreateReader<'r> {
-    pub const FIELD_COUNT: usize = 2;
+impl<'r> BurnProxyReader<'r> {
+    pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
     }
@@ -3573,25 +3583,31 @@ impl<'r> AgentCreateReader<'r> {
         let end = molecule::unpack_number(&slice[8..]) as usize;
         Byte32Reader::new_unchecked(&self.as_slice()[start..end])
     }
-    pub fn to(&self) -> AddressReader<'r> {
+    pub fn proxy_id(&self) -> Byte32Reader<'r> {
         let slice = self.as_slice();
         let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn from(&self) -> AddressReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
         if self.has_extra_fields() {
-            let end = molecule::unpack_number(&slice[12..]) as usize;
+            let end = molecule::unpack_number(&slice[16..]) as usize;
             AddressReader::new_unchecked(&self.as_slice()[start..end])
         } else {
             AddressReader::new_unchecked(&self.as_slice()[start..])
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for AgentCreateReader<'r> {
-    type Entity = AgentCreate;
-    const NAME: &'static str = "AgentCreateReader";
+impl<'r> molecule::prelude::Reader<'r> for BurnProxyReader<'r> {
+    type Entity = BurnProxy;
+    const NAME: &'static str = "BurnProxyReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        AgentCreateReader(slice)
+        BurnProxyReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -3631,33 +3647,40 @@ impl<'r> molecule::prelude::Reader<'r> for AgentCreateReader<'r> {
             return ve!(Self, OffsetsNotMatch);
         }
         Byte32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
-        AddressReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        Byte32Reader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        AddressReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
         Ok(())
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct AgentCreateBuilder {
+pub struct BurnProxyBuilder {
     pub(crate) cluster_id: Byte32,
-    pub(crate) to: Address,
+    pub(crate) proxy_id: Byte32,
+    pub(crate) from: Address,
 }
-impl AgentCreateBuilder {
-    pub const FIELD_COUNT: usize = 2;
+impl BurnProxyBuilder {
+    pub const FIELD_COUNT: usize = 3;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
         self
     }
-    pub fn to(mut self, v: Address) -> Self {
-        self.to = v;
+    pub fn proxy_id(mut self, v: Byte32) -> Self {
+        self.proxy_id = v;
+        self
+    }
+    pub fn from(mut self, v: Address) -> Self {
+        self.from = v;
         self
     }
 }
-impl molecule::prelude::Builder for AgentCreateBuilder {
-    type Entity = AgentCreate;
-    const NAME: &'static str = "AgentCreateBuilder";
+impl molecule::prelude::Builder for BurnProxyBuilder {
+    type Entity = BurnProxy;
+    const NAME: &'static str = "BurnProxyBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
-            + self.to.as_slice().len()
+            + self.proxy_id.as_slice().len()
+            + self.from.as_slice().len()
     }
     fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
         let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
@@ -3665,25 +3688,28 @@ impl molecule::prelude::Builder for AgentCreateBuilder {
         offsets.push(total_size);
         total_size += self.cluster_id.as_slice().len();
         offsets.push(total_size);
-        total_size += self.to.as_slice().len();
+        total_size += self.proxy_id.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.from.as_slice().len();
         writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
         for offset in offsets.into_iter() {
             writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
         }
         writer.write_all(self.cluster_id.as_slice())?;
-        writer.write_all(self.to.as_slice())?;
+        writer.write_all(self.proxy_id.as_slice())?;
+        writer.write_all(self.from.as_slice())?;
         Ok(())
     }
     fn build(&self) -> Self::Entity {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        AgentCreate::new_unchecked(inner.into())
+        BurnProxy::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
-pub struct AgentTransfer(molecule::bytes::Bytes);
-impl ::core::fmt::LowerHex for AgentTransfer {
+pub struct MintAgent(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for MintAgent {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3692,12 +3718,303 @@ impl ::core::fmt::LowerHex for AgentTransfer {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl ::core::fmt::Debug for AgentTransfer {
+impl ::core::fmt::Debug for MintAgent {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl ::core::fmt::Display for AgentTransfer {
+impl ::core::fmt::Display for MintAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
+        write!(f, ", {}: {}", "proxy_id", self.proxy_id())?;
+        write!(f, ", {}: {}", "to", self.to())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for MintAgent {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        MintAgent::new_unchecked(v)
+    }
+}
+impl MintAgent {
+    const DEFAULT_VALUE: [u8; 137] = [
+        137, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16,
+        0, 0, 0, 48, 0, 0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    pub const FIELD_COUNT: usize = 3;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn cluster_id(&self) -> Byte32 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn proxy_id(&self) -> Byte32 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn to(&self) -> Address {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            Address::new_unchecked(self.0.slice(start..end))
+        } else {
+            Address::new_unchecked(self.0.slice(start..))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> MintAgentReader<'r> {
+        MintAgentReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for MintAgent {
+    type Builder = MintAgentBuilder;
+    const NAME: &'static str = "MintAgent";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        MintAgent(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        MintAgentReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        MintAgentReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .cluster_id(self.cluster_id())
+            .proxy_id(self.proxy_id())
+            .to(self.to())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct MintAgentReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for MintAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for MintAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for MintAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
+        write!(f, ", {}: {}", "proxy_id", self.proxy_id())?;
+        write!(f, ", {}: {}", "to", self.to())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl<'r> MintAgentReader<'r> {
+    pub const FIELD_COUNT: usize = 3;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn cluster_id(&self) -> Byte32Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn proxy_id(&self) -> Byte32Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        let end = molecule::unpack_number(&slice[12..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn to(&self) -> AddressReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[12..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[16..]) as usize;
+            AddressReader::new_unchecked(&self.as_slice()[start..end])
+        } else {
+            AddressReader::new_unchecked(&self.as_slice()[start..])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for MintAgentReader<'r> {
+    type Entity = MintAgent;
+    const NAME: &'static str = "MintAgentReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        MintAgentReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let field_count = offset_first / molecule::NUMBER_SIZE - 1;
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        Byte32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        Byte32Reader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        AddressReader::verify(&slice[offsets[2]..offsets[3]], compatible)?;
+        Ok(())
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct MintAgentBuilder {
+    pub(crate) cluster_id: Byte32,
+    pub(crate) proxy_id: Byte32,
+    pub(crate) to: Address,
+}
+impl MintAgentBuilder {
+    pub const FIELD_COUNT: usize = 3;
+    pub fn cluster_id(mut self, v: Byte32) -> Self {
+        self.cluster_id = v;
+        self
+    }
+    pub fn proxy_id(mut self, v: Byte32) -> Self {
+        self.proxy_id = v;
+        self
+    }
+    pub fn to(mut self, v: Address) -> Self {
+        self.to = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for MintAgentBuilder {
+    type Entity = MintAgent;
+    const NAME: &'static str = "MintAgentBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.cluster_id.as_slice().len()
+            + self.proxy_id.as_slice().len()
+            + self.to.as_slice().len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
+        let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.cluster_id.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.proxy_id.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.to.as_slice().len();
+        writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
+        writer.write_all(self.cluster_id.as_slice())?;
+        writer.write_all(self.proxy_id.as_slice())?;
+        writer.write_all(self.to.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        MintAgent::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct TransferAgent(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for TransferAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for TransferAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for TransferAgent {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -3710,13 +4027,13 @@ impl ::core::fmt::Display for AgentTransfer {
         write!(f, " }}")
     }
 }
-impl ::core::default::Default for AgentTransfer {
+impl ::core::default::Default for TransferAgent {
     fn default() -> Self {
         let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
-        AgentTransfer::new_unchecked(v)
+        TransferAgent::new_unchecked(v)
     }
 }
-impl AgentTransfer {
+impl TransferAgent {
     const DEFAULT_VALUE: [u8; 162] = [
         162, 0, 0, 0, 16, 0, 0, 0, 48, 0, 0, 0, 105, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0,
@@ -3764,15 +4081,15 @@ impl AgentTransfer {
             Address::new_unchecked(self.0.slice(start..))
         }
     }
-    pub fn as_reader<'r>(&'r self) -> AgentTransferReader<'r> {
-        AgentTransferReader::new_unchecked(self.as_slice())
+    pub fn as_reader<'r>(&'r self) -> TransferAgentReader<'r> {
+        TransferAgentReader::new_unchecked(self.as_slice())
     }
 }
-impl molecule::prelude::Entity for AgentTransfer {
-    type Builder = AgentTransferBuilder;
-    const NAME: &'static str = "AgentTransfer";
+impl molecule::prelude::Entity for TransferAgent {
+    type Builder = TransferAgentBuilder;
+    const NAME: &'static str = "TransferAgent";
     fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
-        AgentTransfer(data)
+        TransferAgent(data)
     }
     fn as_bytes(&self) -> molecule::bytes::Bytes {
         self.0.clone()
@@ -3781,10 +4098,10 @@ impl molecule::prelude::Entity for AgentTransfer {
         &self.0[..]
     }
     fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        AgentTransferReader::from_slice(slice).map(|reader| reader.to_entity())
+        TransferAgentReader::from_slice(slice).map(|reader| reader.to_entity())
     }
     fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
-        AgentTransferReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+        TransferAgentReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
     }
     fn new_builder() -> Self::Builder {
         ::core::default::Default::default()
@@ -3797,8 +4114,8 @@ impl molecule::prelude::Entity for AgentTransfer {
     }
 }
 #[derive(Clone, Copy)]
-pub struct AgentTransferReader<'r>(&'r [u8]);
-impl<'r> ::core::fmt::LowerHex for AgentTransferReader<'r> {
+pub struct TransferAgentReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for TransferAgentReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         use molecule::hex_string;
         if f.alternate() {
@@ -3807,12 +4124,12 @@ impl<'r> ::core::fmt::LowerHex for AgentTransferReader<'r> {
         write!(f, "{}", hex_string(self.as_slice()))
     }
 }
-impl<'r> ::core::fmt::Debug for AgentTransferReader<'r> {
+impl<'r> ::core::fmt::Debug for TransferAgentReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{}({:#x})", Self::NAME, self)
     }
 }
-impl<'r> ::core::fmt::Display for AgentTransferReader<'r> {
+impl<'r> ::core::fmt::Display for TransferAgentReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "{} {{ ", Self::NAME)?;
         write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
@@ -3825,7 +4142,7 @@ impl<'r> ::core::fmt::Display for AgentTransferReader<'r> {
         write!(f, " }}")
     }
 }
-impl<'r> AgentTransferReader<'r> {
+impl<'r> TransferAgentReader<'r> {
     pub const FIELD_COUNT: usize = 3;
     pub fn total_size(&self) -> usize {
         molecule::unpack_number(self.as_slice()) as usize
@@ -3866,14 +4183,14 @@ impl<'r> AgentTransferReader<'r> {
         }
     }
 }
-impl<'r> molecule::prelude::Reader<'r> for AgentTransferReader<'r> {
-    type Entity = AgentTransfer;
-    const NAME: &'static str = "AgentTransferReader";
+impl<'r> molecule::prelude::Reader<'r> for TransferAgentReader<'r> {
+    type Entity = TransferAgent;
+    const NAME: &'static str = "TransferAgentReader";
     fn to_entity(&self) -> Self::Entity {
         Self::Entity::new_unchecked(self.as_slice().to_owned().into())
     }
     fn new_unchecked(slice: &'r [u8]) -> Self {
-        AgentTransferReader(slice)
+        TransferAgentReader(slice)
     }
     fn as_slice(&self) -> &'r [u8] {
         self.0
@@ -3919,12 +4236,12 @@ impl<'r> molecule::prelude::Reader<'r> for AgentTransferReader<'r> {
     }
 }
 #[derive(Clone, Debug, Default)]
-pub struct AgentTransferBuilder {
+pub struct TransferAgentBuilder {
     pub(crate) cluster_id: Byte32,
     pub(crate) from: Address,
     pub(crate) to: Address,
 }
-impl AgentTransferBuilder {
+impl TransferAgentBuilder {
     pub const FIELD_COUNT: usize = 3;
     pub fn cluster_id(mut self, v: Byte32) -> Self {
         self.cluster_id = v;
@@ -3939,9 +4256,9 @@ impl AgentTransferBuilder {
         self
     }
 }
-impl molecule::prelude::Builder for AgentTransferBuilder {
-    type Entity = AgentTransfer;
-    const NAME: &'static str = "AgentTransferBuilder";
+impl molecule::prelude::Builder for TransferAgentBuilder {
+    type Entity = TransferAgent;
+    const NAME: &'static str = "TransferAgentBuilder";
     fn expected_length(&self) -> usize {
         molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
             + self.cluster_id.as_slice().len()
@@ -3970,7 +4287,272 @@ impl molecule::prelude::Builder for AgentTransferBuilder {
         let mut inner = Vec::with_capacity(self.expected_length());
         self.write(&mut inner)
             .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
-        AgentTransfer::new_unchecked(inner.into())
+        TransferAgent::new_unchecked(inner.into())
+    }
+}
+#[derive(Clone)]
+pub struct BurnAgent(molecule::bytes::Bytes);
+impl ::core::fmt::LowerHex for BurnAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl ::core::fmt::Debug for BurnAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl ::core::fmt::Display for BurnAgent {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
+        write!(f, ", {}: {}", "from", self.from())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl ::core::default::Default for BurnAgent {
+    fn default() -> Self {
+        let v = molecule::bytes::Bytes::from_static(&Self::DEFAULT_VALUE);
+        BurnAgent::new_unchecked(v)
+    }
+}
+impl BurnAgent {
+    const DEFAULT_VALUE: [u8; 101] = [
+        101, 0, 0, 0, 12, 0, 0, 0, 44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0, 0, 0, 16, 0, 0, 0, 48, 0,
+        0, 0, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn cluster_id(&self) -> Byte32 {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32::new_unchecked(self.0.slice(start..end))
+    }
+    pub fn from(&self) -> Address {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            Address::new_unchecked(self.0.slice(start..end))
+        } else {
+            Address::new_unchecked(self.0.slice(start..))
+        }
+    }
+    pub fn as_reader<'r>(&'r self) -> BurnAgentReader<'r> {
+        BurnAgentReader::new_unchecked(self.as_slice())
+    }
+}
+impl molecule::prelude::Entity for BurnAgent {
+    type Builder = BurnAgentBuilder;
+    const NAME: &'static str = "BurnAgent";
+    fn new_unchecked(data: molecule::bytes::Bytes) -> Self {
+        BurnAgent(data)
+    }
+    fn as_bytes(&self) -> molecule::bytes::Bytes {
+        self.0.clone()
+    }
+    fn as_slice(&self) -> &[u8] {
+        &self.0[..]
+    }
+    fn from_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BurnAgentReader::from_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn from_compatible_slice(slice: &[u8]) -> molecule::error::VerificationResult<Self> {
+        BurnAgentReader::from_compatible_slice(slice).map(|reader| reader.to_entity())
+    }
+    fn new_builder() -> Self::Builder {
+        ::core::default::Default::default()
+    }
+    fn as_builder(self) -> Self::Builder {
+        Self::new_builder()
+            .cluster_id(self.cluster_id())
+            .from(self.from())
+    }
+}
+#[derive(Clone, Copy)]
+pub struct BurnAgentReader<'r>(&'r [u8]);
+impl<'r> ::core::fmt::LowerHex for BurnAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        use molecule::hex_string;
+        if f.alternate() {
+            write!(f, "0x")?;
+        }
+        write!(f, "{}", hex_string(self.as_slice()))
+    }
+}
+impl<'r> ::core::fmt::Debug for BurnAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{}({:#x})", Self::NAME, self)
+    }
+}
+impl<'r> ::core::fmt::Display for BurnAgentReader<'r> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{} {{ ", Self::NAME)?;
+        write!(f, "{}: {}", "cluster_id", self.cluster_id())?;
+        write!(f, ", {}: {}", "from", self.from())?;
+        let extra_count = self.count_extra_fields();
+        if extra_count != 0 {
+            write!(f, ", .. ({} fields)", extra_count)?;
+        }
+        write!(f, " }}")
+    }
+}
+impl<'r> BurnAgentReader<'r> {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn total_size(&self) -> usize {
+        molecule::unpack_number(self.as_slice()) as usize
+    }
+    pub fn field_count(&self) -> usize {
+        if self.total_size() == molecule::NUMBER_SIZE {
+            0
+        } else {
+            (molecule::unpack_number(&self.as_slice()[molecule::NUMBER_SIZE..]) as usize / 4) - 1
+        }
+    }
+    pub fn count_extra_fields(&self) -> usize {
+        self.field_count() - Self::FIELD_COUNT
+    }
+    pub fn has_extra_fields(&self) -> bool {
+        Self::FIELD_COUNT != self.field_count()
+    }
+    pub fn cluster_id(&self) -> Byte32Reader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[4..]) as usize;
+        let end = molecule::unpack_number(&slice[8..]) as usize;
+        Byte32Reader::new_unchecked(&self.as_slice()[start..end])
+    }
+    pub fn from(&self) -> AddressReader<'r> {
+        let slice = self.as_slice();
+        let start = molecule::unpack_number(&slice[8..]) as usize;
+        if self.has_extra_fields() {
+            let end = molecule::unpack_number(&slice[12..]) as usize;
+            AddressReader::new_unchecked(&self.as_slice()[start..end])
+        } else {
+            AddressReader::new_unchecked(&self.as_slice()[start..])
+        }
+    }
+}
+impl<'r> molecule::prelude::Reader<'r> for BurnAgentReader<'r> {
+    type Entity = BurnAgent;
+    const NAME: &'static str = "BurnAgentReader";
+    fn to_entity(&self) -> Self::Entity {
+        Self::Entity::new_unchecked(self.as_slice().to_owned().into())
+    }
+    fn new_unchecked(slice: &'r [u8]) -> Self {
+        BurnAgentReader(slice)
+    }
+    fn as_slice(&self) -> &'r [u8] {
+        self.0
+    }
+    fn verify(slice: &[u8], compatible: bool) -> molecule::error::VerificationResult<()> {
+        use molecule::verification_error as ve;
+        let slice_len = slice.len();
+        if slice_len < molecule::NUMBER_SIZE {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE, slice_len);
+        }
+        let total_size = molecule::unpack_number(slice) as usize;
+        if slice_len != total_size {
+            return ve!(Self, TotalSizeNotMatch, total_size, slice_len);
+        }
+        if slice_len < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, HeaderIsBroken, molecule::NUMBER_SIZE * 2, slice_len);
+        }
+        let offset_first = molecule::unpack_number(&slice[molecule::NUMBER_SIZE..]) as usize;
+        if offset_first % molecule::NUMBER_SIZE != 0 || offset_first < molecule::NUMBER_SIZE * 2 {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        if slice_len < offset_first {
+            return ve!(Self, HeaderIsBroken, offset_first, slice_len);
+        }
+        let field_count = offset_first / molecule::NUMBER_SIZE - 1;
+        if field_count < Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        } else if !compatible && field_count > Self::FIELD_COUNT {
+            return ve!(Self, FieldCountNotMatch, Self::FIELD_COUNT, field_count);
+        };
+        let mut offsets: Vec<usize> = slice[molecule::NUMBER_SIZE..offset_first]
+            .chunks_exact(molecule::NUMBER_SIZE)
+            .map(|x| molecule::unpack_number(x) as usize)
+            .collect();
+        offsets.push(total_size);
+        if offsets.windows(2).any(|i| i[0] > i[1]) {
+            return ve!(Self, OffsetsNotMatch);
+        }
+        Byte32Reader::verify(&slice[offsets[0]..offsets[1]], compatible)?;
+        AddressReader::verify(&slice[offsets[1]..offsets[2]], compatible)?;
+        Ok(())
+    }
+}
+#[derive(Clone, Debug, Default)]
+pub struct BurnAgentBuilder {
+    pub(crate) cluster_id: Byte32,
+    pub(crate) from: Address,
+}
+impl BurnAgentBuilder {
+    pub const FIELD_COUNT: usize = 2;
+    pub fn cluster_id(mut self, v: Byte32) -> Self {
+        self.cluster_id = v;
+        self
+    }
+    pub fn from(mut self, v: Address) -> Self {
+        self.from = v;
+        self
+    }
+}
+impl molecule::prelude::Builder for BurnAgentBuilder {
+    type Entity = BurnAgent;
+    const NAME: &'static str = "BurnAgentBuilder";
+    fn expected_length(&self) -> usize {
+        molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1)
+            + self.cluster_id.as_slice().len()
+            + self.from.as_slice().len()
+    }
+    fn write<W: molecule::io::Write>(&self, writer: &mut W) -> molecule::io::Result<()> {
+        let mut total_size = molecule::NUMBER_SIZE * (Self::FIELD_COUNT + 1);
+        let mut offsets = Vec::with_capacity(Self::FIELD_COUNT);
+        offsets.push(total_size);
+        total_size += self.cluster_id.as_slice().len();
+        offsets.push(total_size);
+        total_size += self.from.as_slice().len();
+        writer.write_all(&molecule::pack_number(total_size as molecule::Number))?;
+        for offset in offsets.into_iter() {
+            writer.write_all(&molecule::pack_number(offset as molecule::Number))?;
+        }
+        writer.write_all(self.cluster_id.as_slice())?;
+        writer.write_all(self.from.as_slice())?;
+        Ok(())
+    }
+    fn build(&self) -> Self::Entity {
+        let mut inner = Vec::with_capacity(self.expected_length());
+        self.write(&mut inner)
+            .unwrap_or_else(|_| panic!("{} build should be ok", Self::NAME));
+        BurnAgent::new_unchecked(inner.into())
     }
 }
 #[derive(Clone)]
@@ -4010,22 +4592,24 @@ impl SporeAction {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    pub const ITEMS_COUNT: usize = 9;
+    pub const ITEMS_COUNT: usize = 11;
     pub fn item_id(&self) -> molecule::Number {
         molecule::unpack_number(self.as_slice())
     }
     pub fn to_enum(&self) -> SporeActionUnion {
         let inner = self.0.slice(molecule::NUMBER_SIZE..);
         match self.item_id() {
-            0 => Mint::new_unchecked(inner).into(),
-            1 => Transfer::new_unchecked(inner).into(),
-            2 => Burn::new_unchecked(inner).into(),
-            3 => ClusterCreate::new_unchecked(inner).into(),
-            4 => ClusterTransfer::new_unchecked(inner).into(),
-            5 => ProxyCreate::new_unchecked(inner).into(),
-            6 => ProxyTransfer::new_unchecked(inner).into(),
-            7 => AgentCreate::new_unchecked(inner).into(),
-            8 => AgentTransfer::new_unchecked(inner).into(),
+            0 => MintSpore::new_unchecked(inner).into(),
+            1 => TransferSpore::new_unchecked(inner).into(),
+            2 => BurnSpore::new_unchecked(inner).into(),
+            3 => MintCluster::new_unchecked(inner).into(),
+            4 => TransferCluster::new_unchecked(inner).into(),
+            5 => MintProxy::new_unchecked(inner).into(),
+            6 => TransferProxy::new_unchecked(inner).into(),
+            7 => BurnProxy::new_unchecked(inner).into(),
+            8 => MintAgent::new_unchecked(inner).into(),
+            9 => TransferAgent::new_unchecked(inner).into(),
+            10 => BurnAgent::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -4082,22 +4666,24 @@ impl<'r> ::core::fmt::Display for SporeActionReader<'r> {
     }
 }
 impl<'r> SporeActionReader<'r> {
-    pub const ITEMS_COUNT: usize = 9;
+    pub const ITEMS_COUNT: usize = 11;
     pub fn item_id(&self) -> molecule::Number {
         molecule::unpack_number(self.as_slice())
     }
     pub fn to_enum(&self) -> SporeActionUnionReader<'r> {
         let inner = &self.as_slice()[molecule::NUMBER_SIZE..];
         match self.item_id() {
-            0 => MintReader::new_unchecked(inner).into(),
-            1 => TransferReader::new_unchecked(inner).into(),
-            2 => BurnReader::new_unchecked(inner).into(),
-            3 => ClusterCreateReader::new_unchecked(inner).into(),
-            4 => ClusterTransferReader::new_unchecked(inner).into(),
-            5 => ProxyCreateReader::new_unchecked(inner).into(),
-            6 => ProxyTransferReader::new_unchecked(inner).into(),
-            7 => AgentCreateReader::new_unchecked(inner).into(),
-            8 => AgentTransferReader::new_unchecked(inner).into(),
+            0 => MintSporeReader::new_unchecked(inner).into(),
+            1 => TransferSporeReader::new_unchecked(inner).into(),
+            2 => BurnSporeReader::new_unchecked(inner).into(),
+            3 => MintClusterReader::new_unchecked(inner).into(),
+            4 => TransferClusterReader::new_unchecked(inner).into(),
+            5 => MintProxyReader::new_unchecked(inner).into(),
+            6 => TransferProxyReader::new_unchecked(inner).into(),
+            7 => BurnProxyReader::new_unchecked(inner).into(),
+            8 => MintAgentReader::new_unchecked(inner).into(),
+            9 => TransferAgentReader::new_unchecked(inner).into(),
+            10 => BurnAgentReader::new_unchecked(inner).into(),
             _ => panic!("{}: invalid data", Self::NAME),
         }
     }
@@ -4123,15 +4709,17 @@ impl<'r> molecule::prelude::Reader<'r> for SporeActionReader<'r> {
         let item_id = molecule::unpack_number(slice);
         let inner_slice = &slice[molecule::NUMBER_SIZE..];
         match item_id {
-            0 => MintReader::verify(inner_slice, compatible),
-            1 => TransferReader::verify(inner_slice, compatible),
-            2 => BurnReader::verify(inner_slice, compatible),
-            3 => ClusterCreateReader::verify(inner_slice, compatible),
-            4 => ClusterTransferReader::verify(inner_slice, compatible),
-            5 => ProxyCreateReader::verify(inner_slice, compatible),
-            6 => ProxyTransferReader::verify(inner_slice, compatible),
-            7 => AgentCreateReader::verify(inner_slice, compatible),
-            8 => AgentTransferReader::verify(inner_slice, compatible),
+            0 => MintSporeReader::verify(inner_slice, compatible),
+            1 => TransferSporeReader::verify(inner_slice, compatible),
+            2 => BurnSporeReader::verify(inner_slice, compatible),
+            3 => MintClusterReader::verify(inner_slice, compatible),
+            4 => TransferClusterReader::verify(inner_slice, compatible),
+            5 => MintProxyReader::verify(inner_slice, compatible),
+            6 => TransferProxyReader::verify(inner_slice, compatible),
+            7 => BurnProxyReader::verify(inner_slice, compatible),
+            8 => MintAgentReader::verify(inner_slice, compatible),
+            9 => TransferAgentReader::verify(inner_slice, compatible),
+            10 => BurnAgentReader::verify(inner_slice, compatible),
             _ => ve!(Self, UnknownItem, Self::ITEMS_COUNT, item_id),
         }?;
         Ok(())
@@ -4140,7 +4728,7 @@ impl<'r> molecule::prelude::Reader<'r> for SporeActionReader<'r> {
 #[derive(Clone, Debug, Default)]
 pub struct SporeActionBuilder(pub(crate) SporeActionUnion);
 impl SporeActionBuilder {
-    pub const ITEMS_COUNT: usize = 9;
+    pub const ITEMS_COUNT: usize = 11;
     pub fn set<I>(mut self, v: I) -> Self
     where
         I: ::core::convert::Into<SporeActionUnion>,
@@ -4168,62 +4756,72 @@ impl molecule::prelude::Builder for SporeActionBuilder {
 }
 #[derive(Debug, Clone)]
 pub enum SporeActionUnion {
-    Mint(Mint),
-    Transfer(Transfer),
-    Burn(Burn),
-    ClusterCreate(ClusterCreate),
-    ClusterTransfer(ClusterTransfer),
-    ProxyCreate(ProxyCreate),
-    ProxyTransfer(ProxyTransfer),
-    AgentCreate(AgentCreate),
-    AgentTransfer(AgentTransfer),
+    MintSpore(MintSpore),
+    TransferSpore(TransferSpore),
+    BurnSpore(BurnSpore),
+    MintCluster(MintCluster),
+    TransferCluster(TransferCluster),
+    MintProxy(MintProxy),
+    TransferProxy(TransferProxy),
+    BurnProxy(BurnProxy),
+    MintAgent(MintAgent),
+    TransferAgent(TransferAgent),
+    BurnAgent(BurnAgent),
 }
 #[derive(Debug, Clone, Copy)]
 pub enum SporeActionUnionReader<'r> {
-    Mint(MintReader<'r>),
-    Transfer(TransferReader<'r>),
-    Burn(BurnReader<'r>),
-    ClusterCreate(ClusterCreateReader<'r>),
-    ClusterTransfer(ClusterTransferReader<'r>),
-    ProxyCreate(ProxyCreateReader<'r>),
-    ProxyTransfer(ProxyTransferReader<'r>),
-    AgentCreate(AgentCreateReader<'r>),
-    AgentTransfer(AgentTransferReader<'r>),
+    MintSpore(MintSporeReader<'r>),
+    TransferSpore(TransferSporeReader<'r>),
+    BurnSpore(BurnSporeReader<'r>),
+    MintCluster(MintClusterReader<'r>),
+    TransferCluster(TransferClusterReader<'r>),
+    MintProxy(MintProxyReader<'r>),
+    TransferProxy(TransferProxyReader<'r>),
+    BurnProxy(BurnProxyReader<'r>),
+    MintAgent(MintAgentReader<'r>),
+    TransferAgent(TransferAgentReader<'r>),
+    BurnAgent(BurnAgentReader<'r>),
 }
 impl ::core::default::Default for SporeActionUnion {
     fn default() -> Self {
-        SporeActionUnion::Mint(::core::default::Default::default())
+        SporeActionUnion::MintSpore(::core::default::Default::default())
     }
 }
 impl ::core::fmt::Display for SporeActionUnion {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            SporeActionUnion::Mint(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Mint::NAME, item)
+            SporeActionUnion::MintSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintSpore::NAME, item)
             }
-            SporeActionUnion::Transfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Transfer::NAME, item)
+            SporeActionUnion::TransferSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferSpore::NAME, item)
             }
-            SporeActionUnion::Burn(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Burn::NAME, item)
+            SporeActionUnion::BurnSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnSpore::NAME, item)
             }
-            SporeActionUnion::ClusterCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ClusterCreate::NAME, item)
+            SporeActionUnion::MintCluster(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintCluster::NAME, item)
             }
-            SporeActionUnion::ClusterTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ClusterTransfer::NAME, item)
+            SporeActionUnion::TransferCluster(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferCluster::NAME, item)
             }
-            SporeActionUnion::ProxyCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ProxyCreate::NAME, item)
+            SporeActionUnion::MintProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintProxy::NAME, item)
             }
-            SporeActionUnion::ProxyTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ProxyTransfer::NAME, item)
+            SporeActionUnion::TransferProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferProxy::NAME, item)
             }
-            SporeActionUnion::AgentCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, AgentCreate::NAME, item)
+            SporeActionUnion::BurnProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnProxy::NAME, item)
             }
-            SporeActionUnion::AgentTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, AgentTransfer::NAME, item)
+            SporeActionUnion::MintAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintAgent::NAME, item)
+            }
+            SporeActionUnion::TransferAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferAgent::NAME, item)
+            }
+            SporeActionUnion::BurnAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnAgent::NAME, item)
             }
         }
     }
@@ -4231,32 +4829,38 @@ impl ::core::fmt::Display for SporeActionUnion {
 impl<'r> ::core::fmt::Display for SporeActionUnionReader<'r> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            SporeActionUnionReader::Mint(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Mint::NAME, item)
+            SporeActionUnionReader::MintSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintSpore::NAME, item)
             }
-            SporeActionUnionReader::Transfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Transfer::NAME, item)
+            SporeActionUnionReader::TransferSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferSpore::NAME, item)
             }
-            SporeActionUnionReader::Burn(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, Burn::NAME, item)
+            SporeActionUnionReader::BurnSpore(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnSpore::NAME, item)
             }
-            SporeActionUnionReader::ClusterCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ClusterCreate::NAME, item)
+            SporeActionUnionReader::MintCluster(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintCluster::NAME, item)
             }
-            SporeActionUnionReader::ClusterTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ClusterTransfer::NAME, item)
+            SporeActionUnionReader::TransferCluster(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferCluster::NAME, item)
             }
-            SporeActionUnionReader::ProxyCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ProxyCreate::NAME, item)
+            SporeActionUnionReader::MintProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintProxy::NAME, item)
             }
-            SporeActionUnionReader::ProxyTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, ProxyTransfer::NAME, item)
+            SporeActionUnionReader::TransferProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferProxy::NAME, item)
             }
-            SporeActionUnionReader::AgentCreate(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, AgentCreate::NAME, item)
+            SporeActionUnionReader::BurnProxy(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnProxy::NAME, item)
             }
-            SporeActionUnionReader::AgentTransfer(ref item) => {
-                write!(f, "{}::{}({})", Self::NAME, AgentTransfer::NAME, item)
+            SporeActionUnionReader::MintAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, MintAgent::NAME, item)
+            }
+            SporeActionUnionReader::TransferAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, TransferAgent::NAME, item)
+            }
+            SporeActionUnionReader::BurnAgent(ref item) => {
+                write!(f, "{}::{}({})", Self::NAME, BurnAgent::NAME, item)
             }
         }
     }
@@ -4264,188 +4868,222 @@ impl<'r> ::core::fmt::Display for SporeActionUnionReader<'r> {
 impl SporeActionUnion {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            SporeActionUnion::Mint(ref item) => write!(f, "{}", item),
-            SporeActionUnion::Transfer(ref item) => write!(f, "{}", item),
-            SporeActionUnion::Burn(ref item) => write!(f, "{}", item),
-            SporeActionUnion::ClusterCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnion::ClusterTransfer(ref item) => write!(f, "{}", item),
-            SporeActionUnion::ProxyCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnion::ProxyTransfer(ref item) => write!(f, "{}", item),
-            SporeActionUnion::AgentCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnion::AgentTransfer(ref item) => write!(f, "{}", item),
+            SporeActionUnion::MintSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnion::TransferSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnion::BurnSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnion::MintCluster(ref item) => write!(f, "{}", item),
+            SporeActionUnion::TransferCluster(ref item) => write!(f, "{}", item),
+            SporeActionUnion::MintProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnion::TransferProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnion::BurnProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnion::MintAgent(ref item) => write!(f, "{}", item),
+            SporeActionUnion::TransferAgent(ref item) => write!(f, "{}", item),
+            SporeActionUnion::BurnAgent(ref item) => write!(f, "{}", item),
         }
     }
 }
 impl<'r> SporeActionUnionReader<'r> {
     pub(crate) fn display_inner(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         match self {
-            SporeActionUnionReader::Mint(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::Transfer(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::Burn(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::ClusterCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::ClusterTransfer(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::ProxyCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::ProxyTransfer(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::AgentCreate(ref item) => write!(f, "{}", item),
-            SporeActionUnionReader::AgentTransfer(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::MintSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::TransferSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::BurnSpore(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::MintCluster(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::TransferCluster(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::MintProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::TransferProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::BurnProxy(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::MintAgent(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::TransferAgent(ref item) => write!(f, "{}", item),
+            SporeActionUnionReader::BurnAgent(ref item) => write!(f, "{}", item),
         }
     }
 }
-impl ::core::convert::From<Mint> for SporeActionUnion {
-    fn from(item: Mint) -> Self {
-        SporeActionUnion::Mint(item)
+impl ::core::convert::From<MintSpore> for SporeActionUnion {
+    fn from(item: MintSpore) -> Self {
+        SporeActionUnion::MintSpore(item)
     }
 }
-impl ::core::convert::From<Transfer> for SporeActionUnion {
-    fn from(item: Transfer) -> Self {
-        SporeActionUnion::Transfer(item)
+impl ::core::convert::From<TransferSpore> for SporeActionUnion {
+    fn from(item: TransferSpore) -> Self {
+        SporeActionUnion::TransferSpore(item)
     }
 }
-impl ::core::convert::From<Burn> for SporeActionUnion {
-    fn from(item: Burn) -> Self {
-        SporeActionUnion::Burn(item)
+impl ::core::convert::From<BurnSpore> for SporeActionUnion {
+    fn from(item: BurnSpore) -> Self {
+        SporeActionUnion::BurnSpore(item)
     }
 }
-impl ::core::convert::From<ClusterCreate> for SporeActionUnion {
-    fn from(item: ClusterCreate) -> Self {
-        SporeActionUnion::ClusterCreate(item)
+impl ::core::convert::From<MintCluster> for SporeActionUnion {
+    fn from(item: MintCluster) -> Self {
+        SporeActionUnion::MintCluster(item)
     }
 }
-impl ::core::convert::From<ClusterTransfer> for SporeActionUnion {
-    fn from(item: ClusterTransfer) -> Self {
-        SporeActionUnion::ClusterTransfer(item)
+impl ::core::convert::From<TransferCluster> for SporeActionUnion {
+    fn from(item: TransferCluster) -> Self {
+        SporeActionUnion::TransferCluster(item)
     }
 }
-impl ::core::convert::From<ProxyCreate> for SporeActionUnion {
-    fn from(item: ProxyCreate) -> Self {
-        SporeActionUnion::ProxyCreate(item)
+impl ::core::convert::From<MintProxy> for SporeActionUnion {
+    fn from(item: MintProxy) -> Self {
+        SporeActionUnion::MintProxy(item)
     }
 }
-impl ::core::convert::From<ProxyTransfer> for SporeActionUnion {
-    fn from(item: ProxyTransfer) -> Self {
-        SporeActionUnion::ProxyTransfer(item)
+impl ::core::convert::From<TransferProxy> for SporeActionUnion {
+    fn from(item: TransferProxy) -> Self {
+        SporeActionUnion::TransferProxy(item)
     }
 }
-impl ::core::convert::From<AgentCreate> for SporeActionUnion {
-    fn from(item: AgentCreate) -> Self {
-        SporeActionUnion::AgentCreate(item)
+impl ::core::convert::From<BurnProxy> for SporeActionUnion {
+    fn from(item: BurnProxy) -> Self {
+        SporeActionUnion::BurnProxy(item)
     }
 }
-impl ::core::convert::From<AgentTransfer> for SporeActionUnion {
-    fn from(item: AgentTransfer) -> Self {
-        SporeActionUnion::AgentTransfer(item)
+impl ::core::convert::From<MintAgent> for SporeActionUnion {
+    fn from(item: MintAgent) -> Self {
+        SporeActionUnion::MintAgent(item)
     }
 }
-impl<'r> ::core::convert::From<MintReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: MintReader<'r>) -> Self {
-        SporeActionUnionReader::Mint(item)
+impl ::core::convert::From<TransferAgent> for SporeActionUnion {
+    fn from(item: TransferAgent) -> Self {
+        SporeActionUnion::TransferAgent(item)
     }
 }
-impl<'r> ::core::convert::From<TransferReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: TransferReader<'r>) -> Self {
-        SporeActionUnionReader::Transfer(item)
+impl ::core::convert::From<BurnAgent> for SporeActionUnion {
+    fn from(item: BurnAgent) -> Self {
+        SporeActionUnion::BurnAgent(item)
     }
 }
-impl<'r> ::core::convert::From<BurnReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: BurnReader<'r>) -> Self {
-        SporeActionUnionReader::Burn(item)
+impl<'r> ::core::convert::From<MintSporeReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: MintSporeReader<'r>) -> Self {
+        SporeActionUnionReader::MintSpore(item)
     }
 }
-impl<'r> ::core::convert::From<ClusterCreateReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: ClusterCreateReader<'r>) -> Self {
-        SporeActionUnionReader::ClusterCreate(item)
+impl<'r> ::core::convert::From<TransferSporeReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: TransferSporeReader<'r>) -> Self {
+        SporeActionUnionReader::TransferSpore(item)
     }
 }
-impl<'r> ::core::convert::From<ClusterTransferReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: ClusterTransferReader<'r>) -> Self {
-        SporeActionUnionReader::ClusterTransfer(item)
+impl<'r> ::core::convert::From<BurnSporeReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: BurnSporeReader<'r>) -> Self {
+        SporeActionUnionReader::BurnSpore(item)
     }
 }
-impl<'r> ::core::convert::From<ProxyCreateReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: ProxyCreateReader<'r>) -> Self {
-        SporeActionUnionReader::ProxyCreate(item)
+impl<'r> ::core::convert::From<MintClusterReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: MintClusterReader<'r>) -> Self {
+        SporeActionUnionReader::MintCluster(item)
     }
 }
-impl<'r> ::core::convert::From<ProxyTransferReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: ProxyTransferReader<'r>) -> Self {
-        SporeActionUnionReader::ProxyTransfer(item)
+impl<'r> ::core::convert::From<TransferClusterReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: TransferClusterReader<'r>) -> Self {
+        SporeActionUnionReader::TransferCluster(item)
     }
 }
-impl<'r> ::core::convert::From<AgentCreateReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: AgentCreateReader<'r>) -> Self {
-        SporeActionUnionReader::AgentCreate(item)
+impl<'r> ::core::convert::From<MintProxyReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: MintProxyReader<'r>) -> Self {
+        SporeActionUnionReader::MintProxy(item)
     }
 }
-impl<'r> ::core::convert::From<AgentTransferReader<'r>> for SporeActionUnionReader<'r> {
-    fn from(item: AgentTransferReader<'r>) -> Self {
-        SporeActionUnionReader::AgentTransfer(item)
+impl<'r> ::core::convert::From<TransferProxyReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: TransferProxyReader<'r>) -> Self {
+        SporeActionUnionReader::TransferProxy(item)
+    }
+}
+impl<'r> ::core::convert::From<BurnProxyReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: BurnProxyReader<'r>) -> Self {
+        SporeActionUnionReader::BurnProxy(item)
+    }
+}
+impl<'r> ::core::convert::From<MintAgentReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: MintAgentReader<'r>) -> Self {
+        SporeActionUnionReader::MintAgent(item)
+    }
+}
+impl<'r> ::core::convert::From<TransferAgentReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: TransferAgentReader<'r>) -> Self {
+        SporeActionUnionReader::TransferAgent(item)
+    }
+}
+impl<'r> ::core::convert::From<BurnAgentReader<'r>> for SporeActionUnionReader<'r> {
+    fn from(item: BurnAgentReader<'r>) -> Self {
+        SporeActionUnionReader::BurnAgent(item)
     }
 }
 impl SporeActionUnion {
     pub const NAME: &'static str = "SporeActionUnion";
     pub fn as_bytes(&self) -> molecule::bytes::Bytes {
         match self {
-            SporeActionUnion::Mint(item) => item.as_bytes(),
-            SporeActionUnion::Transfer(item) => item.as_bytes(),
-            SporeActionUnion::Burn(item) => item.as_bytes(),
-            SporeActionUnion::ClusterCreate(item) => item.as_bytes(),
-            SporeActionUnion::ClusterTransfer(item) => item.as_bytes(),
-            SporeActionUnion::ProxyCreate(item) => item.as_bytes(),
-            SporeActionUnion::ProxyTransfer(item) => item.as_bytes(),
-            SporeActionUnion::AgentCreate(item) => item.as_bytes(),
-            SporeActionUnion::AgentTransfer(item) => item.as_bytes(),
+            SporeActionUnion::MintSpore(item) => item.as_bytes(),
+            SporeActionUnion::TransferSpore(item) => item.as_bytes(),
+            SporeActionUnion::BurnSpore(item) => item.as_bytes(),
+            SporeActionUnion::MintCluster(item) => item.as_bytes(),
+            SporeActionUnion::TransferCluster(item) => item.as_bytes(),
+            SporeActionUnion::MintProxy(item) => item.as_bytes(),
+            SporeActionUnion::TransferProxy(item) => item.as_bytes(),
+            SporeActionUnion::BurnProxy(item) => item.as_bytes(),
+            SporeActionUnion::MintAgent(item) => item.as_bytes(),
+            SporeActionUnion::TransferAgent(item) => item.as_bytes(),
+            SporeActionUnion::BurnAgent(item) => item.as_bytes(),
         }
     }
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            SporeActionUnion::Mint(item) => item.as_slice(),
-            SporeActionUnion::Transfer(item) => item.as_slice(),
-            SporeActionUnion::Burn(item) => item.as_slice(),
-            SporeActionUnion::ClusterCreate(item) => item.as_slice(),
-            SporeActionUnion::ClusterTransfer(item) => item.as_slice(),
-            SporeActionUnion::ProxyCreate(item) => item.as_slice(),
-            SporeActionUnion::ProxyTransfer(item) => item.as_slice(),
-            SporeActionUnion::AgentCreate(item) => item.as_slice(),
-            SporeActionUnion::AgentTransfer(item) => item.as_slice(),
+            SporeActionUnion::MintSpore(item) => item.as_slice(),
+            SporeActionUnion::TransferSpore(item) => item.as_slice(),
+            SporeActionUnion::BurnSpore(item) => item.as_slice(),
+            SporeActionUnion::MintCluster(item) => item.as_slice(),
+            SporeActionUnion::TransferCluster(item) => item.as_slice(),
+            SporeActionUnion::MintProxy(item) => item.as_slice(),
+            SporeActionUnion::TransferProxy(item) => item.as_slice(),
+            SporeActionUnion::BurnProxy(item) => item.as_slice(),
+            SporeActionUnion::MintAgent(item) => item.as_slice(),
+            SporeActionUnion::TransferAgent(item) => item.as_slice(),
+            SporeActionUnion::BurnAgent(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            SporeActionUnion::Mint(_) => 0,
-            SporeActionUnion::Transfer(_) => 1,
-            SporeActionUnion::Burn(_) => 2,
-            SporeActionUnion::ClusterCreate(_) => 3,
-            SporeActionUnion::ClusterTransfer(_) => 4,
-            SporeActionUnion::ProxyCreate(_) => 5,
-            SporeActionUnion::ProxyTransfer(_) => 6,
-            SporeActionUnion::AgentCreate(_) => 7,
-            SporeActionUnion::AgentTransfer(_) => 8,
+            SporeActionUnion::MintSpore(_) => 0,
+            SporeActionUnion::TransferSpore(_) => 1,
+            SporeActionUnion::BurnSpore(_) => 2,
+            SporeActionUnion::MintCluster(_) => 3,
+            SporeActionUnion::TransferCluster(_) => 4,
+            SporeActionUnion::MintProxy(_) => 5,
+            SporeActionUnion::TransferProxy(_) => 6,
+            SporeActionUnion::BurnProxy(_) => 7,
+            SporeActionUnion::MintAgent(_) => 8,
+            SporeActionUnion::TransferAgent(_) => 9,
+            SporeActionUnion::BurnAgent(_) => 10,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            SporeActionUnion::Mint(_) => "Mint",
-            SporeActionUnion::Transfer(_) => "Transfer",
-            SporeActionUnion::Burn(_) => "Burn",
-            SporeActionUnion::ClusterCreate(_) => "ClusterCreate",
-            SporeActionUnion::ClusterTransfer(_) => "ClusterTransfer",
-            SporeActionUnion::ProxyCreate(_) => "ProxyCreate",
-            SporeActionUnion::ProxyTransfer(_) => "ProxyTransfer",
-            SporeActionUnion::AgentCreate(_) => "AgentCreate",
-            SporeActionUnion::AgentTransfer(_) => "AgentTransfer",
+            SporeActionUnion::MintSpore(_) => "MintSpore",
+            SporeActionUnion::TransferSpore(_) => "TransferSpore",
+            SporeActionUnion::BurnSpore(_) => "BurnSpore",
+            SporeActionUnion::MintCluster(_) => "MintCluster",
+            SporeActionUnion::TransferCluster(_) => "TransferCluster",
+            SporeActionUnion::MintProxy(_) => "MintProxy",
+            SporeActionUnion::TransferProxy(_) => "TransferProxy",
+            SporeActionUnion::BurnProxy(_) => "BurnProxy",
+            SporeActionUnion::MintAgent(_) => "MintAgent",
+            SporeActionUnion::TransferAgent(_) => "TransferAgent",
+            SporeActionUnion::BurnAgent(_) => "BurnAgent",
         }
     }
     pub fn as_reader<'r>(&'r self) -> SporeActionUnionReader<'r> {
         match self {
-            SporeActionUnion::Mint(item) => item.as_reader().into(),
-            SporeActionUnion::Transfer(item) => item.as_reader().into(),
-            SporeActionUnion::Burn(item) => item.as_reader().into(),
-            SporeActionUnion::ClusterCreate(item) => item.as_reader().into(),
-            SporeActionUnion::ClusterTransfer(item) => item.as_reader().into(),
-            SporeActionUnion::ProxyCreate(item) => item.as_reader().into(),
-            SporeActionUnion::ProxyTransfer(item) => item.as_reader().into(),
-            SporeActionUnion::AgentCreate(item) => item.as_reader().into(),
-            SporeActionUnion::AgentTransfer(item) => item.as_reader().into(),
+            SporeActionUnion::MintSpore(item) => item.as_reader().into(),
+            SporeActionUnion::TransferSpore(item) => item.as_reader().into(),
+            SporeActionUnion::BurnSpore(item) => item.as_reader().into(),
+            SporeActionUnion::MintCluster(item) => item.as_reader().into(),
+            SporeActionUnion::TransferCluster(item) => item.as_reader().into(),
+            SporeActionUnion::MintProxy(item) => item.as_reader().into(),
+            SporeActionUnion::TransferProxy(item) => item.as_reader().into(),
+            SporeActionUnion::BurnProxy(item) => item.as_reader().into(),
+            SporeActionUnion::MintAgent(item) => item.as_reader().into(),
+            SporeActionUnion::TransferAgent(item) => item.as_reader().into(),
+            SporeActionUnion::BurnAgent(item) => item.as_reader().into(),
         }
     }
 }
@@ -4453,41 +5091,47 @@ impl<'r> SporeActionUnionReader<'r> {
     pub const NAME: &'r str = "SporeActionUnionReader";
     pub fn as_slice(&self) -> &'r [u8] {
         match self {
-            SporeActionUnionReader::Mint(item) => item.as_slice(),
-            SporeActionUnionReader::Transfer(item) => item.as_slice(),
-            SporeActionUnionReader::Burn(item) => item.as_slice(),
-            SporeActionUnionReader::ClusterCreate(item) => item.as_slice(),
-            SporeActionUnionReader::ClusterTransfer(item) => item.as_slice(),
-            SporeActionUnionReader::ProxyCreate(item) => item.as_slice(),
-            SporeActionUnionReader::ProxyTransfer(item) => item.as_slice(),
-            SporeActionUnionReader::AgentCreate(item) => item.as_slice(),
-            SporeActionUnionReader::AgentTransfer(item) => item.as_slice(),
+            SporeActionUnionReader::MintSpore(item) => item.as_slice(),
+            SporeActionUnionReader::TransferSpore(item) => item.as_slice(),
+            SporeActionUnionReader::BurnSpore(item) => item.as_slice(),
+            SporeActionUnionReader::MintCluster(item) => item.as_slice(),
+            SporeActionUnionReader::TransferCluster(item) => item.as_slice(),
+            SporeActionUnionReader::MintProxy(item) => item.as_slice(),
+            SporeActionUnionReader::TransferProxy(item) => item.as_slice(),
+            SporeActionUnionReader::BurnProxy(item) => item.as_slice(),
+            SporeActionUnionReader::MintAgent(item) => item.as_slice(),
+            SporeActionUnionReader::TransferAgent(item) => item.as_slice(),
+            SporeActionUnionReader::BurnAgent(item) => item.as_slice(),
         }
     }
     pub fn item_id(&self) -> molecule::Number {
         match self {
-            SporeActionUnionReader::Mint(_) => 0,
-            SporeActionUnionReader::Transfer(_) => 1,
-            SporeActionUnionReader::Burn(_) => 2,
-            SporeActionUnionReader::ClusterCreate(_) => 3,
-            SporeActionUnionReader::ClusterTransfer(_) => 4,
-            SporeActionUnionReader::ProxyCreate(_) => 5,
-            SporeActionUnionReader::ProxyTransfer(_) => 6,
-            SporeActionUnionReader::AgentCreate(_) => 7,
-            SporeActionUnionReader::AgentTransfer(_) => 8,
+            SporeActionUnionReader::MintSpore(_) => 0,
+            SporeActionUnionReader::TransferSpore(_) => 1,
+            SporeActionUnionReader::BurnSpore(_) => 2,
+            SporeActionUnionReader::MintCluster(_) => 3,
+            SporeActionUnionReader::TransferCluster(_) => 4,
+            SporeActionUnionReader::MintProxy(_) => 5,
+            SporeActionUnionReader::TransferProxy(_) => 6,
+            SporeActionUnionReader::BurnProxy(_) => 7,
+            SporeActionUnionReader::MintAgent(_) => 8,
+            SporeActionUnionReader::TransferAgent(_) => 9,
+            SporeActionUnionReader::BurnAgent(_) => 10,
         }
     }
     pub fn item_name(&self) -> &str {
         match self {
-            SporeActionUnionReader::Mint(_) => "Mint",
-            SporeActionUnionReader::Transfer(_) => "Transfer",
-            SporeActionUnionReader::Burn(_) => "Burn",
-            SporeActionUnionReader::ClusterCreate(_) => "ClusterCreate",
-            SporeActionUnionReader::ClusterTransfer(_) => "ClusterTransfer",
-            SporeActionUnionReader::ProxyCreate(_) => "ProxyCreate",
-            SporeActionUnionReader::ProxyTransfer(_) => "ProxyTransfer",
-            SporeActionUnionReader::AgentCreate(_) => "AgentCreate",
-            SporeActionUnionReader::AgentTransfer(_) => "AgentTransfer",
+            SporeActionUnionReader::MintSpore(_) => "MintSpore",
+            SporeActionUnionReader::TransferSpore(_) => "TransferSpore",
+            SporeActionUnionReader::BurnSpore(_) => "BurnSpore",
+            SporeActionUnionReader::MintCluster(_) => "MintCluster",
+            SporeActionUnionReader::TransferCluster(_) => "TransferCluster",
+            SporeActionUnionReader::MintProxy(_) => "MintProxy",
+            SporeActionUnionReader::TransferProxy(_) => "TransferProxy",
+            SporeActionUnionReader::BurnProxy(_) => "BurnProxy",
+            SporeActionUnionReader::MintAgent(_) => "MintAgent",
+            SporeActionUnionReader::TransferAgent(_) => "TransferAgent",
+            SporeActionUnionReader::BurnAgent(_) => "BurnAgent",
         }
     }
 }

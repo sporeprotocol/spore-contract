@@ -146,7 +146,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let action::SporeActionUnion::Mint(mint) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if mint.spore_id().as_slice() != spore_id
@@ -178,7 +178,7 @@ fn process_destruction() -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let action::SporeActionUnion::Burn(burn) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if burn.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
@@ -213,7 +213,7 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let action::SporeActionUnion::Transfer(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if transfer.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
