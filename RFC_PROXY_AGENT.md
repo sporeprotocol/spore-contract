@@ -1,24 +1,22 @@
-# Public Cluster verification problems
+# Public Cluster Verification Problems
 
-## Original Problems/Purpose
+## Original Problems
 
-In the original design of the Spore Protocol, if one wants to create a spore with a Cluster ID, then it must follow:
+In the original design of the Spore Protocol, the creation of a Spore with a Cluster ID required the following conditions:
 
 1. The referenced Cluster Cell must be found in the `CellDeps`.
 2. The referenced Cluster Cell must be found in the `Inputs`.
 3. The referenced Cluster Cell must be found in the `Outputs`.
 
-This is for verifying the ownership of the referenced Cluster Cell, avoiding vicious behavious happened to one’s private Cluster.
+This verification process ensures ownership of the referenced Cluster Cell, preventing malicious activities on one's private Cluster.
 
-While this guarantees unexpected minting will not happen to a certain Cluster, it also brings a problem for Clusters that support public minting — those using specific lock to achieve this. That is, there might be a  bottleneck when the Cluster contains many popular Spore cells and there's only one Cluster cell available to construct transactions.
+However, while this approach prevents unintended minting in a certain Cluster, it brings a problem for Clusters that support public minting — those using specific lock to achieve this. That is, there might be a bottleneck when the Cluster contains multiple popular Spore cells, and there is only one Cluster cell available to construct transactions.
 
-More specificly, if two person wants to mint different Spores into a Cluster named `Cluster A`, and they accidently send their mint transaction at the same time, then one of their transaction will be rejected because of the Cluster was consumed and recreated, the rejected one also needs to reconstruct its transaction in order to continue minting.
+More specifically, if two person attempt to mint different Spores into a Cluster, say Cluster A, and their minting transactions are accidentally sent at the same time, then one of them will be rejected because the target Cluster was consumed and recreated by the other. The rejected one must then be reconstructed to continue the minting process.
 
-## Solution details
+## Solution
 
-### Step1: Creating Cluster Proxy Cell
-
-In this stage, the **owner** needs to create a special cell, here we called it **Cluster Proxy Cell**
+At this stage, the **owner** needs to create a special cell, here we called it **Cluster Proxy Cell**
 
 A Cluster Proxy Cell’s structure is like below:
 
@@ -39,10 +37,13 @@ The Type args can be:
 
 Where `cluster_proxy_id = hash(Inputs[0], Output_Index)`
 
-Below is a transaction shows how to create a Cluster Proxy Cell, by putting a Cluster Cell to Inputs & Outputs:
+### Step1: Creating Cluster Proxy Cell
+
+Creating a Cluster Proxy Cell can be done in two ways. The first method is putting a Cluster Cell to Inputs & Outputs, as shown below:
+
+#### Method 1. Use Direct Input
 
 ```yaml
-# Method 1, direct input
 CellDeps:
     <CLUSTER_PROXY_TYPE_CELL>
     <CLUSTER_TYPE_CELL>
@@ -74,10 +75,11 @@ Outputs:
             <user_defined> # for example, acp
 ```
 
-Or you can use an **Input Cell** with same Lock to the Cluster Cell to achieve this
+The other method is using an Input Cell with same Lock to the Cluster Cell to create a Cluster Proxy Cell.
+
+#### Method 2. Use Lock Proxy
 
 ```yaml
-# Method 2, use lock proxy
 CellDeps:
     <CLUSTER_PROXY_TYPE_CELL>
     Cluster Cell A:
@@ -118,10 +120,11 @@ Cluster Agent Cell:
         <user_defined>
 ```
 
-Below shows the methods about how to create a Cluster Proxy Agent Cell:
+There are two ways to create a Cluster Proxy Agent Cell.
+
+#### Method 1. Direct Input
 
 ```yaml
-# Method 1, direct input
 CellDeps:
     <CLUSTER_PROXY_TYPE_CELL>
     <CLUSTER_PROXY_AGENT_TYPE_CELL>
@@ -160,10 +163,11 @@ Outputs:
      <...any other cells>
 ```
 
-Or you can make a payment to the Cluster Proxy owner to achieve the same:  (By transfering capacity to the same lock address with Cluster Proxy)
+# Method 2. Use Payment Appearance
+
+Alternatively, you can make a payment to the Cluster Proxy owner to create a Cluster Agent Cell. This method essentially involves transferring capacity to the same lock address with the Cluster Proxy.
 
 ```yaml
-# Method 2, with payment appearance
 CellDeps:
     <CLUSTER_AGENT_TYPE_CELL>
     Cluster Proxy Cell:
@@ -196,13 +200,13 @@ Outputs:
      <...any other cells>
 ```
 
-In here, payment cell is just an example showcase, it can be any unlockable cell and is not limited in just one cell.  
+Here, the payment cell serves merely as an example; it can be any unlockable cell and is not limited to only one cell.
 
 ### Step3: Mint Spore with Cluster Agent
 
-Holder of the Cluster Agent Cell can now mint Spore using this Cell. Valid methods are listed below.
+The Cluster Agent Cell holder can mint Spore using three valid methods listed below.
 
-1. **Mint with direct input**
+#### Method 1. Mint With Direct Input
 
 ```yaml
 CellDeps:
@@ -236,7 +240,7 @@ Outputs:
             <user_defined> # for example, acp
 ```
 
-2. **Mint with Lock Proxy**
+#### Method 2. Mint With Lock Proxy
 
 ```yaml
 CellDeps:
@@ -270,7 +274,7 @@ Outputs:
             <user-defined>
 ```
 
-3. **Mint with Signature** (not implemented)
+#### Method 3. Mint With Signature (Not Implemented)
 
 ```yaml
 CellDeps:
