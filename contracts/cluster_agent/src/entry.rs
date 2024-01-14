@@ -111,7 +111,7 @@ fn process_transfer() -> Result<(), Error> {
     let input_agent_data = load_cell_data(0, GroupInput)?;
     let output_agent_data = load_cell_data(0, GroupOutput)?;
 
-    if input_agent_data != output_agent_data {
+    if input_agent_data != output_agent_data || input_agent_data.is_empty() {
         return Err(Error::ImmutableAgentFieldModification);
     }
 

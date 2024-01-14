@@ -27,7 +27,7 @@ fn test_simple_mutant_mint() {
         spore_extension_type_id.to_vec().into(),
     );
 
-    let spore_out_cell = build_output_cell_with_type_id(&mut context, type_.clone());
+    let spore_out_cell = build_normal_output_cell_with_type(&mut context, type_.clone());
 
     let tx = TransactionBuilder::default()
         .input(input_cell)

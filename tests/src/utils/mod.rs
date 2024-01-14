@@ -86,11 +86,23 @@ pub fn build_cluster_input(
     )
 }
 
+pub fn build_agent_proxy_input(
+    context: &mut Context,
+    cell_data: &[u8],
+    type_: Option<Script>,
+) -> CellInput {
+    let input_ckb = cell_data.len() as u64;
+    internal::build_input(context, input_ckb, type_, Bytes::copy_from_slice(cell_data))
+}
+
 pub fn build_normal_input(context: &mut Context) -> CellInput {
     internal::build_input(context, UNIFORM_CAPACITY, None, Bytes::new())
 }
 
-pub fn build_output_cell_with_type_id(context: &mut Context, type_: Option<Script>) -> CellOutput {
+pub fn build_normal_output_cell_with_type(
+    context: &mut Context,
+    type_: Option<Script>,
+) -> CellOutput {
     internal::build_output(context, UNIFORM_CAPACITY, type_)
 }
 
@@ -142,7 +154,7 @@ pub fn build_single_spore_mint_tx(
         }
     };
     let spore_type = build_spore_type_script(context, &spore_out_point, type_id.to_vec().into());
-    let spore_output = build_output_cell_with_type_id(context, spore_type.clone());
+    let spore_output = build_normal_output_cell_with_type(context, spore_type.clone());
     let tx = TransactionBuilder::default()
         .input(input)
         .output(spore_output)

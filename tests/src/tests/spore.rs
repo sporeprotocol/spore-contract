@@ -73,8 +73,8 @@ fn test_multi_spores_mint() {
     let spore_type_2 =
         build_spore_type_script(&mut context, &spore_out_point, spore_id_2.to_vec().into());
 
-    let spore_out_cell_1 = build_output_cell_with_type_id(&mut context, spore_type_1.clone());
-    let spore_out_cell_2 = build_output_cell_with_type_id(&mut context, spore_type_2.clone());
+    let spore_out_cell_1 = build_normal_output_cell_with_type(&mut context, spore_type_1.clone());
+    let spore_out_cell_2 = build_normal_output_cell_with_type(&mut context, spore_type_2.clone());
     let output_cell = build_normal_output(&mut context);
 
     let tx = TransactionBuilder::default()
@@ -135,7 +135,7 @@ fn test_simple_spore_transfer() {
     );
     let spore_input = build_spore_input(&mut context, spore_type.clone(), serialized.clone());
 
-    let spore_output = build_output_cell_with_type_id(&mut context, spore_type.clone());
+    let spore_output = build_normal_output_cell_with_type(&mut context, spore_type.clone());
     let tx = TransactionBuilder::default()
         .input(spore_input)
         .output(spore_output)
