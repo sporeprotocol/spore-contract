@@ -1,3 +1,5 @@
+// note: impelemtation refers to https://github.com/hyperium/mime
+
 use core::ops::Range;
 
 use alloc::ffi::CString;
