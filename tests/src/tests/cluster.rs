@@ -6,36 +6,51 @@ use crate::utils::co_build::*;
 use crate::utils::*;
 use crate::MAX_CYCLES;
 
-#[test]
-fn test_simple_cluster_mint() {
-    let mut context = Context::default();
-    let input_cell = build_normal_input(&mut context);
+mod simple_cluster_mint {
+    use super::*;
 
-    let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
-    let cluster_type_id = build_type_id(&input_cell, 0);
-    let type_ = build_spore_type_script(
-        &mut context,
-        &cluster_out_point,
-        cluster_type_id.to_vec().into(),
-    );
-    let cluster_out_cell = build_normal_output_cell_with_type(&mut context, type_.clone());
+    fn make_simple_cluster_mint(cluster_out_index: usize) {
+        let mut context = Context::default();
+        let input_cell = build_normal_input(&mut context);
 
-    let tx = TransactionBuilder::default()
-        .input(input_cell)
-        .output(cluster_out_cell)
-        .output_data(cluster.as_slice().pack())
-        .cell_dep(cluster_script_dep)
-        .build();
+        let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
+        let (cluster_out_point, cluster_script_dep) =
+            build_spore_materials(&mut context, "cluster");
+        let cluster_type_id = build_type_id(&input_cell, cluster_out_index);
+        let type_ = build_spore_type_script(
+            &mut context,
+            &cluster_out_point,
+            cluster_type_id.to_vec().into(),
+        );
+        let cluster_out_cell = build_normal_output_cell_with_type(&mut context, type_.clone());
 
-    let action = build_mint_cluster_action(&mut context, cluster_type_id, cluster.as_slice());
-    let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
+        let tx = TransactionBuilder::default()
+            .input(input_cell)
+            .output(cluster_out_cell)
+            .output_data(cluster.as_slice().pack())
+            .cell_dep(cluster_script_dep)
+            .build();
 
-    let tx = context.complete_tx(tx);
+        let action = build_mint_cluster_action(&mut context, cluster_type_id, cluster.as_slice());
+        let tx = complete_co_build_message_with_actions(tx, &[(type_, action)]);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("test simple spore mint");
+        let tx = context.complete_tx(tx);
+
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("test simple spore mint");
+    }
+
+    #[test]
+    fn test_simple_cluster_mint() {
+        make_simple_cluster_mint(0);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_simple_cluster_mint_failed_with_wrong_out_index() {
+        make_simple_cluster_mint(1);
+    }
 }
 
 #[cfg(test)]

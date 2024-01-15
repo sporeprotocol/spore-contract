@@ -69,6 +69,7 @@ pub fn build_spore_input(
         input_ckb,
         spore_type,
         Bytes::copy_from_slice(spore_data.as_slice()),
+        Default::default(),
     )
 }
 
@@ -83,6 +84,7 @@ pub fn build_cluster_input(
         input_ckb,
         type_,
         Bytes::copy_from_slice(cluster_data.as_slice()),
+        Default::default(),
     )
 }
 
@@ -92,30 +94,52 @@ pub fn build_agent_proxy_input(
     type_: Option<Script>,
 ) -> CellInput {
     let input_ckb = cell_data.len() as u64;
-    internal::build_input(context, input_ckb, type_, Bytes::copy_from_slice(cell_data))
+    internal::build_input(
+        context,
+        input_ckb,
+        type_,
+        Bytes::copy_from_slice(cell_data),
+        Default::default(),
+    )
 }
 
 pub fn build_normal_input(context: &mut Context) -> CellInput {
-    internal::build_input(context, UNIFORM_CAPACITY, None, Bytes::new())
+    internal::build_input(
+        context,
+        UNIFORM_CAPACITY,
+        None,
+        Bytes::new(),
+        Default::default(),
+    )
 }
 
 pub fn build_normal_output_cell_with_type(
     context: &mut Context,
     type_: Option<Script>,
 ) -> CellOutput {
-    internal::build_output(context, UNIFORM_CAPACITY, type_)
+    internal::build_output(context, UNIFORM_CAPACITY, type_, Default::default())
 }
 
 pub fn build_normal_output(context: &mut Context) -> CellOutput {
-    internal::build_output(context, UNIFORM_CAPACITY, None)
+    internal::build_output(context, UNIFORM_CAPACITY, None, Default::default())
 }
 
 pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<Script>) -> CellDep {
+    build_normal_cell_dep_with_lock_args(context, data, type_, Default::default())
+}
+
+pub fn build_normal_cell_dep_with_lock_args(
+    context: &mut Context,
+    data: &[u8],
+    type_: Option<Script>,
+    lock_args: &[u8],
+) -> CellDep {
     let outpoint = internal::build_outpoint(
         context,
         data.len() as u64,
         type_,
         Bytes::copy_from_slice(data),
+        lock_args.to_vec().into(),
     );
     CellDep::new_builder().out_point(outpoint).build()
 }
@@ -197,7 +221,7 @@ pub fn build_single_spore_mint_in_cluster_tx(
     let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
 
     // build lock script
-    let lock_script = internal::build_always_success_script(context);
+    let lock_script = internal::build_always_success_script(context, Default::default());
     let lock_script_dep = CellDep::new_builder()
         .out_point(always_success_out_point)
         .build();

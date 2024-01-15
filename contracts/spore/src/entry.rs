@@ -26,8 +26,8 @@ use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
-    let spore_data =
-        SporeData::from_compatible_slice(raw_data.as_slice()).map_err(|_| Error::InvalidNFTData)?;
+    let spore_data = SporeData::from_compatible_slice(raw_data.as_slice())
+        .map_err(|_| Error::InvalidSporeData)?;
     Ok(spore_data)
 }
 
@@ -47,17 +47,19 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
     // verify NFT ID
     let Some(spore_id) = verify_type_id(index) else {
-        return Err(Error::InvalidNFTID);
+        return Err(Error::InvalidSporeID);
     };
 
     let raw_content_type = spore_data.content_type();
     let content_type = raw_content_type.unpack();
 
-    let mime = MIME::parse(content_type)?; // content_type validation
-                                           // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
-                                           //
-                                           // The Multipart Content-Type is used to represent a document that is comprised of multiple
-                                           // parts, each of which may have its own individual MIME type
+    // content_type validation
+    let mime = MIME::parse(content_type)?;
+
+    // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
+    //
+    // The Multipart Content-Type is used to represent a document that is comprised of multiple
+    // parts, each of which may have its own individual MIME type
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
         // The Content-Type field for multipart entities requires one parameter, "boundary", which
@@ -69,7 +71,8 @@ fn process_creation(index: usize) -> Result<(), Error> {
         kmp::kmp_find(
             format!(
                 "--{}",
-                alloc::str::from_utf8(&content_type[boundary_range]).or(Err(Error::Encoding))?
+                alloc::str::from_utf8(&content_type[boundary_range])
+                    .or(Err(Error::BoundaryEncoding))?
             )
             .as_bytes(),
             content_arr,

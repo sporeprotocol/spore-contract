@@ -119,26 +119,11 @@ impl MIME {
         for (param_range, value_range) in self.params.iter() {
             check_range_validate(content_type, param_range)?;
             if content_type[param_range.clone()] == param.as_bytes()[..] {
+                check_range_validate(content_type, value_range)?;
                 return Ok(Some(value_range.clone()));
             }
         }
         Ok(None)
-    }
-
-    pub fn verify_param(
-        &self,
-        content_type: &[u8],
-        param: &str,
-        value: &[u8],
-    ) -> Result<bool, Error> {
-        for (param_range, value_range) in self.params.iter() {
-            check_range_validate(content_type, param_range)?;
-            if content_type[param_range.clone()] == param.as_bytes()[..] {
-                check_range_validate(content_type, value_range)?;
-                return Ok(content_type[value_range.clone()] == value[..]);
-            }
-        }
-        Ok(false)
     }
 }
 
