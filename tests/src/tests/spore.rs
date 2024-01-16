@@ -98,7 +98,7 @@ fn test_multi_spores_mint() {
     let serialized =
         build_serialized_spore_data("Hello Spore!".as_bytes().to_vec(), "plain/text", None);
 
-    let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
+    let (spore_out_point, spore_script_dep) = build_spore_contract_materials(&mut context, "spore");
 
     let input_cell_1 = build_normal_input(&mut context);
     let input_cell_2 = build_normal_input(&mut context);
@@ -197,7 +197,8 @@ mod simple_spore_transfer {
 
     fn make_simple_spore_transfer(new_content: Vec<u8>, new_out_index: usize) {
         let mut context = Context::default();
-        let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
+        let (spore_out_point, spore_script_dep) =
+            build_spore_contract_materials(&mut context, "spore");
         let normal_input = &build_normal_input(&mut context);
 
         // build spore cell in Input
@@ -251,26 +252,17 @@ mod simple_spore_transfer {
     }
 }
 
-mod spore_mint_with_lock_proxy {
-    use ckb_testtool::ckb_hash::blake2b_256;
-
+mod spore_mint_from_cluster_lock_proxy {
     use super::*;
 
-    fn make_spore_mint_with_lock_proxy(append_cluster_dep: bool, lock_args: &[u8]) {
+    fn make_spore_mint_from_cluster_lock_proxy(append_cluster_dep: bool, lock_args: &[u8]) {
         let mut context = Context::default();
-        let (cluster_out_point, _) = build_spore_materials(&mut context, "cluster");
+        let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
 
         // build cluster celldep
         let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-        let cluster_id = blake2b_256("12345678");
-        let cluster_type =
-            build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
-        let cluster_dep = build_normal_cell_dep_with_lock_args(
-            &mut context,
-            cluster.as_slice(),
-            cluster_type,
-            lock_args,
-        );
+        let (cluster_id, _, _, _, cluster_dep) =
+            build_cluster_materials(&mut context, &cluster_out_point, cluster, 0, lock_args);
 
         // build spore mint from cluster tx
         let mut tx = build_single_spore_mint_tx(
@@ -287,24 +279,215 @@ mod spore_mint_with_lock_proxy {
 
         context
             .verify_tx(&tx, MAX_CYCLES)
-            .expect("test spore mint with lock proxy");
+            .expect("test spore mint from lock proxy");
     }
 
     #[test]
-    fn test_spore_mint_with_lock_proxy() {
-        make_spore_mint_with_lock_proxy(true, &[]);
-    }
-
-    #[should_panic]
-    #[test]
-    fn test_spore_mint_with_lock_proxy_failed_without_cluster() {
-        make_spore_mint_with_lock_proxy(false, &[]);
+    fn test_spore_mint_from_cluster_lock_proxy() {
+        make_spore_mint_from_cluster_lock_proxy(true, &[]);
     }
 
     #[should_panic]
     #[test]
-    fn test_spore_mint_with_lock_proxy_failed_with_wrong_cluster_id() {
-        make_spore_mint_with_lock_proxy(true, &[1]);
+    fn test_spore_mint_from_cluster_lock_proxy_failed_without_cluster() {
+        make_spore_mint_from_cluster_lock_proxy(false, &[]);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_cluster_lock_proxy_failed_with_wrong_cluster() {
+        make_spore_mint_from_cluster_lock_proxy(true, &[1]);
+    }
+}
+
+mod spore_mint_from_cluster_transfer {
+    use super::*;
+
+    fn make_spore_mint_from_cluster_transfer(add_cluster_action: bool, add_cluster_dep: bool) {
+        let mut context = Context::default();
+        let (cluster_out_point, cluster_contract_dep) =
+            build_spore_contract_materials(&mut context, "cluster");
+
+        // build cluster materials
+        let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
+        let (cluster_id, cluster_type, cluster_input, cluster_output, cluster_dep) =
+            build_cluster_materials(&mut context, &cluster_out_point, cluster.clone(), 0, &[]);
+
+        // build spore mint from cluster transfer tx
+        let action = co_build::build_transfer_cluster_action(&mut context, cluster_id);
+        let cluster_action = if add_cluster_action {
+            vec![(cluster_type, action)]
+        } else {
+            vec![]
+        };
+        let mut tx = build_single_spore_mint_tx_with_extra_action(
+            &mut context,
+            "Hello Spore!".as_bytes().to_vec(),
+            "plain/text",
+            None,
+            Some(cluster_id),
+            cluster_action,
+        );
+        tx = tx
+            .as_advanced_builder()
+            .input(cluster_input)
+            .output(cluster_output)
+            .output_data(cluster.as_bytes().pack())
+            .cell_dep(cluster_contract_dep)
+            .build();
+        if add_cluster_dep {
+            tx = tx.as_advanced_builder().cell_dep(cluster_dep).build();
+        }
+        tx = context.complete_tx(tx);
+
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("test spore mint from cluster transfer");
+    }
+
+    #[test]
+    fn test_spore_mint_from_cluster_transfer() {
+        make_spore_mint_from_cluster_transfer(true, true);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_cluster_transfer_failed_with_no_cluster_action() {
+        make_spore_mint_from_cluster_transfer(false, true);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_cluster_transfer_failed_with_no_cluster_dep() {
+        make_spore_mint_from_cluster_transfer(true, false);
+    }
+}
+
+mod spore_mint_from_agent_lock_proxy {
+    use super::*;
+    use ckb_testtool::ckb_hash::blake2b_256;
+
+    fn make_spore_mint_from_agent_lock_proxy(add_cluster_dep: bool) {
+        let mut context = Context::default();
+        let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
+        let (agent_out_point, _) = build_spore_contract_materials(&mut context, "cluster_agent");
+
+        // build cluster materials
+        let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
+        let (cluster_id, _, _, _, cluster_dep) =
+            build_cluster_materials(&mut context, &cluster_out_point, cluster.clone(), 0, &[]);
+
+        // build cluster agent
+        let proxy_type_hash = blake2b_256("12345678");
+        let (_, _, _, agent_dep) = build_agent_materials(
+            &mut context,
+            &agent_out_point,
+            &cluster_id,
+            &proxy_type_hash,
+        );
+
+        // build spore mint from cluster transfer tx
+        let mut tx = build_single_spore_mint_tx(
+            &mut context,
+            "Hello Spore!".as_bytes().to_vec(),
+            "plain/text",
+            None,
+            Some(cluster_id),
+        );
+        tx = tx.as_advanced_builder().cell_dep(agent_dep).build();
+        if add_cluster_dep {
+            tx = tx.as_advanced_builder().cell_dep(cluster_dep).build();
+        }
+        tx = context.complete_tx(tx);
+
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("test spore mint from cluster transfer");
+    }
+
+    #[test]
+    fn test_spore_mint_from_agent_lock_proxy() {
+        make_spore_mint_from_agent_lock_proxy(true);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_agent_lock_proxy_failed_with_no_cluster_dep() {
+        make_spore_mint_from_agent_lock_proxy(false);
+    }
+}
+
+mod spore_mint_from_agent_transfer {
+    use super::*;
+    use ckb_testtool::ckb_hash::blake2b_256;
+
+    fn make_spore_mint_from_agent_transfer(add_cluster_dep: bool, add_agent_action: bool) {
+        let mut context = Context::default();
+        let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
+        let (agent_out_point, agent_script_dep) =
+            build_spore_contract_materials(&mut context, "cluster_agent");
+
+        // build cluster materials
+        let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
+        let (cluster_id, _, _, _, cluster_dep) =
+            build_cluster_materials(&mut context, &cluster_out_point, cluster.clone(), 0, &[]);
+
+        // build cluster agent
+        let proxy_type_hash = blake2b_256("12345678");
+        let (agent_type, agent_input, agent_output, _) = build_agent_materials(
+            &mut context,
+            &agent_out_point,
+            &cluster_id,
+            &proxy_type_hash,
+        );
+
+        // build spore mint from cluster transfer tx
+        let action = co_build::build_transfer_agent_action(&mut context, cluster_id);
+        let agent_action = if add_agent_action {
+            vec![(agent_type, action)]
+        } else {
+            vec![]
+        };
+        let mut tx = build_single_spore_mint_tx_with_extra_action(
+            &mut context,
+            "Hello Spore!".as_bytes().to_vec(),
+            "plain/text",
+            None,
+            Some(cluster_id),
+            agent_action,
+        );
+        tx = tx
+            .as_advanced_builder()
+            .input(agent_input)
+            .output(agent_output)
+            .output_data(proxy_type_hash.to_vec().pack())
+            .cell_dep(agent_script_dep)
+            .build();
+        if add_cluster_dep {
+            tx = tx.as_advanced_builder().cell_dep(cluster_dep).build();
+        }
+        tx = context.complete_tx(tx);
+
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("test spore mint from cluster transfer");
+    }
+
+    #[test]
+    fn test_spore_mint_from_agent_transfer() {
+        make_spore_mint_from_agent_transfer(true, true);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_agent_transfer_failed_with_no_cluster_dep() {
+        make_spore_mint_from_agent_transfer(false, true);
+    }
+
+    #[should_panic]
+    #[test]
+    fn test_spore_mint_from_agent_transfer_failed_with_no_agent_action() {
+        make_spore_mint_from_agent_transfer(true, false);
     }
 }
 
@@ -315,7 +498,8 @@ mod simple_spore_destroy {
         let mut context = Context::default();
         let serialized =
             build_serialized_spore_data("Hello Spore!".as_bytes().to_vec(), content_type, None);
-        let (spore_out_point, spore_script_dep) = build_spore_materials(&mut context, "spore");
+        let (spore_out_point, spore_script_dep) =
+            build_spore_contract_materials(&mut context, "spore");
 
         let normal_input = build_normal_input(&mut context);
         let spore_type_id = build_type_id(&normal_input, 0);

@@ -15,7 +15,7 @@ mod simple_cluster_mint {
 
         let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
         let (cluster_out_point, cluster_script_dep) =
-            build_spore_materials(&mut context, "cluster");
+            build_spore_contract_materials(&mut context, "cluster");
         let cluster_type_id = build_type_id(&input_cell, cluster_out_index);
         let type_ = build_spore_type_script(
             &mut context,
@@ -61,7 +61,7 @@ mod simple_cluster_transfer {
         let mut context = Context::default();
         let normal_cell = build_normal_input(&mut context);
         let (cluster_out_point, cluster_script_dep) =
-            build_spore_materials(&mut context, "cluster");
+            build_spore_contract_materials(&mut context, "cluster");
 
         // cluster in Input
         let old_cluster_data =
@@ -128,7 +128,8 @@ fn test_simple_cluster_destroy_failed() {
 
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
 
-    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
+    let (cluster_out_point, cluster_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&build_normal_input(&mut context), 0);
     let type_ =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
@@ -176,14 +177,16 @@ fn test_cluster_agent_mint() {
 
     // cluster
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
+    let (cluster_out_point, cluster_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&input_cell, 0);
     let cluster_type =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
-    let (proxy_out_point, proxy_script_dep) = build_spore_materials(&mut context, "cluster_proxy");
+    let (proxy_out_point, proxy_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster_proxy");
     let proxy_id = build_type_id(&input_cell, 1);
     let proxy_type_arg = vec![proxy_id.to_vec(), vec![1]].concat();
     let proxy_type = build_spore_type_script(
@@ -195,7 +198,8 @@ fn test_cluster_agent_mint() {
     let proxy_type_hash = proxy_type.unwrap_or_default().calc_script_hash();
 
     // agent
-    let (agent_out_point, agent_script_dep) = build_spore_materials(&mut context, "cluster_agent");
+    let (agent_out_point, agent_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster_agent");
     let agent_type =
         build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
     let agent_out_cell = build_normal_output_cell_with_type(&mut context, agent_type.clone())
@@ -233,7 +237,7 @@ mod cluster_agent_transfer {
         let mut context = Context::default();
         let input_cell = build_normal_input(&mut context);
         let (agent_out_point, agent_script_dep) =
-            build_spore_materials(&mut context, "cluster_agent");
+            build_spore_contract_materials(&mut context, "cluster_agent");
 
         // agent in Input
         let old_cluster_id = build_type_id(&input_cell, 0);
@@ -297,7 +301,8 @@ mod cluster_agent_transfer {
 fn test_cluster_agent_burn() {
     let mut context = Context::default();
     let input_cell = build_normal_input(&mut context);
-    let (agent_out_point, agent_script_dep) = build_spore_materials(&mut context, "cluster_agent");
+    let (agent_out_point, agent_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster_agent");
 
     // agent in Input
     let cluster_id = build_type_id(&input_cell, 0);
@@ -331,14 +336,16 @@ fn test_cluster_proxy_mint() {
 
     // cluster
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
-    let (cluster_out_point, cluster_script_dep) = build_spore_materials(&mut context, "cluster");
+    let (cluster_out_point, cluster_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&input_cell, 1);
     let cluster_type =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
-    let (proxy_out_point, proxy_script_dep) = build_spore_materials(&mut context, "cluster_proxy");
+    let (proxy_out_point, proxy_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster_proxy");
     let proxy_id = build_type_id(&input_cell, 0);
     let proxy_type =
         build_spore_type_script(&mut context, &proxy_out_point, proxy_id.to_vec().into());
@@ -368,7 +375,7 @@ mod cluster_proxy_transfer {
         let mut context = Context::default();
         let input_cell = build_normal_input(&mut context);
         let (proxy_out_point, proxy_script_dep) =
-            build_spore_materials(&mut context, "cluster_proxy");
+            build_spore_contract_materials(&mut context, "cluster_proxy");
 
         // proxy in Input
         let old_cluster_id = blake2b_256("12345678");
@@ -427,7 +434,8 @@ mod cluster_proxy_transfer {
 fn test_cluster_proxy_burn() {
     let mut context = Context::default();
     let input_cell = build_normal_input(&mut context);
-    let (proxy_out_point, proxy_script_dep) = build_spore_materials(&mut context, "cluster_proxy");
+    let (proxy_out_point, proxy_script_dep) =
+        build_spore_contract_materials(&mut context, "cluster_proxy");
 
     // proxy in Input
     let cluster_id = blake2b_256("12345678");

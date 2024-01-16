@@ -86,11 +86,12 @@ pub fn find_position_by_type_args(
 ) -> Option<usize> {
     QueryIter::new(load_cell_type, source).position(|script| {
         if let Some(script) = script {
-            script.args().raw_data().as_ref() == args
-                && match &filter_fn {
-                    None => true,
-                    Some(ref filter_fn) => filter_fn(&script.code_hash().unpack()),
+            if let Some(filter) = filter_fn {
+                if !filter(&script.code_hash().unpack()) {
+                    return false;
                 }
+            }
+            script.args().raw_data().as_ref() == args
         } else {
             false
         }

@@ -8,9 +8,9 @@ use crate::MAX_CYCLES;
 fn test_simple_mutant_mint() {
     let mut context = Context::default();
 
-    let (_, lua_lib_dep) = build_spore_materials(&mut context, "libckblua.so");
+    let (_, lua_lib_dep) = build_spore_contract_materials(&mut context, "libckblua.so");
     let (spore_extension_out_point, spore_extension_script_dep) =
-        build_spore_materials(&mut context, "spore_extension_lua");
+        build_spore_contract_materials(&mut context, "spore_extension_lua");
 
     let lua_code = String::from("print('hello world')");
     let input_cell = build_normal_input(&mut context);

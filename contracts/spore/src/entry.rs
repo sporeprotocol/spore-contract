@@ -7,7 +7,7 @@ use core::result::Result;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash};
+use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash, load_script};
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -23,6 +23,20 @@ use spore_utils::{
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
+
+enum Operation {
+    Mint,
+    Transfer,
+    Burn,
+}
+
+fn check_cluster_code_hash(code_hash: &[u8; 32]) -> bool {
+    CLUSTER_CODE_HASHES.contains(code_hash)
+}
+
+fn check_agent_code_hash(code_hash: &[u8; 32]) -> bool {
+    CLUSTER_AGENT_CODE_HASHES.contains(code_hash)
+}
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -45,16 +59,15 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidContentType);
     }
 
-    // verify NFT ID
+    // verify Spore ID
     let Some(spore_id) = verify_type_id(index) else {
         return Err(Error::InvalidSporeID);
     };
 
-    let raw_content_type = spore_data.content_type();
-    let content_type = raw_content_type.unpack();
-
     // content_type validation
-    let mime = MIME::parse(content_type)?;
+    let content_type = spore_data.content_type().raw_data();
+    let mime = MIME::parse(&content_type)?;
+    verify_extension(&mime, Operation::Mint, vec![index as u8])?;
 
     // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
     //
@@ -66,7 +79,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // is used to specify the encapsulation boundary. See Appendix C of rfc1521 for a complex
         // multipart example.
         let boundary_range = mime
-            .get_param(content_type, "boundary")?
+            .get_param(&content_type, "boundary")?
             .ok_or(Error::InvalidContentType)?;
         kmp::kmp_find(
             format!(
@@ -82,22 +95,22 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
     // check in Cluster mode
     if spore_data.cluster_id().to_opt().is_some() {
-        // check if cluster cell in deps
+        // check if cluster cell is in deps
         let cluster_id = spore_data
             .cluster_id()
             .to_opt()
             .unwrap_or_default()
             .raw_data();
-        let cluster_fn: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_CODE_HASHES.contains(x) };
-        let agent_fn: fn(&[u8; 32]) -> bool = |x| -> bool { CLUSTER_AGENT_CODE_HASHES.contains(x) };
-        let cell_dep_index = find_position_by_type_args(&cluster_id, CellDep, Some(cluster_fn))
-            .ok_or(Error::ClusterCellNotInDep)?;
+        let cell_dep_index =
+            find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
+                .ok_or(Error::ClusterCellNotInDep)?;
 
+        // the cluster contract guarantees the cluster data will always be correct once created
         let raw_cluster_data = load_cell_data(cell_dep_index, CellDep)?;
-        let cluster_data =
-            ClusterData::from_compatible_slice(&raw_cluster_data).unwrap_or_default(); // the cluster contract guarantees the cluster data will always be correct once created
-        if cluster_data.mutant_id().is_some() {
-            let mutant_id = cluster_data.mutant_id().to_opt().unwrap_or_default();
+        let cluster_data = ClusterData::new_unchecked(raw_cluster_data.into());
+
+        // check in Mutant mode
+        if let Some(mutant_id) = cluster_data.mutant_id().to_opt() {
             let mutant_verify_passed = mime
                 .mutants
                 .iter()
@@ -108,24 +121,25 @@ fn process_creation(index: usize) -> Result<(), Error> {
             }
         }
 
-        // Condition 1: Check if cluster exist in Inputs & Outputs
+        // Condition 1: Check if cluster exists in Inputs & Outputs
         let cluster_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(cluster_fn)).is_some();
+            find_position_by_type_args(&cluster_id, Input, Some(check_cluster_code_hash)).is_some();
         let cluster_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(cluster_fn)).is_some();
+            find_position_by_type_args(&cluster_id, Output, Some(check_cluster_code_hash))
+                .is_some();
 
-        // Condition 2: Check if cluster agent in Inputs & Outputs
+        // Condition 2: Check if cluster agent exists in Inputs & Outputs
         let agent_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(agent_fn)).is_some();
+            find_position_by_type_args(&cluster_id, Input, Some(check_agent_code_hash)).is_some();
         let agent_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(agent_fn)).is_some();
+            find_position_by_type_args(&cluster_id, Output, Some(check_agent_code_hash)).is_some();
 
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
-            // Condition 3: Use cluster agent by lock proxy
+            // Condition 3: Use cluster agent in Lock Proxy mode
             if let Some(agent_index) =
-                find_position_by_type_args(&cluster_id, CellDep, Some(agent_fn))
+                find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
             {
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
                 find_position_by_lock_hash(&agent_lock_hash, Output)
@@ -143,11 +157,6 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
     }
 
-    // check in Mutant mode
-    if !mime.mutants.is_empty() {
-        verify_extension(&mime, 0, vec![index as u8])?;
-    }
-
     // check co-build action @lyk
     let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
@@ -163,21 +172,19 @@ fn process_creation(index: usize) -> Result<(), Error> {
 }
 
 fn process_destruction() -> Result<(), Error> {
-    //destruction
     let spore_data = load_spore_data(0, GroupInput)?;
+    let content_type = spore_data.content_type().raw_data();
 
-    let content_type_bytes = spore_data.content_type();
-    let content_type = content_type_bytes.unpack();
-    let mime = MIME::parse(content_type)?;
+    let mime = MIME::parse(&content_type)?;
     if mime.immortal {
         // true destroy a immortal nft
         return Err(Error::DestroyImmortalNFT);
     }
 
     if !mime.mutants.is_empty() {
-        let type_script = load_cell_type(0, GroupInput)?.unwrap_or_default();
-        let index = find_position_by_type(&type_script, Input).ok_or(Error::IndexOutOfBound)?;
-        verify_extension(&mime, 2, vec![index as u8])?;
+        let spore_type = load_script()?;
+        let index = find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
+        verify_extension(&mime, Operation::Burn, vec![index as u8])?;
     }
 
     // check co-build action @lyk
@@ -193,8 +200,7 @@ fn process_destruction() -> Result<(), Error> {
 }
 
 fn process_transfer() -> Result<(), Error> {
-    // found same NFT in output, this is a transfer
-    // check no field was modified
+    // found same NFT in output, this is a transfer, check no field was modified
     let input_data = load_spore_data(0, GroupInput)?;
     let output_data = load_spore_data(0, GroupOutput)?;
 
@@ -202,17 +208,20 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ModifySporePermanentField);
     }
 
-    let content_type_bytes = input_data.content_type();
-    let content_type = content_type_bytes.unpack();
-    let mime = MIME::parse(content_type)?;
+    let content_type = input_data.content_type().raw_data();
+    let mime = MIME::parse(&content_type)?;
 
     if !mime.mutants.is_empty() {
-        let type_script = load_cell_type(0, GroupInput)?.unwrap_or_default();
+        let spore_type = load_script()?;
         let input_index =
-            find_position_by_type(&type_script, Input).ok_or(Error::IndexOutOfBound)?;
+            find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
         let output_index =
-            find_position_by_type(&type_script, Output).ok_or(Error::IndexOutOfBound)?;
-        verify_extension(&mime, 1, vec![input_index as u8, output_index as u8])?;
+            find_position_by_type(&spore_type, Output).ok_or(Error::IndexOutOfBound)?;
+        verify_extension(
+            &mime,
+            Operation::Transfer,
+            vec![input_index as u8, output_index as u8],
+        )?;
     }
 
     // check co-build action @lyk
@@ -228,50 +237,54 @@ fn process_transfer() -> Result<(), Error> {
     Ok(())
 }
 
-fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> {
+fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
     let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
-    for mutant in mime.mutants.iter() {
-        let ext_pos = QueryIter::new(load_cell_type, CellDep).position(|script| match script {
-            Some(script) => {
-                if crate::hash::MUTANT_CODE_HASHES.contains(&script.code_hash().unpack()) {
-                    return mutant[..] == script.args().raw_data()[..32];
+    for mutant_id in mime.mutants.iter() {
+        let mutant_index =
+            QueryIter::new(load_cell_type, CellDep).position(|script| match script {
+                Some(script) => {
+                    if crate::hash::MUTANT_CODE_HASHES.contains(&script.code_hash().unpack()) {
+                        return mutant_id[..] == script.args().raw_data()[..32];
+                    }
+                    false
                 }
-                false
-            }
-            None => false,
-        });
-        match ext_pos {
+                None => false,
+            });
+        match mutant_index {
             None => return Err(Error::ExtensionCellNotInDep),
-            Some(ext_pos) => {
-                // creation operator
-                if op == 0 {
-                    check_payment(ext_pos, &mut payment_map)?;
+            Some(mutant_index) => {
+                // mint spore should pay if payment set
+                if let Operation::Mint = op {
+                    check_payment(mutant_index, &mut payment_map)?;
                 }
 
-                let ext_pos = ext_pos as u8;
-                let lua_programe_hash = load_cell_data_hash(ext_pos.into(), CellDep)?;
+                let lua_programe_hash = load_cell_data_hash(mutant_index, CellDep)?;
                 match op {
-                    0 | 2 => {
+                    Operation::Mint | Operation::Burn => {
                         ckb_std::high_level::exec_cell(
                             &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + ext_pos, 0].as_slice())
-                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
                                 CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
                                     .unwrap_or_default(),
                             ],
                         )?;
                     }
-                    1 => {
+                    Operation::Transfer => {
                         ckb_std::high_level::exec_cell(
                             &lua_programe_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + ext_pos, 0].as_slice())
-                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
                                 CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
                                     .unwrap_or_default(),
                                 CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
@@ -279,7 +292,6 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
                             ],
                         )?;
                     }
-                    _ => unreachable!(),
                 }
             }
         }
@@ -287,20 +299,23 @@ fn verify_extension(mime: &MIME, op: usize, argv: Vec<u8>) -> Result<(), Error> 
     Ok(())
 }
 
-fn check_payment(ext_pos: usize, payment_map: &mut BTreeMap<[u8; 32], u8>) -> Result<(), Error> {
-    let ext_script = load_cell_type(ext_pos, CellDep)?.unwrap_or_default();
-    let ext_args = ext_script.args().raw_data();
+fn check_payment(
+    mutant_index: usize,
+    payment_map: &mut BTreeMap<[u8; 32], u8>,
+) -> Result<(), Error> {
+    let mutant_type = load_cell_type(mutant_index, CellDep)?.unwrap_or_default();
+    let args = mutant_type.args().raw_data();
     // CAUTION: only check 33 size pattern, leave room for user customization
-    if ext_args.len() > 32 {
+    if args.len() > 32 {
         // we need a payment
         let self_lock_hash = load_cell_lock_hash(0, GroupOutput)?;
-        let mutant_lock_hash = load_cell_lock_hash(ext_pos, CellDep)?;
+        let mutant_lock_hash = load_cell_lock_hash(mutant_index, CellDep)?;
 
         let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
         let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
         let payment_power = {
             let previous_power = payment_map.entry(mutant_lock_hash).or_default();
-            let current_power = ext_args.get(32).cloned().unwrap_or(0);
+            let current_power = args.get(32).cloned().unwrap_or(0);
             let power = *previous_power + current_power;
             *previous_power = power;
             power
@@ -335,7 +350,7 @@ pub fn main() -> Result<(), Error> {
         (0, 1) => {
             // find it's index in Output
             let output_index =
-                find_position_by_type(&spore_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
+                find_position_by_type(&spore_in_output[0], Output).ok_or(Error::IndexOutOfBound)?;
             return process_creation(output_index);
         }
         (1, 0) => {
