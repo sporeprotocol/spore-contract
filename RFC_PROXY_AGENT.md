@@ -8,13 +8,13 @@ In the original design of the Spore Protocol, the creation of a Spore with a Clu
 2. The referenced Cluster Cell must be found in the `Inputs`.
 3. The referenced Cluster Cell must be found in the `Outputs`.
 
-This verification process ensures ownership of the referenced Cluster Cell, preventing malicious activities on one's private Cluster. However, while this approach prevents unintended minting in a private Cluster, challenges persist in public Clusters supporting public minting. This is especially true for those utilizing a specific lock, as it may lead to unintended minting. Specifically, there might be a bottleneck when the Cluster contains multiple popular Spore cells, and there is only one Cluster cell available to construct transactions. 
+This verification process ensures ownership of the referenced Cluster Cell, preventing malicious activities on one's private Cluster.
 
-To elaborate furtehr, if two individuals attempt to mint different Spores into a Cluster, say `Cluster A`, and their minting transactions are accidentally sent at the same time, then one of them will be rejected because the target Cluster was consumed and recreated by the other. The rejected transaction must then be reconstructed to continue the minting process.
+While this design prevents minting in a private Cluster when ownership is absent, challenges remain in public Clusters. In public mining, ownership is nullified upon a customized lock (e.g., [anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md)) is introduced. However, this gives rise to the issue of cell competition: if two minting transactions are accidentally sent simultaneously, one will be rejected. The target Cluster gets consumed and recreated by one transaction, requiring reconstruction of the rejected transaction to proceed with minting.
 
 ## Solution
 
-At this stage, the **owner** needs to create a special cell, here we called it **Cluster Proxy Cell**.
+At this stage, the **owner** needs to create a special cell, here we called it **Cluster Proxy Cell**
 
 A Cluster Proxy Cell’s structure is like below:
 
@@ -33,9 +33,9 @@ The Type args can be:
 - args: <cluster_proxy_id>
 - args: <cluster_proxy_id> <minimal payment in 10^n ckbytes: uint8>
 
-where `cluster_proxy_id = hash(Inputs[0], Output_Index)`.
+Where `cluster_proxy_id = hash(Inputs[0], Output_Index)`
 
-### Step 1: Create Cluster Proxy Cell
+### Step1: Creating Cluster Proxy Cell
 
 Creating a Cluster Proxy Cell can be done in two ways. The first method is putting a Cluster Cell to Inputs & Outputs, as shown below:
 
@@ -73,7 +73,7 @@ Outputs:
             <user_defined> # for example, acp
 ```
 
-The other method is using an **Input Cell** with same Lock to the Cluster Cell to create a Cluster Proxy Cell, shown below:
+The other method is using an Input Cell with same Lock to the Cluster Cell to create a Cluster Proxy Cell.
 
 #### Method 2. Use Lock Proxy
 
@@ -104,9 +104,9 @@ Outputs:
      <...any other cells>
 ```
 
-### Step 2: Create Cluster Agent Cell
+### Step2: Create Cluster Agent Cell
 
-Once the Cluster owner created the Cluster Proxy Cell, anyone able to unlock the Cluster Proxy Cell can create a special type cell: Cluster Agent Cell. The holder of this Cluster Agent Cell can mint Spore in a regular process and put it into the referenced Cluster.
+Once the Cluster owner created the Cluster Proxy Cell, anyone who is able to unlock the Cluster Proxy Cell is able to create a special type cell called: Cluster Agent Cell. Holder of this Cluster Agent Cell can mint Spore in a regular process and put it into the referenced Cluster.
 
 ```yaml
 Cluster Agent Cell:
@@ -161,7 +161,7 @@ Outputs:
      <...any other cells>
 ```
 
-#### Method 2. Use Payment Appearance
+# Method 2. Use Payment Appearance
 
 Alternatively, you can make a payment to the Cluster Proxy owner to create a Cluster Agent Cell. This method essentially involves transferring capacity to the same lock address with the Cluster Proxy.
 
@@ -200,7 +200,7 @@ Outputs:
 
 Here, the payment cell serves merely as an example; it can be any unlockable cell and is not limited to only one cell.
 
-### Step 3: Mint Spore with Cluster Agent
+### Step3: Mint Spore with Cluster Agent
 
 The Cluster Agent Cell holder can mint Spore using three valid methods listed below.
 
