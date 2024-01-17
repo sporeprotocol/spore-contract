@@ -7,6 +7,7 @@ use ckb_testtool::ckb_types::{
     bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed, packed::*, prelude::*,
 };
 use ckb_testtool::context::Context;
+use spore_types::generated::action::SporeActionUnion;
 use std::num::ParseIntError;
 
 use spore_types::generated::spore_types::{ClusterData, SporeData};
@@ -58,6 +59,16 @@ pub fn build_spore_type_script(
     context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args)
 }
 
+pub fn build_spore_type_script_with_payment(
+    context: &mut Context,
+    out_point: &OutPoint,
+    args: &[u8; 32],
+    payment: u8,
+) -> Option<Script> {
+    let args = vec![args.to_vec(), vec![payment]].concat();
+    context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args.into())
+}
+
 pub fn build_spore_input(
     context: &mut Context,
     spore_type: Option<Script>,
@@ -69,6 +80,7 @@ pub fn build_spore_input(
         input_ckb,
         spore_type,
         Bytes::copy_from_slice(spore_data.as_slice()),
+        Default::default(),
     )
 }
 
@@ -83,49 +95,129 @@ pub fn build_cluster_input(
         input_ckb,
         type_,
         Bytes::copy_from_slice(cluster_data.as_slice()),
+        Default::default(),
+    )
+}
+
+pub fn build_agent_proxy_input(
+    context: &mut Context,
+    cell_data: &[u8],
+    type_: Option<Script>,
+) -> CellInput {
+    let input_ckb = cell_data.len() as u64;
+    internal::build_input(
+        context,
+        input_ckb,
+        type_,
+        Bytes::copy_from_slice(cell_data),
+        Default::default(),
     )
 }
 
 pub fn build_normal_input(context: &mut Context) -> CellInput {
-    internal::build_input(context, UNIFORM_CAPACITY, None, Bytes::new())
+    internal::build_input(
+        context,
+        UNIFORM_CAPACITY,
+        None,
+        Bytes::new(),
+        Default::default(),
+    )
 }
 
-pub fn build_output_cell_with_type_id(context: &mut Context, type_: Option<Script>) -> CellOutput {
-    internal::build_output(context, UNIFORM_CAPACITY, type_)
+pub fn build_normal_output_cell_with_type(
+    context: &mut Context,
+    type_: Option<Script>,
+) -> CellOutput {
+    internal::build_output(context, UNIFORM_CAPACITY, type_, Default::default())
 }
 
 pub fn build_normal_output(context: &mut Context) -> CellOutput {
-    internal::build_output(context, UNIFORM_CAPACITY, None)
+    internal::build_output(context, UNIFORM_CAPACITY, None, Default::default())
 }
 
 pub fn build_normal_cell_dep(context: &mut Context, data: &[u8], type_: Option<Script>) -> CellDep {
+    build_normal_cell_dep_with_lock_args(context, data, type_, Default::default())
+}
+
+pub fn build_normal_cell_dep_with_lock_args(
+    context: &mut Context,
+    data: &[u8],
+    type_: Option<Script>,
+    lock_args: &[u8],
+) -> CellDep {
     let outpoint = internal::build_outpoint(
         context,
         data.len() as u64,
         type_,
         Bytes::copy_from_slice(data),
+        lock_args.to_vec().into(),
     );
     CellDep::new_builder().out_point(outpoint).build()
 }
 
-pub fn build_spore_materials(context: &mut Context, binary_name: &str) -> (OutPoint, CellDep) {
+pub fn build_spore_contract_materials(
+    context: &mut Context,
+    binary_name: &str,
+) -> (OutPoint, CellDep) {
     let binary = Loader::default().load_binary(binary_name);
     let out_point = context.deploy_cell(binary);
     let script_dep = CellDep::new_builder().out_point(out_point.clone()).build();
     (out_point, script_dep)
 }
 
-pub fn build_single_spore_mint_tx(
+pub fn build_cluster_materials(
+    context: &mut Context,
+    cluster_out_point: &OutPoint,
+    cluster_data: ClusterData,
+    cluster_out_index: usize,
+    lock_args: &[u8],
+) -> ([u8; 32], Option<Script>, CellInput, CellOutput, CellDep) {
+    let normal_input = build_normal_input(context);
+    let cluster_id = build_type_id(&normal_input, cluster_out_index);
+    let cluster_type =
+        build_spore_type_script(context, cluster_out_point, cluster_id.to_vec().into());
+    let cluster_input = build_cluster_input(context, cluster_data.clone(), cluster_type.clone());
+    let cluster_output = build_normal_output_cell_with_type(context, cluster_type.clone());
+    let cluster_dep = build_normal_cell_dep_with_lock_args(
+        context,
+        cluster_data.as_slice(),
+        cluster_type.clone(),
+        lock_args,
+    );
+    (
+        cluster_id,
+        cluster_type,
+        cluster_input,
+        cluster_output,
+        cluster_dep,
+    )
+}
+
+pub fn build_agent_materials(
+    context: &mut Context,
+    agent_out_point: &OutPoint,
+    cluster_id: &[u8; 32],
+    proxy_type_hash: &[u8; 32],
+) -> (Option<Script>, CellInput, CellOutput, CellDep) {
+    let agent_type = build_spore_type_script(context, agent_out_point, cluster_id.to_vec().into());
+    let agent_input = build_agent_proxy_input(context, proxy_type_hash, agent_type.clone());
+    let agent_output = build_normal_output_cell_with_type(context, agent_type.clone());
+    let agent_dep = build_normal_cell_dep(context, proxy_type_hash, agent_type.clone());
+    (agent_type, agent_input, agent_output, agent_dep)
+}
+
+pub fn build_single_spore_mint_tx_with_extra_action(
     context: &mut Context,
     output_data: Vec<u8>,
     content_type: &str,
     input_data: Option<SporeData>,
     cluster_id: Option<[u8; 32]>,
+    mut actions: Vec<(Option<Script>, SporeActionUnion)>,
 ) -> TransactionView {
     let output_data =
         build_serialized_spore_data(output_data, content_type, cluster_id.map(|v| v.to_vec()));
 
-    let (spore_out_point, spore_script_dep) = build_spore_materials(context, "spore");
+    let (spore_out_point, spore_script_dep) = build_spore_contract_materials(context, "spore");
     let (input, type_id) = match input_data {
         None => {
             let input = build_normal_input(context);
@@ -142,7 +234,7 @@ pub fn build_single_spore_mint_tx(
         }
     };
     let spore_type = build_spore_type_script(context, &spore_out_point, type_id.to_vec().into());
-    let spore_output = build_output_cell_with_type_id(context, spore_type.clone());
+    let spore_output = build_normal_output_cell_with_type(context, spore_type.clone());
     let tx = TransactionBuilder::default()
         .input(input)
         .output(spore_output)
@@ -151,7 +243,25 @@ pub fn build_single_spore_mint_tx(
         .build();
 
     let action = co_build::build_mint_spore_action(context, type_id, output_data.as_slice());
-    co_build::complete_co_build_message_with_actions(tx, &[(spore_type, action)])
+    actions.push((spore_type, action));
+    co_build::complete_co_build_message_with_actions(tx, &actions)
+}
+
+pub fn build_single_spore_mint_tx(
+    context: &mut Context,
+    output_data: Vec<u8>,
+    content_type: &str,
+    input_data: Option<SporeData>,
+    cluster_id: Option<[u8; 32]>,
+) -> TransactionView {
+    build_single_spore_mint_tx_with_extra_action(
+        context,
+        output_data,
+        content_type,
+        input_data,
+        cluster_id,
+        vec![],
+    )
 }
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
@@ -185,7 +295,7 @@ pub fn build_single_spore_mint_in_cluster_tx(
     let always_success_out_point = context.deploy_cell(ALWAYS_SUCCESS.clone());
 
     // build lock script
-    let lock_script = internal::build_always_success_script(context);
+    let lock_script = internal::build_always_success_script(context, Default::default());
     let lock_script_dep = CellDep::new_builder()
         .out_point(always_success_out_point)
         .build();

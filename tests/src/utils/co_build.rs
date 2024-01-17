@@ -85,7 +85,7 @@ pub fn build_mint_spore_action(
     nft_id: [u8; 32],
     content: &[u8],
 ) -> SporeActionUnion {
-    let to = internal::build_always_success_script(context);
+    let to = internal::build_always_success_script(context, Default::default());
     let mint = MintSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
         .data_hash(h256_to_byte32(blake2b_256(content)))
@@ -95,7 +95,7 @@ pub fn build_mint_spore_action(
 }
 
 pub fn build_transfer_spore_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let address = script_to_address(script);
     let transfer = TransferSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
@@ -106,7 +106,7 @@ pub fn build_transfer_spore_action(context: &mut Context, nft_id: [u8; 32]) -> S
 }
 
 pub fn build_burn_spore_action(context: &mut Context, nft_id: [u8; 32]) -> SporeActionUnion {
-    let from = internal::build_always_success_script(context);
+    let from = internal::build_always_success_script(context, Default::default());
     let burn = BurnSpore::new_builder()
         .spore_id(h256_to_byte32(nft_id))
         .from(script_to_address(from))
@@ -119,7 +119,7 @@ pub fn build_mint_cluster_action(
     cluster_id: [u8; 32],
     content: &[u8],
 ) -> SporeActionUnion {
-    let to = internal::build_always_success_script(context);
+    let to = internal::build_always_success_script(context, Default::default());
     let cluster_create = MintCluster::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .data_hash(h256_to_byte32(blake2b_256(content)))
@@ -132,7 +132,7 @@ pub fn build_transfer_cluster_action(
     context: &mut Context,
     cluster_id: [u8; 32],
 ) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let address = script_to_address(script);
     let cluster_transfer = TransferCluster::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
@@ -147,7 +147,7 @@ pub fn build_mint_proxy_action(
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
-    let to = internal::build_always_success_script(context);
+    let to = internal::build_always_success_script(context, Default::default());
     let proxy_create = MintProxy::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .proxy_id(h256_to_byte32(proxy_id))
@@ -161,7 +161,7 @@ pub fn build_transfer_proxy_action(
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let from = script_to_address(script);
     let to = from.clone();
     let proxy_transfer = TransferProxy::new_builder()
@@ -178,7 +178,7 @@ pub fn build_burn_proxy_action(
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let from = script_to_address(script);
     let proxy_burn = BurnProxy::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
@@ -193,7 +193,7 @@ pub fn build_mint_agent_action(
     cluster_id: [u8; 32],
     proxy_id: [u8; 32],
 ) -> SporeActionUnion {
-    let to = internal::build_always_success_script(context);
+    let to = internal::build_always_success_script(context, Default::default());
     let agent_create = MintAgent::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))
         .proxy_id(h256_to_byte32(proxy_id))
@@ -206,7 +206,7 @@ pub fn build_transfer_agent_action(
     context: &mut Context,
     cluster_id: [u8; 32],
 ) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let from = script_to_address(script);
     let to = from.clone();
     let agent_transfer = TransferAgent::new_builder()
@@ -218,7 +218,7 @@ pub fn build_transfer_agent_action(
 }
 
 pub fn build_burn_agent_action(context: &mut Context, cluster_id: [u8; 32]) -> SporeActionUnion {
-    let script = internal::build_always_success_script(context);
+    let script = internal::build_always_success_script(context, Default::default());
     let from = script_to_address(script);
     let agent_burn = BurnAgent::new_builder()
         .cluster_id(h256_to_byte32(cluster_id))

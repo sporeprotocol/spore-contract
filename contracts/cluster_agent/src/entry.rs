@@ -53,7 +53,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         return Err(Error::RefCellNotClusterProxy);
     }
 
-    // verify cluster ID
+    // verify cluster id
     let cluster_id = load_cell_data(proxy_index, CellDep)?;
     let script = load_script()?;
     if script.args().raw_data().as_ref() != &cluster_id {
@@ -77,9 +77,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             debug!("Minimal payment is: {}", minimal_payment_args);
 
             let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
-            let lock = load_cell_lock_hash(proxy_index, CellDep)?;
-            let input_capacity = calc_capacity_sum(&lock, Input);
-            let output_capacity = calc_capacity_sum(&lock, Output);
+            let proxy_lock_hash = load_cell_lock_hash(proxy_index, CellDep)?;
+            let input_capacity = calc_capacity_sum(&proxy_lock_hash, Input);
+            let output_capacity = calc_capacity_sum(&proxy_lock_hash, Output);
             if input_capacity + minimal_payment > output_capacity {
                 return Err(Error::PaymentNotEnough);
             } else {
@@ -111,7 +111,7 @@ fn process_transfer() -> Result<(), Error> {
     let input_agent_data = load_cell_data(0, GroupInput)?;
     let output_agent_data = load_cell_data(0, GroupOutput)?;
 
-    if input_agent_data != output_agent_data {
+    if input_agent_data != output_agent_data || input_agent_data.is_empty() {
         return Err(Error::ImmutableAgentFieldModification);
     }
 

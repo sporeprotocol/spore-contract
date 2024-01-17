@@ -55,9 +55,10 @@ pub enum Error {
     MutantNotInDeps,
 
     // spore errors
-    ModifySporePermanentField = 60,
-    InvalidNFTData,
-    InvalidNFTID,
+    BoundaryEncoding = 60,
+    ModifySporePermanentField,
+    InvalidSporeData,
+    InvalidSporeID,
     InvalidContentType, // failed to parse content-type
     DestroyImmortalNFT, // cannot destroy an immortal cellular cell
     EmptyContent,       // content is empty
