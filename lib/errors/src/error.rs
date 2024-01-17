@@ -16,6 +16,7 @@ pub enum Error {
     SporeActionDuplicated,
     SporeActionMismatch,
     SporeActionFieldMismatch,
+    SporeActionAddressesMismatch,
 
     // spore_extension_lua errors
     ModifyExtensionPermanentField = 15,

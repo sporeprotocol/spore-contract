@@ -154,7 +154,7 @@ pub fn check_spore_address(
     let address = load_cell_lock(0, group_source)?;
     let action::AddressUnion::Script(expected_script) = spore_address.to_enum();
     if address.as_slice() != expected_script.as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
+        return Err(Error::SporeActionAddressesMismatch);
     }
     Ok(())
 }
