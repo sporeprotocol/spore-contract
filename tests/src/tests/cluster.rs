@@ -181,19 +181,15 @@ fn test_cluster_agent_mint() {
         build_spore_contract_materials(&mut context, "cluster");
     let cluster_id = build_type_id(&input_cell, 0);
     let cluster_type =
-        build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
+        build_spore_type_script_with_payment(&mut context, &cluster_out_point, &cluster_id, 1);
     let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
 
     // proxy
     let (proxy_out_point, proxy_script_dep) =
         build_spore_contract_materials(&mut context, "cluster_proxy");
     let proxy_id = build_type_id(&input_cell, 1);
-    let proxy_type_arg = vec![proxy_id.to_vec(), vec![1]].concat();
-    let proxy_type = build_spore_type_script(
-        &mut context,
-        &proxy_out_point,
-        proxy_type_arg.clone().into(),
-    );
+    let proxy_type =
+        build_spore_type_script_with_payment(&mut context, &proxy_out_point, &proxy_id, 1);
     let proxy_dep = build_normal_cell_dep(&mut context, &cluster_id, proxy_type.clone());
     let proxy_type_hash = proxy_type.unwrap_or_default().calc_script_hash();
 
@@ -242,19 +238,21 @@ mod cluster_agent_transfer {
         // agent in Input
         let old_cluster_id = build_type_id(&input_cell, 0);
         let old_agent_data = blake2b_256("12345676890");
-        let old_agent_type = build_spore_type_script(
+        let old_agent_type = build_spore_type_script_with_payment(
             &mut context,
             &agent_out_point,
-            old_cluster_id.to_vec().into(),
+            &old_cluster_id,
+            1,
         );
         let old_agent_cell = build_agent_proxy_input(&mut context, &old_agent_data, old_agent_type);
 
         // agent in Output
         let new_cluster_id = build_type_id(&input_cell, new_cluster_out_index);
-        let new_agent_type = build_spore_type_script(
+        let new_agent_type = build_spore_type_script_with_payment(
             &mut context,
             &agent_out_point,
-            new_cluster_id.to_vec().into(),
+            &new_cluster_id,
+            1,
         );
         let new_agent_cell =
             build_normal_output_cell_with_type(&mut context, new_agent_type.clone());
@@ -308,7 +306,7 @@ fn test_cluster_agent_burn() {
     let cluster_id = build_type_id(&input_cell, 0);
     let agent_data = blake2b_256("12345676890");
     let agent_type =
-        build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
+        build_spore_type_script_with_payment(&mut context, &agent_out_point, &cluster_id, 1);
     let agent_cell = build_agent_proxy_input(&mut context, &agent_data, agent_type.clone());
 
     // build agent burn tx
@@ -348,7 +346,7 @@ fn test_cluster_proxy_mint() {
         build_spore_contract_materials(&mut context, "cluster_proxy");
     let proxy_id = build_type_id(&input_cell, 0);
     let proxy_type =
-        build_spore_type_script(&mut context, &proxy_out_point, proxy_id.to_vec().into());
+        build_spore_type_script_with_payment(&mut context, &proxy_out_point, &proxy_id, 1);
     let proxy_out_cell = build_normal_output_cell_with_type(&mut context, proxy_type.clone());
 
     let tx = TransactionBuilder::default()
@@ -381,13 +379,13 @@ mod cluster_proxy_transfer {
         let old_cluster_id = blake2b_256("12345678");
         let old_proxy_id = build_type_id(&input_cell, 0);
         let old_proxy_type =
-            build_spore_type_script(&mut context, &proxy_out_point, old_proxy_id.to_vec().into());
+            build_spore_type_script_with_payment(&mut context, &proxy_out_point, &old_proxy_id, 1);
         let old_proxy_cell = build_agent_proxy_input(&mut context, &old_cluster_id, old_proxy_type);
 
         // proxy in Output
         let new_proxy_id = build_type_id(&input_cell, new_proxy_out_index);
         let new_proxy_type =
-            build_spore_type_script(&mut context, &proxy_out_point, new_proxy_id.to_vec().into());
+            build_spore_type_script_with_payment(&mut context, &proxy_out_point, &new_proxy_id, 1);
         let new_proxy_cell =
             build_normal_output_cell_with_type(&mut context, new_proxy_type.clone());
 
@@ -441,7 +439,7 @@ fn test_cluster_proxy_burn() {
     let cluster_id = blake2b_256("12345678");
     let proxy_id = build_type_id(&input_cell, 0);
     let proxy_type =
-        build_spore_type_script(&mut context, &proxy_out_point, proxy_id.to_vec().into());
+        build_spore_type_script_with_payment(&mut context, &proxy_out_point, &proxy_id, 1);
     let proxy_cell = build_agent_proxy_input(&mut context, &cluster_id, proxy_type.clone());
 
     // build proxy burn tx

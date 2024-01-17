@@ -59,6 +59,16 @@ pub fn build_spore_type_script(
     context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args)
 }
 
+pub fn build_spore_type_script_with_payment(
+    context: &mut Context,
+    out_point: &OutPoint,
+    args: &[u8; 32],
+    payment: u8,
+) -> Option<Script> {
+    let args = vec![args.to_vec(), vec![payment]].concat();
+    context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args.into())
+}
+
 pub fn build_spore_input(
     context: &mut Context,
     spore_type: Option<Script>,

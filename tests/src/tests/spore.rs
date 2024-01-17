@@ -514,7 +514,7 @@ mod simple_spore_destroy {
         let tx = TransactionBuilder::default()
             .input(spore_input)
             .output(normal_output)
-            .output_data(serialized.as_slice().pack())
+            .output_data(Default::default())
             .cell_dep(spore_script_dep)
             .build();
 
