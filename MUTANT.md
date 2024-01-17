@@ -11,10 +11,10 @@ if spore_output_index > 0 then
   ckb.exit_script(spore_output_index)
 end
 ```
-Storing it on a Mutant Cell. Assume the ID of this mutant is `0xMUTANT_ID` we have a spore like:
+Storing it on a Mutant Cell. Assume the ID of this mutant is `MUTANT_ID` (no `0x` prefix) we have a spore like:
 ```yaml
 Data:
-  content-type: "image/png;mutant[]=0xMUTANT_ID"
+  content-type: "image/png;mutant[]=MUTANT_ID"
   content: ...
 Type:
   code_hash: SPORE_TYPE_ID_V2

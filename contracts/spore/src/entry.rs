@@ -1,5 +1,6 @@
 use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
+use ckb_std::ckb_types::util::hash::blake2b_256;
 use core::ffi::CStr;
 use core::result::Result;
 
@@ -14,10 +15,11 @@ use ckb_std::{
 };
 
 use spore_errors::error::Error;
+use spore_types::generated::action;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_utils::{
-    calc_capacity_sum, find_position_by_lock_hash, find_position_by_type,
-    find_position_by_type_args, verify_type_id, MIME,
+    calc_capacity_sum, check_spore_address, extract_spore_action, find_position_by_lock_hash,
+    find_position_by_type, find_position_by_type_args, load_self_id, verify_type_id, MIME,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -43,19 +45,19 @@ fn process_creation(index: usize) -> Result<(), Error> {
         return Err(Error::InvalidContentType);
     }
 
-    // verify Spore ID
-    if !verify_type_id(index, Output) {
+    // verify NFT ID
+    let Some(spore_id) = verify_type_id(index) else {
         return Err(Error::InvalidNFTID);
-    }
+    };
 
     let raw_content_type = spore_data.content_type();
     let content_type = raw_content_type.unpack();
 
     let mime = MIME::parse(content_type)?; // content_type validation
-    // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
-    //
-    // The Multipart Content-Type is used to represent a document that is comprised of multiple
-    // parts, each of which may have its own individual MIME type
+                                           // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
+                                           //
+                                           // The Multipart Content-Type is used to represent a document that is comprised of multiple
+                                           // parts, each of which may have its own individual MIME type
     if content_type[mime.main_type.clone()] == "multipart".as_bytes()[..] {
         // Check if boundary param exists
         // The Content-Type field for multipart entities requires one parameter, "boundary", which
@@ -75,6 +77,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         .ok_or(Error::InvalidMultipartContent)?;
     }
 
+    // check in Cluster mode
     if spore_data.cluster_id().to_opt().is_some() {
         // check if cluster cell in deps
         let cluster_id = spore_data
@@ -103,41 +106,55 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
 
         // Condition 1: Check if cluster exist in Inputs & Outputs
-        return if find_position_by_type_args(&cluster_id, Input, Some(cluster_fn)).is_some()
-            && find_position_by_type_args(&cluster_id, Output, Some(cluster_fn)).is_some()
-        {
-            Ok(())
-        }
+        let cluster_cell_in_input =
+            find_position_by_type_args(&cluster_id, Input, Some(cluster_fn)).is_some();
+        let cluster_cell_in_output =
+            find_position_by_type_args(&cluster_id, Output, Some(cluster_fn)).is_some();
+
         // Condition 2: Check if cluster agent in Inputs & Outputs
-        else if find_position_by_type_args(&cluster_id, Input, Some(agent_fn)).is_some()
-            && find_position_by_type_args(&cluster_id, Output, Some(agent_fn)).is_some()
+        let agent_cell_in_input =
+            find_position_by_type_args(&cluster_id, Input, Some(agent_fn)).is_some();
+        let agent_cell_in_output =
+            find_position_by_type_args(&cluster_id, Output, Some(agent_fn)).is_some();
+
+        if (!cluster_cell_in_input || !cluster_cell_in_output)
+            && (!agent_cell_in_input || !agent_cell_in_output)
         {
-            Ok(())
+            // Condition 3: Use cluster agent by lock proxy
+            if let Some(agent_index) =
+                find_position_by_type_args(&cluster_id, CellDep, Some(agent_fn))
+            {
+                let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
+                find_position_by_lock_hash(&agent_lock_hash, Output)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+                find_position_by_lock_hash(&agent_lock_hash, Input)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            } else {
+                // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
+                let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
+                find_position_by_lock_hash(&cluster_lock_hash, Output)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+                find_position_by_lock_hash(&cluster_lock_hash, Input)
+                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
+            }
         }
-        // Condition 3: Use cluster agent by lock proxy
-        else if let Some(agent_index) =
-            find_position_by_type_args(&cluster_id, CellDep, Some(agent_fn))
-        {
-            let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
-            find_position_by_lock_hash(&agent_lock_hash, Output)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            find_position_by_lock_hash(&agent_lock_hash, Input)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            Ok(())
-        } else {
-            // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
-            let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-            find_position_by_lock_hash(&cluster_lock_hash, Output)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            find_position_by_lock_hash(&cluster_lock_hash, Input)
-                .ok_or(Error::ClusterOwnershipVerifyFailed)?;
-            Ok(())
-        };
     }
 
+    // check in Mutant mode
     if !mime.mutants.is_empty() {
         verify_extension(&mime, 0, vec![index as u8])?;
     }
+
+    // check co-build action @lyk
+    let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if mint.spore_id().as_slice() != spore_id
+        || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
+    {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
@@ -159,6 +176,15 @@ fn process_destruction() -> Result<(), Error> {
         let index = find_position_by_type(&type_script, Input).ok_or(Error::IndexOutOfBound)?;
         verify_extension(&mime, 2, vec![index as u8])?;
     }
+
+    // check co-build action @lyk
+    let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if burn.spore_id().as_slice() != &load_self_id()? {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, burn.from())?;
 
     Ok(())
 }
@@ -185,6 +211,16 @@ fn process_transfer() -> Result<(), Error> {
             find_position_by_type(&type_script, Output).ok_or(Error::IndexOutOfBound)?;
         verify_extension(&mime, 1, vec![input_index as u8, output_index as u8])?;
     }
+
+    // check co-build action @lyk
+    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if transfer.spore_id().as_slice() != &load_self_id()? {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, transfer.from())?;
+    check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }
@@ -294,7 +330,7 @@ pub fn main() -> Result<(), Error> {
 
     match (spore_in_input.len(), spore_in_output.len()) {
         (0, 1) => {
-            // find it's index in Source::Output
+            // find it's index in Output
             let output_index =
                 find_position_by_type(&spore_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);

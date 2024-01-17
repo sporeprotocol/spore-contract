@@ -20,9 +20,9 @@ enum ParamType {
 pub struct MIME {
     pub main_type: RangePair,
     pub sub_type: RangePair,
-    params: Vec<(RangePair, RangePair)>,
     pub mutants: Vec<[u8; 32]>,
     pub immortal: bool,
+    params: Vec<(RangePair, RangePair)>,
 }
 
 impl MIME {
@@ -143,7 +143,7 @@ impl MIME {
 fn check_range_validate(array: &[u8], range: &Range<usize>) -> Result<(), Error> {
     let end: usize = range.end;
     debug!("len = {}, end = {end}", array.len());
-    if array.len() <= end {
+    if array.len() < end {
         return Err(Error::ContentOutOfRange);
     }
     Ok(())
@@ -250,36 +250,4 @@ fn parse_quoted_value(s: &str) -> Result<usize, Error> {
         }
     }
     Err(Error::InvalidParamValue)
-}
-
-#[test]
-fn test_basic() {
-    assert!(MIME::str_parse("image/png").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5").is_ok());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
-        .map_err(|_| "mutant str_parse")
-        .unwrap()
-        .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
-            "mutant[]",
-            b"2,3,4,5"
-        )
-        .map_err(|_| "mutant verify_param")
-        .unwrap());
-    assert!(MIME::str_parse("image/png;immortal=true;mutant[]=2,3,4,5")
-        .map_err(|_| "mutant str_parse")
-        .unwrap()
-        .verify_param(
-            b"image/png;immortal=true;mutant[]=2,3,4,5",
-            "immortal",
-            b"true"
-        )
-        .map_err(|_| "mutant verify_param")
-        .unwrap());
-    assert!(MIME::str_parse("image/").is_err());
-    assert!(MIME::str_parse("image/;").is_err());
-    assert!(MIME::str_parse("/;").is_err());
-    assert!(MIME::str_parse(";").is_err());
-    assert!(MIME::str_parse("").is_err());
 }

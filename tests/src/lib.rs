@@ -4,6 +4,9 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+#[allow(dead_code)]
+const MAX_CYCLES: u64 = 10_000_000;
+
 #[cfg(test)]
 mod tests;
 mod utils;

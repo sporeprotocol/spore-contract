@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 ckb-std = "0.14.3"
 spore-utils = { path = "../../lib/utils" }
+spore-types = { path = "../../lib/types" }
 spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]

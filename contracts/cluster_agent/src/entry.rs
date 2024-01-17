@@ -11,8 +11,13 @@ use ckb_std::ckb_constants::Source::{self, CellDep, GroupInput, GroupOutput, Inp
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
+
 use spore_errors::error::Error;
-use spore_utils::{calc_capacity_sum, find_position_by_type, find_posityion_by_type_hash};
+use spore_types::generated::action;
+use spore_utils::{
+    calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_self_id,
+};
+use spore_utils::{check_spore_address, extract_spore_action};
 
 const CLUSTER_PROXY_ID_LEN: usize = 32;
 
@@ -41,29 +46,29 @@ fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
 fn process_creation(_index: usize) -> Result<(), Error> {
     let proxy_type_hash = load_cell_data(0, GroupOutput)?;
     // check cluster proxy in Deps
-    let cell_dep_index = find_posityion_by_type_hash(proxy_type_hash.as_slice(), CellDep)
+    let proxy_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
         .ok_or(Error::ProxyCellNotInDep)?;
-    let target_cell_type_hash = load_cell_type(cell_dep_index, CellDep)?.unwrap_or_default();
-    if !is_valid_cluster_proxy_cell(&target_cell_type_hash.code_hash().unpack()) {
+    let proxy_type = load_cell_type(proxy_index, CellDep)?.unwrap_or_default();
+    if !is_valid_cluster_proxy_cell(&proxy_type.code_hash().unpack()) {
         return Err(Error::RefCellNotClusterProxy);
     }
 
     // verify cluster ID
-    let cluster_id = load_cell_data(cell_dep_index, CellDep)?;
+    let cluster_id = load_cell_data(proxy_index, CellDep)?;
     let script = load_script()?;
-    let script_args: Vec<u8> = script.args().unpack();
-    if script_args.as_slice()[..] != cluster_id.as_slice()[..] {
+    if script.args().raw_data().as_ref() != &cluster_id {
         return Err(Error::InvalidAgentArgs);
     }
 
     // Condition 1: Check if cluster proxy exist in Inputs & Outputs
-    return if find_posityion_by_type_hash(proxy_type_hash.as_slice(), Input).is_some()
-        && find_posityion_by_type_hash(proxy_type_hash.as_slice(), Output).is_some()
-    {
-        Ok(())
-    } else {
+    let proxy_cell_in_input =
+        find_position_by_type_hash(proxy_type_hash.as_slice(), Input).is_some();
+    let proxy_cell_in_output =
+        find_position_by_type_hash(proxy_type_hash.as_slice(), Output).is_some();
+
+    if !proxy_cell_in_input || !proxy_cell_in_output {
         // Condition 2: Check for minimal payment
-        let proxy_type_args = load_cell_type(cell_dep_index, CellDep)?
+        let proxy_type_args = load_cell_type(proxy_index, CellDep)?
             .unwrap_or_default()
             .args()
             .raw_data();
@@ -72,7 +77,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             debug!("Minimal payment is: {}", minimal_payment_args);
 
             let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
-            let lock = load_cell_lock_hash(cell_dep_index, CellDep)?;
+            let lock = load_cell_lock_hash(proxy_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&lock, Input);
             let output_capacity = calc_capacity_sum(&lock, Output);
             if input_capacity + minimal_payment > output_capacity {
@@ -86,8 +91,20 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         } else {
             return Err(Error::PaymentMethodNotSupport);
         }
-        Ok(())
+    }
+
+    // co-build check @lyk
+    let action::SporeActionUnion::MintAgent(mint) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
     };
+    if &cluster_id != mint.cluster_id().as_slice()
+        || &proxy_type.args().raw_data()[..32] != mint.proxy_id().as_slice()
+    {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupOutput, mint.to())?;
+
+    Ok(())
 }
 
 fn process_transfer() -> Result<(), Error> {
@@ -98,6 +115,28 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ImmutableAgentFieldModification);
     }
 
+    // co-build check @lyk
+    let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if &load_self_id()? != transfer.cluster_id().as_slice() {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, transfer.from())?;
+    check_spore_address(GroupOutput, transfer.to())?;
+
+    Ok(())
+}
+
+fn process_destruction() -> Result<(), Error> {
+    // co-build check @lyk
+    let action::SporeActionUnion::BurnAgent(burn) = extract_spore_action()?.to_enum() else {
+        return Err(Error::SporeActionMismatch);
+    };
+    if &load_self_id()? != burn.cluster_id().as_slice() {
+        return Err(Error::SporeActionFieldMismatch);
+    }
+    check_spore_address(GroupInput, burn.from())?;
     Ok(())
 }
 
@@ -127,7 +166,7 @@ pub fn main() -> Result<(), Error> {
                 find_position_by_type(&agent_in_output[0], Output).unwrap_or_default(); // Once we entered here, it can't be empty, and use 0 as a fallback position
             return process_creation(output_index);
         }
-        (1, 0) => Ok(()), // There's no limitation to destroy an agent except lock
+        (1, 0) => process_destruction(),
         (1, 1) => process_transfer(),
         _ => unreachable!(),
     };
