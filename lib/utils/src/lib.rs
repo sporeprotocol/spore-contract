@@ -2,6 +2,7 @@
 
 extern crate alloc;
 
+use alloc::vec::Vec;
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::bytes::Bytes;
 use ckb_std::ckb_types::packed::Script;
@@ -10,7 +11,7 @@ use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
     load_cell, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type,
-    load_cell_type_hash, load_input, load_script_hash, QueryIter,
+    load_cell_type_hash, load_input, load_script, load_script_hash, QueryIter,
 };
 
 use spore_errors::error::Error;
@@ -23,6 +24,10 @@ pub mod co_build_types {
 }
 
 mod mime;
+
+pub fn load_self_id() -> Result<Vec<u8>, Error> {
+    Ok(load_script()?.args().raw_data()[..32].to_vec())
+}
 
 pub fn load_type_args(index: usize, source: Source) -> Bytes {
     load_cell_type(index, source)

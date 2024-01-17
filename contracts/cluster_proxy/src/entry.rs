@@ -11,7 +11,7 @@ use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_lock_hash, find_position_by_type,
-    find_position_by_type_args, load_type_args, verify_type_id,
+    find_position_by_type_args, load_self_id, verify_type_id,
 };
 
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
@@ -70,7 +70,7 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::SporeActionMismatch);
     };
     if input_data.as_slice() != transfer.cluster_id().as_slice()
-        || load_type_args(0, GroupInput).as_ref() != transfer.proxy_id().as_slice()
+        || &load_self_id()? != transfer.proxy_id().as_slice()
     {
         return Err(Error::SporeActionFieldMismatch);
     }
@@ -82,14 +82,14 @@ fn process_transfer() -> Result<(), Error> {
 
 fn process_destruction() -> Result<(), Error> {
     let cluster_id = load_cell_data(0, GroupInput)?;
-    let proxy_id = load_type_args(0, GroupInput);
+    let proxy_id = load_self_id()?;
 
     // co-build check @lyk
     let action::SporeActionUnion::BurnProxy(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
     if cluster_id.as_slice() != burn.cluster_id().as_slice()
-        || proxy_id.as_ref() != burn.proxy_id().as_slice()
+        || &proxy_id != burn.proxy_id().as_slice()
     {
         return Err(Error::SporeActionFieldMismatch);
     }

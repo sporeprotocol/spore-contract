@@ -19,7 +19,7 @@ use spore_types::generated::action;
 use spore_types::generated::spore_types::{ClusterData, SporeData};
 use spore_utils::{
     calc_capacity_sum, check_spore_address, extract_spore_action, find_position_by_lock_hash,
-    find_position_by_type, find_position_by_type_args, load_type_args, verify_type_id, MIME,
+    find_position_by_type, find_position_by_type_args, load_self_id, verify_type_id, MIME,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -181,7 +181,7 @@ fn process_destruction() -> Result<(), Error> {
     let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if burn.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
+    if burn.spore_id().as_slice() != &load_self_id()? {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, burn.from())?;
@@ -216,7 +216,7 @@ fn process_transfer() -> Result<(), Error> {
     let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if transfer.spore_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
+    if transfer.spore_id().as_slice() != &load_self_id()? {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, transfer.from())?;

@@ -15,7 +15,7 @@ use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
 use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_utils::{
-    calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_type_args,
+    calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_self_id,
 };
 use spore_utils::{check_spore_address, extract_spore_action};
 
@@ -119,7 +119,7 @@ fn process_transfer() -> Result<(), Error> {
     let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if load_type_args(0, GroupInput).as_ref() != transfer.cluster_id().as_slice() {
+    if &load_self_id()? != transfer.cluster_id().as_slice() {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, transfer.from())?;
@@ -133,7 +133,7 @@ fn process_destruction() -> Result<(), Error> {
     let action::SporeActionUnion::BurnAgent(burn) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if load_type_args(0, GroupInput).as_ref() != burn.cluster_id().as_slice() {
+    if &load_self_id()? != burn.cluster_id().as_slice() {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, burn.from())?;

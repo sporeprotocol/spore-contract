@@ -20,7 +20,7 @@ use spore_errors::error::Error;
 use spore_types::generated::spore_types::ClusterData;
 use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_type, find_position_by_type_args,
-    load_type_args, verify_type_id,
+    load_self_id, verify_type_id,
 };
 
 use crate::hash::SPORE_EXTENSION_LUA;
@@ -111,7 +111,7 @@ fn process_transfer() -> Result<(), Error> {
     let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum() else {
         return Err(Error::SporeActionMismatch);
     };
-    if transfer.cluster_id().as_slice() != load_type_args(0, GroupInput).as_ref() {
+    if transfer.cluster_id().as_slice() != &load_self_id()? {
         return Err(Error::SporeActionFieldMismatch);
     }
     check_spore_address(GroupInput, transfer.from())?;
