@@ -52,32 +52,34 @@ The versioning philosophy is **"Using code_hash as version"** while developing w
 
 A different code hash means a different version of Spore Protocol.
 
-Make sure you are using the proper version you want, because there's no such "upgrade/downgrade" method to use, the only way to achieve this in a similiar result is destroy and reconstruct a new Spore with same fields. 
+Make sure you are using the proper version you want, because there's no such "upgrade/downgrade" method to use, the only way to achieve this in a similiar result is to destroy and reconstruct a new Spore with same fields. 
 
-Here are lists of Spore protocol contract cells code_hashes (Top item is the latest, bottom item is the oldest):
+Our `forzen` versions of contract, which means our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. And to be more clear, the `frozen` information contains each avaliable `code_hash` generated from each Spore contracts we deployed before, with their corresponding commit hash as an indicator field.
+
+`./deployment/migration` stores the deployment detail for each Spore contracts. Here's a list of newest version of `code_hash`, which are aslo recorded in [migration](https://github.com/sporeprotocol/spore-contract/tree/feat/complete-test-cases/deployment/migration) directory:
 
 ### Spore
 Pudge Testnet:
-- data_hash: `0x56f5dbbafccf025c2fde98fda20498dc98245a0a28fce2db190cd24cc3636c6d`
-- data_hash: `0xbbad126377d45f90a8ee120da988a2d7332c78ba8fd679aab478a19d6c133494`
+- data_hash: `0xfd2dc714c4d4cb81e8621e5c124465a048d06551b467f58eaa64041dd322cf81`
 
 ### Cluster
 Pudge Testnet:
-- data_hash: `0x15f835c4ca0b861df38f10d4e95c51ba9cee3c89f178b21e2e28baa67ebd8b42`
-- data_hash: `0x598d793defef36e2eeba54a9b45130e4ca92822e1d193671f490950c3b856080`
+- data_hash: `0x372b7c11d7b688e02d9c2b7604fbdf0dc898a0f6741854ea6c65d41f8ef4a64e`
+
+### Cluster Proxy
+Pudge Testnet:
+- data_hash: `0xfc1fbe95e7fb5be520f1adb2bdbd1529422613b02254ff01fd0f30604861ae36`
+
+### Cluster Agent
+- data_hash: `0xa170fc93235213e90214e4273bb283e7979bf6477f70b4f2319d3777ec36235c`
 
 ### Mutant (Lua Extension)
 Pudge Testnet:
-- data_hash: `0xb4d3f207831e2774d310a87571fb0095f5b4af4fa176d8bfaae0191a4d6989c8`
+- data_hash: `0x94a9b875911ace20f1f0d063a26495d14e4b04e32fd218261bb747f34e71ae47`
+
+In addition, using Mutant contract requires the Lua library file. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua), and we've already deployed in the Pudge Testnet:
 
 ### Spore Lua Lib
 - tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`
 - index: `0`
 - data_hash: `0xed08faee8c29b7a7c29bd9d495b4b93cc207bd70ca93f7b356f39c677e7ab0fc`
-
-### Cluster Proxy
-Pudge Testnet:
-- data_hash: `0x428457c447f0200e302c3b64f0ee0c165b759e9d3b98118c55710bf2f294a7c2`
-
-### Cluster Agent
-- data_hash: `0x1c6296a5a0aa3cdb50c9f9e6c713c28c2e1dff5c826d84d4dbe5d35cc307bb6f`
