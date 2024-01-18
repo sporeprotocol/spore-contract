@@ -60,18 +60,18 @@ Our `forzen` versions of contract, which are our prior versions, can be found in
 
 #### Spore
 Pudge Testnet:
-- data_hash: `0xfd2dc714c4d4cb81e8621e5c124465a048d06551b467f58eaa64041dd322cf81`
+- data_hash: `0xa32df38d2de1da82cbcb9e4467f8c18479596394eea977e471b75be5fe3e9c67`
 
 #### Cluster
 Pudge Testnet:
-- data_hash: `0x372b7c11d7b688e02d9c2b7604fbdf0dc898a0f6741854ea6c65d41f8ef4a64e`
+- data_hash: `0x5203a3baf931c15a809c4a0bb7041aebb73118281e31e8d104d926b8523977b1`
 
 #### Cluster Proxy
 Pudge Testnet:
-- data_hash: `0xfc1fbe95e7fb5be520f1adb2bdbd1529422613b02254ff01fd0f30604861ae36`
+- data_hash: `0x08e5cecab2bbdea9139534a822d46b82929e06f12f00c68343a88a58827cd3db`
 
 #### Cluster Agent
-- data_hash: `0xa170fc93235213e90214e4273bb283e7979bf6477f70b4f2319d3777ec36235c`
+- data_hash: `0x88850ac632eed604f0ad784394004db384d0eea8038a24eee83439687d79343f`
 
 #### Mutant (Lua Extension)
 Pudge Testnet:
