@@ -11,6 +11,7 @@ use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash, load_script}
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
+    debug,
     high_level::{load_cell_data, load_cell_type, QueryIter},
 };
 
@@ -78,6 +79,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // The Content-Type field for multipart entities requires one parameter, "boundary", which
         // is used to specify the encapsulation boundary. See Appendix C of rfc1521 for a complex
         // multipart example.
+        debug!("check mime multipart specification");
         let boundary_range = mime
             .get_param(&content_type, "boundary")?
             .ok_or(Error::InvalidContentType)?;
@@ -94,20 +96,18 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // check in Cluster mode
-    if spore_data.cluster_id().to_opt().is_some() {
+    if let Some(cluster_id) = spore_data.cluster_id().to_opt() {
+        debug!("check in cluster mode");
         // check if cluster cell is in deps
-        let cluster_id = spore_data
-            .cluster_id()
-            .to_opt()
-            .unwrap_or_default()
-            .raw_data();
+        let cluster_id = cluster_id.raw_data();
         let cell_dep_index =
             find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
                 .ok_or(Error::ClusterCellNotInDep)?;
 
         // the cluster contract guarantees the cluster data will always be correct once created
         let raw_cluster_data = load_cell_data(cell_dep_index, CellDep)?;
-        let cluster_data = ClusterData::new_unchecked(raw_cluster_data.into());
+        let cluster_data = ClusterData::from_compatible_slice(&raw_cluster_data)
+            .map_err(|_| Error::InvalidClusterData)?;
 
         // check in Mutant mode
         if let Some(mutant_id) = cluster_data.mutant_id().to_opt() {
@@ -141,12 +141,14 @@ fn process_creation(index: usize) -> Result<(), Error> {
             if let Some(agent_index) =
                 find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
             {
+                debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
                 find_position_by_lock_hash(&agent_lock_hash, Output)
                     .ok_or(Error::ClusterOwnershipVerifyFailed)?;
                 find_position_by_lock_hash(&agent_lock_hash, Input)
                     .ok_or(Error::ClusterOwnershipVerifyFailed)?;
             } else {
+                debug!("check in lock proxy mode");
                 // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
                 let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
                 find_position_by_lock_hash(&cluster_lock_hash, Output)

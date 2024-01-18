@@ -9,6 +9,7 @@ pub enum Error {
     Encoding,
 
     // common
+    InvalidClusterData,
     ClusterCellNotInDep,
     ClusterOwnershipVerifyFailed,
     InvliadCoBuildWitnessLayout,
@@ -51,7 +52,6 @@ pub enum Error {
     ModifyClusterPermanentField,
     EmptyName,
     InvalidClusterID,
-    InvalidClusterData,
     MutantNotInDeps,
 
     // spore errors
