@@ -31,7 +31,8 @@ $ capsule build --release -- --features release_export # build in release mode f
 To check native test cases, which are placed in [tests](./tests/), please run:
 
 ```bash
-$ capsule test
+$ capsule test # test in debug mode
+$ capsule test --release # test in release mode
 ```
 
 ### Writing extra contracts
