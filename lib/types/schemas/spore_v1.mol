@@ -1,13 +1,4 @@
-array U8 [byte; 1];
-array U128 [byte; 16];
-array USize [byte; 4];
-array Bytes32 [byte; 32];
-
 vector Bytes <byte>;
-vector BytesVec <Bytes>;
-
-array Bool [byte; 1];
-option BoolOpt (Bool);
 option BytesOpt (Bytes);
 
 table SporeData {
@@ -19,6 +10,4 @@ table SporeData {
 table ClusterData {
     name: Bytes,
     description: Bytes,
-    mutant_id: BytesOpt,
 }
-

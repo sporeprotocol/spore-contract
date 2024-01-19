@@ -17,7 +17,7 @@ use ckb_std::{
 // https://docs.rs/ckb-std/
 use ckb_std::high_level::{load_script, QueryIter};
 use spore_errors::error::Error;
-use spore_types::generated::spore_types::ClusterData;
+use spore_types::generated::spore::ClusterDataV2 as ClusterData;
 use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_type, find_position_by_type_args,
     load_self_id, verify_type_id,

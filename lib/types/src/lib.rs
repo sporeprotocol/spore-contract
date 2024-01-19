@@ -1,7 +1,7 @@
 #![no_std]
 
 extern crate alloc;
-pub use crate::generated::spore_types::{Bool, Bytes, BytesOpt, SporeData};
+pub use crate::generated::spore::{Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
 use molecule::prelude::{Builder, Entity};
@@ -35,7 +35,7 @@ pub struct NativeNFTData {
     pub cluster_id: Option<Vec<u8>>,
 }
 
-impl From<NativeNFTData> for generated::spore_types::SporeData {
+impl From<NativeNFTData> for generated::spore::SporeData {
     fn from(data: NativeNFTData) -> Self {
         let content: Bytes = data.content.as_slice().into();
         let content_type: Bytes = data.content_type.as_bytes().into();
@@ -53,28 +53,8 @@ impl From<NativeNFTData> for generated::spore_types::SporeData {
     }
 }
 
-impl From<generated::spore_types::Bool> for bool {
-    fn from(value: generated::spore_types::Bool) -> bool {
-        match value.as_slice().first().unwrap_or(&0) {
-            0 => false,
-            1 => true,
-            _ => false,
-        }
-    }
-}
-
-impl generated::spore_types::Bytes {
+impl generated::spore::Bytes {
     pub fn unpack(&self) -> &[u8] {
         &self.as_slice()[4..]
-    }
-}
-
-impl From<generated::spore_types::BoolOpt> for bool {
-    fn from(value: generated::spore_types::BoolOpt) -> bool {
-        if value.is_none() {
-            return false;
-        }
-
-        bool::from(Bool::from_slice(value.as_slice()).unwrap())
     }
 }

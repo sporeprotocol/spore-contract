@@ -17,10 +17,11 @@ use ckb_std::{
 
 use spore_errors::error::Error;
 use spore_types::generated::action;
-use spore_types::generated::spore_types::{ClusterData, SporeData};
+use spore_types::generated::spore::SporeData;
 use spore_utils::{
-    calc_capacity_sum, check_spore_address, extract_spore_action, find_position_by_lock_hash,
-    find_position_by_type, find_position_by_type_args, load_self_id, verify_type_id, MIME,
+    calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
+    verify_type_id, MIME,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -106,8 +107,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
         // the cluster contract guarantees the cluster data will always be correct once created
         let raw_cluster_data = load_cell_data(cell_dep_index, CellDep)?;
-        let cluster_data = ClusterData::from_compatible_slice(&raw_cluster_data)
-            .map_err(|_| Error::InvalidClusterData)?;
+        let cluster_data = compatible_load_cluster_data(&raw_cluster_data)?;
 
         // check in Mutant mode
         if let Some(mutant_id) = cluster_data.mutant_id().to_opt() {

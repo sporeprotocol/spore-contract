@@ -1,0 +1,7 @@
+import spore_v1;
+
+table ClusterDataV2 {
+    name: Bytes,
+    description: Bytes,
+    mutant_id: BytesOpt,
+}
