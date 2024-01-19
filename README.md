@@ -10,76 +10,80 @@ Spore developers are supposed to use [Spore SDK](https://github.com/sporeprotoco
 
 Spore is an on-chain protocol to power digital asset ownership, distribution, and value capture. For more, check out https://spore.pro
 
-This repo contains the [Spore RFC](./RFC.md), protocol types [schema definition](./lib/types/schemas/spore.mol) and [implementation](./contracts/) of Spore Type contract written in Rust.
+This repo contains the [Spore RFC](./docs/RFC.md), [Spore Mutant RFC](./docs/MUTANT.md), [Spore Cluster Proxy/Agent RFC](./docs/RFC_PROXY_AGENT.md), protocol types [schema definition](./lib/types/schemas/spore.mol) and [implementation](./contracts/) of Spore contracts written in Rust.
 
 
 ## ⚙️ Development
-To start developing this contract, you'll need:
+Before development, basic dependencies are required:
 
 - [Rust](https://www.rust-lang.org/tools/install)
 - [Cross](https://github.com/cross-rs/cross)
 - [Capsule](https://github.com/nervosnetwork/capsule)
 
-To build contracts, run:
+To build contracts, please run one of below commands:
 
-``` sh
-capsule build
+```bash
+$ capsule build # build in debug mode
+$ capsule build --release # build in release mode for testnet
+$ capsule build --release -- --features release_export # build in release mode for mainnet
 ```
 
-Test cases are located in [tests](./tests/). To run test cases:
+To check native test cases, which are placed in [tests](./tests/), please run:
 
-``` sh
-capsule test
+```bash
+$ capsule test # test in debug mode
+$ capsule test --release # test in release mode
 ```
 
 ### Writing extra contracts
 
-If you want to extend spore contracts, you can achieve it by:
+If your development requires to be built on Spore, steps below are recommended:
 
 1. Writing a new Type contract
-2. Modify existed contracts.
+2. Modify existed contracts
 
 For method 1, the flow is:
 
-1. Run `capsule new-contract YOUR_CONTRACT_NAME` to init a new contract
-2. Modify `Cargo.toml` of your contract, introduce `spore-types`,`spore-utils`, `spore-constant`
+1. Run `capsule new-contract YOUR_CONTRACT_NAME` to initialize a new contract project
+2. Modify `Cargo.toml` of your contract, and introduce `spore-types`,`spore-utils`, `spore-constant`
 3. Implementing your contract rules in `entry.rs`
-4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to.
-
+4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to
 
 ## Deployed Code Hashes
-The versioning philosophy is **"Using code_hash as version"** while developing with Spore Protocol.
+The versioning philosophy is **"Using code_hash as version"** for Spore Protocol, which means the different code hash matches the different version.
 
-A different code hash means a different version of Spore Protocol.
+Make sure you are using the proper version you want, because there's no such an "upgrade/downgrade" method but we suggest to use "destroy/reconstruct" method instead, which requires no modification of any fields in Spore cell.
 
-Make sure you are using the proper version you want, because there's no such "upgrade/downgrade" method to use, the only way to achieve this in a similiar result is to destroy and reconstruct a new Spore with same fields. 
+Our `forzen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts with corresponding commit hash for the rolling back help.
 
-Our `forzen` versions of contract, which means our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. And to be more clear, the `frozen` information contains each avaliable `code_hash` generated from each Spore contracts we deployed before, with their corresponding commit hash as an indicator field.
+`./deployment/migration` recorded the deployment detail for each Spore contract. Here's a list about the newest versions:
 
-`./deployment/migration` stores the deployment detail for each Spore contracts. Here's a list of newest version of `code_hash`, which are aslo recorded in [migration](https://github.com/sporeprotocol/spore-contract/tree/feat/complete-test-cases/deployment/migration) directory:
-
-### Spore
+#### Spore
 Pudge Testnet:
-- data_hash: `0xfd2dc714c4d4cb81e8621e5c124465a048d06551b467f58eaa64041dd322cf81`
+- data_hash: `0xa32df38d2de1da82cbcb9e4467f8c18479596394eea977e471b75be5fe3e9c67`
 
-### Cluster
+#### Cluster
 Pudge Testnet:
-- data_hash: `0x372b7c11d7b688e02d9c2b7604fbdf0dc898a0f6741854ea6c65d41f8ef4a64e`
+- data_hash: `0x5203a3baf931c15a809c4a0bb7041aebb73118281e31e8d104d926b8523977b1`
 
-### Cluster Proxy
+#### Cluster Proxy
 Pudge Testnet:
-- data_hash: `0xfc1fbe95e7fb5be520f1adb2bdbd1529422613b02254ff01fd0f30604861ae36`
+- data_hash: `0x08e5cecab2bbdea9139534a822d46b82929e06f12f00c68343a88a58827cd3db`
 
-### Cluster Agent
-- data_hash: `0xa170fc93235213e90214e4273bb283e7979bf6477f70b4f2319d3777ec36235c`
+#### Cluster Agent
+- data_hash: `0x88850ac632eed604f0ad784394004db384d0eea8038a24eee83439687d79343f`
 
-### Mutant (Lua Extension)
+#### Mutant (Lua Extension)
 Pudge Testnet:
 - data_hash: `0x94a9b875911ace20f1f0d063a26495d14e4b04e32fd218261bb747f34e71ae47`
 
-In addition, using Mutant contract requires the Lua library file. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua), and we've already deployed in the Pudge Testnet:
+In addition, using Mutant contract requires the binary of Lua library. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
 
-### Spore Lua Lib
+#### Spore Lua Lib
 - tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`
 - index: `0`
 - data_hash: `0xed08faee8c29b7a7c29bd9d495b4b93cc207bd70ca93f7b356f39c677e7ab0fc`
+
+## Deployment
+
+We provided a simple bash script to operate deployment through `ckb-cli` toolchain, details refer to [here](https://github.com/sporeprotocol/spore-contract/tree/master/deployment)
