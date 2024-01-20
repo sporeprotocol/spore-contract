@@ -201,3 +201,43 @@ pub fn compatible_load_cluster_data(
         )
     }
 }
+
+#[test]
+fn test_compatible_load_cluster_data() {
+    // test ClusterDataV1 -> ClusterDataV2
+    let cluster_data_v1 = spore::ClusterData::new_builder()
+        .name("Test Cluster Name".as_bytes().into())
+        .description("Test Cluster Description".as_bytes().into())
+        .build();
+    let raw_cluster_data = cluster_data_v1.as_slice();
+    let cluster_data_v2 = compatible_load_cluster_data(raw_cluster_data)
+        .map_err(|_| "compatible_load_cluster_data error")
+        .expect("test ClusterDataV1 -> ClusterDataV2");
+    assert_eq!(
+        cluster_data_v2.name().as_slice(),
+        cluster_data_v1.name().as_slice()
+    );
+    assert_eq!(
+        cluster_data_v2.description().as_slice(),
+        cluster_data_v1.description().as_slice()
+    );
+    assert!(cluster_data_v2.mutant_id().is_none());
+
+    // test ClusterDataV2 -> ClusterDataV2
+    let cluster_data_v2_with_mutant_id = cluster_data_v2
+        .as_builder()
+        .mutant_id("mock mutant_id".as_bytes().into())
+        .build();
+    let raw_cluster_data = cluster_data_v2_with_mutant_id.as_slice();
+    let cluster_data_v1 = spore::ClusterData::from_compatible_slice(raw_cluster_data)
+        .map_err(|_| "spore::ClusterData::from_compatible_slice error")
+        .expect("test old format -> new format");
+    assert!(cluster_data_v1.has_extra_fields());
+    assert_eq!(cluster_data_v1.field_count(), 3);
+    assert_eq!(cluster_data_v1.count_extra_fields(), 1);
+    let cluster_data_v2 = compatible_load_cluster_data(raw_cluster_data)
+        .map_err(|_| "compatible_load_cluster_data error")
+        .expect("test ClusterDataV2 -> ClusterDataV2");
+    assert!(cluster_data_v2.mutant_id().is_some());
+}
+

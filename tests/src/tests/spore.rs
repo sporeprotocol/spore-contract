@@ -301,6 +301,7 @@ mod spore_mint_from_cluster_lock_proxy {
     }
 }
 
+/// test creating Spore v2 with Cluster v1
 #[test]
 fn test_spore_mint_from_cluster_lock_proxy_compatible_v1() {
     let mut context = Context::default();
