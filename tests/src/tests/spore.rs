@@ -1,3 +1,4 @@
+use ckb_testtool::ckb_hash::blake2b_256;
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, packed, prelude::*};
 use ckb_testtool::context::Context;
 
@@ -298,6 +299,46 @@ mod spore_mint_from_cluster_lock_proxy {
     fn test_spore_mint_from_cluster_lock_proxy_failed_with_wrong_cluster() {
         make_spore_mint_from_cluster_lock_proxy(true, &[1]);
     }
+}
+
+/// test creating Spore v2 with Cluster v1
+#[test]
+fn test_spore_mint_from_cluster_lock_proxy_compatible_v1() {
+    let mut context = Context::default();
+    let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
+
+    // build cluster celldep
+    let cluster = spore_types::generated::spore::ClusterData::new_builder()
+        .name("Test Cluster".as_bytes().into())
+        .description("Spore Cluster".as_bytes().into())
+        .build();
+
+    let cluster_id = blake2b_256("12345678");
+    let cluster_type =
+        build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
+    let cluster_dep = build_normal_cell_dep_with_lock_args(
+        &mut context,
+        cluster.as_slice(),
+        cluster_type.clone(),
+        &[],
+    );
+
+    // build spore mint from cluster tx
+    let tx = build_single_spore_mint_tx(
+        &mut context,
+        "Hello Spore!".as_bytes().to_vec(),
+        "plain/text",
+        None,
+        Some(cluster_id),
+    )
+    .as_advanced_builder()
+    .cell_dep(cluster_dep)
+    .build();
+    let tx = context.complete_tx(tx);
+
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("test spore mint compatible v1");
 }
 
 mod spore_mint_from_cluster_transfer {

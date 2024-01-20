@@ -10,7 +10,7 @@ use ckb_testtool::context::Context;
 use spore_types::generated::action::SporeActionUnion;
 use std::num::ParseIntError;
 
-use spore_types::generated::spore_types::{ClusterData, SporeData};
+use spore_types::generated::spore::{ClusterDataV2 as ClusterData, SporeData};
 use spore_types::NativeNFTData;
 
 use crate::Loader;
@@ -24,6 +24,7 @@ pub fn build_serialized_cluster_data(name: &str, description: &str) -> ClusterDa
     ClusterData::new_builder()
         .name(name.as_bytes().into())
         .description(description.as_bytes().into())
+        .mutant_id(Default::default())
         .build()
 }
 

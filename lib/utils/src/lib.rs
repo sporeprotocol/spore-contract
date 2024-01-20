@@ -15,7 +15,7 @@ use ckb_std::high_level::{
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::action;
+use spore_types::generated::{action, spore};
 
 pub use mime::MIME;
 pub mod co_build_types {
@@ -179,5 +179,25 @@ pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
         (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data())
             .map_err(|_| Error::InvliadCoBuildMessage),
         _ => Err(Error::SporeActionDuplicated),
+    }
+}
+
+pub fn compatible_load_cluster_data(
+    raw_cluster_data: &[u8],
+) -> Result<spore::ClusterDataV2, Error> {
+    let cluster_data = spore::ClusterData::from_compatible_slice(raw_cluster_data)
+        .map_err(|_| Error::InvalidClusterData)?;
+    debug!("cluster_data filed count: {}", cluster_data.field_count());
+    if cluster_data.field_count() == 2 {
+        Ok(spore::ClusterDataV2::new_builder()
+            .name(cluster_data.name())
+            .description(cluster_data.description())
+            .mutant_id(Default::default())
+            .build())
+    } else {
+        Ok(
+            spore::ClusterDataV2::from_compatible_slice(raw_cluster_data)
+                .map_err(|_| Error::InvalidClusterData)?,
+        )
     }
 }
