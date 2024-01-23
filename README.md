@@ -54,28 +54,7 @@ The versioning philosophy is **"Using code_hash as version"** for Spore Protocol
 
 Make sure you are using the proper version you want, because there's no such an "upgrade/downgrade" method but we suggest to use "destroy/reconstruct" method instead, which requires no modification of any fields in Spore cell.
 
-Our `forzen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts with corresponding commit hash for the rolling back help.
-
-`./deployment/migration` recorded the deployment detail for each Spore contract. Here's a list about the newest versions:
-
-#### Spore
-Pudge Testnet:
-- data_hash: `0xa32df38d2de1da82cbcb9e4467f8c18479596394eea977e471b75be5fe3e9c67`
-
-#### Cluster
-Pudge Testnet:
-- data_hash: `0x5203a3baf931c15a809c4a0bb7041aebb73118281e31e8d104d926b8523977b1`
-
-#### Cluster Proxy
-Pudge Testnet:
-- data_hash: `0x08e5cecab2bbdea9139534a822d46b82929e06f12f00c68343a88a58827cd3db`
-
-#### Cluster Agent
-- data_hash: `0x88850ac632eed604f0ad784394004db384d0eea8038a24eee83439687d79343f`
-
-#### Mutant (Lua Extension)
-Pudge Testnet:
-- data_hash: `0x94a9b875911ace20f1f0d063a26495d14e4b04e32fd218261bb747f34e71ae47`
+Our `forzen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
 
 In addition, using Mutant contract requires the binary of Lua library. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
 

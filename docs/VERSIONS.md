@@ -2,8 +2,6 @@
 
 ## tag 0.2.1 (testnet)
 
-commit hash: 53bfd4d4bbbee773ca10c1181982d9a27718826d
-
 **spore**:
 | | |
 |-|-|
@@ -33,8 +31,6 @@ commit hash: 53bfd4d4bbbee773ca10c1181982d9a27718826d
 |code_hash|0xbe8b9ce3d05a32c4bb26fe71cd5fc1407ce91e3a8b9e8719be2ab072cef1454b|
 
 ## tag 0.2.2 (mainnet)
-
-commit hash: 7867692a0e26b08cc713ece96cfb054b92a47337
 
 **spore**:
 | | |
