@@ -34,7 +34,7 @@ commit hash: 53bfd4d4bbbee773ca10c1181982d9a27718826d
 
 ## tag 0.2.2 (mainnet)
 
-commit hash: 40ef57a2d3689740bf0c6fa47938e52948252179
+commit hash: 7867692a0e26b08cc713ece96cfb054b92a47337
 
 **spore**:
 | | |
