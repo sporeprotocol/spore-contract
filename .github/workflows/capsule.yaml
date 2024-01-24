@@ -46,11 +46,13 @@ jobs:
       - name: List all the contract binaries of ${{ github.ref }}
         run: ls -l ${{ matrix.target-dir }}
 
-      - name: Archive the contract binaries
+      - name: Archive the contract binaries ${{ github.sha }}
         uses: actions/upload-artifact@v4
         with:
-          name: contract-binaries-${{ matrix.target }}
+          name: contract-binaries-${{ matrix.target }}-${{ github.sha }}
           path: ${{ matrix.target-dir }}
+    outputs:
+      spore-contract-ref: ${{ github.sha }}
   
   record-code-hash:
     needs: capsule-build-and-test
@@ -60,6 +62,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       # TODO: add this codehash util into the `tests` directory
+      # or, simply use `ckb-cli util blake2b --binary-path ...` to get the codehash
       - name: Checkout a code_hash tool
         uses: actions/checkout@v4
         with:
@@ -68,13 +71,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: contract-binaries-${{ matrix.target }}
-
-      - run: |
-          pwd
-          ls build
-          ls
-          ls /home/runner/work/spore-contract/spore-contract
+          name: contract-binaries-${{ matrix.target }}-${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}
 
       - name: Build codehash-tool
         working-directory: build
@@ -82,4 +79,6 @@ jobs:
 
       - name: Record code_hash of contract binaries
         working-directory: build
-        run: ./target/debug/code_hash
+        run: |
+          echo "spore-contract-commit: ${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}\n"
+          ./target/debug/code_hash
