@@ -50,7 +50,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: contract-binaries-${{ matrix.target }}-${{ github.sha }}
-          path: ${{ matrix.target-dir }}
+          path: |
+            build/debug
+            build/release
     outputs:
       spore-contract-ref: ${{ github.sha }}
   
@@ -72,6 +74,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: contract-binaries-${{ matrix.target }}-${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}
+          path: build
 
       - name: Build codehash-tool
         working-directory: build
