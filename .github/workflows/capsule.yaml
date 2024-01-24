@@ -1,5 +1,6 @@
 name: Capsule build/test
 on:
+  push:
   pull_request:
     paths:
       - contracts/**
@@ -7,14 +8,27 @@ on:
       - tests/**
 
 jobs:
-  capsule:
+  capsule-build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: debug
+            cargo-option: ""
+            target-dir: "build/debug"
+          - target: testnet
+            cargo-option: "--release"
+            target-dir: "build/release"
+          - target: mainnet
+            cargo-option: "--release -- --features release_export"
+            target-dir: "build/release"
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            override: true
+          toolchain: stable
+          override: true
       
       - name: Prepare capsule v0.10.2
         run: |
@@ -28,10 +42,48 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Capsule build
-        run: capsule build
+        run: capsule build ${{ matrix.cargo-option }}
 
-      - name: Capsule test -- --nocapture
-        run: capsule test
+      - name: Capsule test
+        run: capsule test ${{ matrix.cargo-option }}
 
-      
-        
+      - name: List all the contract binaries of ${{ github.ref }}
+        run: ls -l ${{ matrix.target-dir }}
+
+      - name: Archive the contract binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-binaries-${{ matrix.target }}
+          path: ${{ matrix.target-dir }}
+  
+  record-code-hash:
+    needs: capsule-build-and-test
+    strategy:
+      matrix:
+        target: [debug, testnet, mainnet]
+    runs-on: ubuntu-20.04
+    steps:
+      # TODO: add this codehash util into the `tests` directory
+      - name: Checkout a code_hash tool
+        uses: actions/checkout@v4
+        with:
+          repository: Flouse/spore-contract
+          ref: codehash-tool
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: contract-binaries-${{ matrix.target }}
+
+      - run: |
+          pwd
+          ls build
+          ls
+          ls /home/runner/work/spore-contract/spore-contract
+
+      - name: Build codehash-tool
+        working-directory: build
+        run: cargo build
+
+      - name: Record code_hash of contract binaries
+        working-directory: build
+        run: ./target/debug/code_hash
