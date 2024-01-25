@@ -9,8 +9,6 @@ pub struct FrozenVersions {
 
 #[derive(serde::Deserialize)]
 pub struct PublishedCodeHash {
-    #[serde(rename(deserialize = "commit_hash"))]
-    _commit_hash: String,
     #[serde(default)]
     spore: String,
     #[serde(default)]

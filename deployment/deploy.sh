@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 
-echo "deploying $1 from $3 to $2"
+export network=$4
+
+if [ -z $network ]
+then
+    export network="testnet"
+fi
+
+echo "deploying $1 from $3 to $2 on $network"
 
 ckb-cli --url $2 deploy gen-txs --from-address $3 --fee-rate 1000 --deployment-config ./toml/$1.toml \
-    --info-file ./$1.json --migration-dir ./migration/$1 --sign-now
+    --info-file ./$1.json --migration-dir ./migration/$network/$1 --sign-now
 
 echo "ckb transacion file '$1.json' has generated"
 
-ckb-cli --url $2 deploy apply-txs --info-file ./$1.json --migration-dir ./migration/$1
+ckb-cli --url $2 deploy apply-txs --info-file ./$1.json --migration-dir ./migration/$network/$1
 
 rm ./$1.json
 
