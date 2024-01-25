@@ -30,8 +30,14 @@
 |index|0|
 |code_hash|0xbe8b9ce3d05a32c4bb26fe71cd5fc1407ce91e3a8b9e8719be2ab072cef1454b|
 
-## tag 0.2.2 (mainnet)
+## tag 0.2.2-beta.1 (mainnet)
 
+**spore**:
+| | |
+|-|-|
+|tx_hash|0x96b198fb5ddbd1eed57ed667068f1f1e55d07907b4c0dbd38675a69ea1b69824|
+|index|0|
+|code_hash|0x4a4dce1df3dffff7f8b2cd7dff7303df3b6150c9788cb75dcf6747247132b9f5|
 
 **cluster**:
 | | |
