@@ -32,12 +32,6 @@
 
 ## tag 0.2.2 (mainnet)
 
-**spore**:
-| | |
-|-|-|
-|tx_hash|0xcb67e11a39594a183eae50664073a85fa0140ae25480df61114aca0e47726d38|
-|index|0|
-|code_hash|0x9cb02fa8621d79fff300b910d52665f594d3ad468142a66213cfaaca0409502c|
 
 **cluster**:
 | | |
