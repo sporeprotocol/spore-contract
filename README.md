@@ -3,7 +3,7 @@
   A protocol for valuing on-chain contents, build on top of <a href="https://github.com/nervosnetwork/ckb">CKB</a>. Check <a href="https://docs.spore.pro">Spore Docs</a> for a quick start.
 </p>
 
-Developers are encouraged to utilize the [Spore SDK](https://github.com/sporeprotocol/spore-sdk) for creating applications using Spore, rather than working directly with this contracts. However, if your want to test/extend the contract, or deploy it on a local blockchain, then you can refer to the [Development](#⚙️-development) section.
+Developers are encouraged to utilize the [Spore SDK](https://github.com/sporeprotocol/spore-sdk) for creating applications using Spore, rather than working directly with the contracts. However, if your want to test/extend the contracts, or deploy it on a local blockchain, then you can refer to the [Development](#⚙️-development) section.
 
 ## About
 
