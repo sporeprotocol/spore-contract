@@ -14,6 +14,7 @@ mod xxx {
     use ckb_testtool::ckb_types::packed::{CellDep, CellInput, CellOutput, OutPoint};
     use ckb_testtool::ckb_types::prelude::{Builder, Entity, Pack};
 
+    #[ignore = "used to generate consuming transaction"]
     #[test]
     fn burn_spore_contract() {
         let tx_hash = h256!("0xcb67e11a39594a183eae50664073a85fa0140ae25480df61114aca0e47726d38");
