@@ -9,7 +9,7 @@ fi
 
 echo "deploying $1 from $3 to $2 on $network"
 
-ckb-cli --url $2 deploy gen-txs --from-address $3 --fee-rate 1000 --deployment-config ./toml/$1.toml \
+ckb-cli --url $2 deploy gen-txs --from-address $3 --fee-rate 1000 --deployment-config ./toml/$network/$1.toml \
     --info-file ./$1.json --migration-dir ./migration/$network/$1 --sign-now
 
 echo "ckb transacion file '$1.json' has generated"

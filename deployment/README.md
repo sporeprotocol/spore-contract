@@ -27,3 +27,5 @@ code_hash = "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8"
 args = <your-wallet-lock-args>
 hash_type = "type"
 ```
+
+notice: `frozen` versions are always containing all of deployed contracts except the latest one
