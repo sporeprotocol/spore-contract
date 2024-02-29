@@ -5,13 +5,16 @@ use core::result::Result;
 // Import from `core` instead of from `std` since we are in no-std mode
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
+use ckb_std::high_level::{
+    load_cell_data, load_cell_lock_hash, load_cell_type, load_script, QueryIter,
+};
 
 use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_lock_hash, find_position_by_type,
-    find_position_by_type_args, load_self_id, verify_type_id,
+    find_position_by_type_args, load_self_id, verify_type_id, CLUSTER_PROXY_ID_LEN,
+    CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
 };
 
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
@@ -24,6 +27,12 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let cell_dep_index =
         find_position_by_type_args(&cluster_id, CellDep, Some(is_valid_cluster_cell))
             .ok_or(Error::ClusterCellNotInDep)?;
+
+    // verify script args format
+    let args = load_script()?.args().raw_data();
+    if args.len() != CLUSTER_PROXY_ID_LEN && args.len() != CLUSTER_PROXY_ID_WITH_PAYMENT_LEN {
+        return Err(Error::InvalidProxyArgs);
+    }
 
     // verify Proxy ID
     let Some(proxy_id) = verify_type_id(index) else {
@@ -66,7 +75,8 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // co-build check @lyk
-    let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum()
+    else {
         return Err(Error::SporeActionMismatch);
     };
     if input_data.as_slice() != transfer.cluster_id().as_slice()

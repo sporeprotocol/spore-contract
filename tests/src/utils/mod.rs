@@ -19,6 +19,7 @@ pub mod co_build;
 mod internal;
 
 pub const UNIFORM_CAPACITY: u64 = 1000u64;
+pub const CAPACITY_UNIT: u64 = 100_000_000;
 
 pub fn build_serialized_cluster_data(name: &str, description: &str) -> ClusterData {
     ClusterData::new_builder()
@@ -64,9 +65,10 @@ pub fn build_spore_type_script_with_payment(
     context: &mut Context,
     out_point: &OutPoint,
     args: &[u8; 32],
-    payment: u8,
+    payment: u64,
 ) -> Option<Script> {
-    let args = vec![args.to_vec(), vec![payment]].concat();
+    let payment_in_ckb = payment * CAPACITY_UNIT;
+    let args = vec![args.to_vec(), payment_in_ckb.to_le_bytes().to_vec()].concat();
     context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args.into())
 }
 

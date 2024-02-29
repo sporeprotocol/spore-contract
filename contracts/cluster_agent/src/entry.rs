@@ -17,9 +17,10 @@ use spore_types::generated::action;
 use spore_utils::{
     calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_self_id,
 };
-use spore_utils::{check_spore_address, extract_spore_action};
-
-const CLUSTER_PROXY_ID_LEN: usize = 32;
+use spore_utils::{
+    check_spore_address, extract_spore_action, CLUSTER_PROXY_ID_LEN,
+    CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
+};
 
 fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
@@ -72,11 +73,12 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             .unwrap_or_default()
             .args()
             .raw_data();
-        if proxy_type_args.len() > CLUSTER_PROXY_ID_LEN {
-            let minimal_payment_args = proxy_type_args.get(CLUSTER_PROXY_ID_LEN).unwrap_or(&0);
-            debug!("Minimal payment is: {}", minimal_payment_args);
+        if proxy_type_args.len() == CLUSTER_PROXY_ID_WITH_PAYMENT_LEN {
+            let range = CLUSTER_PROXY_ID_LEN..CLUSTER_PROXY_ID_WITH_PAYMENT_LEN;
+            let minimal_payment =
+                u64::from_le_bytes(proxy_type_args[range].try_into().unwrap_or_default());
+            debug!("Minimal payment is: {}", minimal_payment);
 
-            let minimal_payment = 10u128.pow(*minimal_payment_args as u32);
             let proxy_lock_hash = load_cell_lock_hash(proxy_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&proxy_lock_hash, Input);
             let output_capacity = calc_capacity_sum(&proxy_lock_hash, Output);
@@ -89,7 +91,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
                 }
             }
         } else {
-            return Err(Error::PaymentMethodNotSupport);
+            if proxy_type_args.len() != CLUSTER_PROXY_ID_LEN {
+                return Err(Error::PaymentMethodNotSupport);
+            }
         }
     }
 
@@ -98,7 +102,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         return Err(Error::SporeActionMismatch);
     };
     if &cluster_id != mint.cluster_id().as_slice()
-        || &proxy_type.args().raw_data()[..32] != mint.proxy_id().as_slice()
+        || &proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN] != mint.proxy_id().as_slice()
     {
         return Err(Error::SporeActionFieldMismatch);
     }
@@ -116,7 +120,8 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // co-build check @lyk
-    let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum()
+    else {
         return Err(Error::SporeActionMismatch);
     };
     if &load_self_id()? != transfer.cluster_id().as_slice() {

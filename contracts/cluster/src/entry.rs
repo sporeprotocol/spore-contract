@@ -25,40 +25,6 @@ use spore_utils::{
 
 use crate::hash::SPORE_EXTENSION_LUA;
 
-#[allow(unused)]
-fn process_input(
-    index: usize,
-    input_source: Source,
-    group_cell_in_outputs: &mut Vec<usize>,
-    output_source: Source,
-) -> Result<(), Error> {
-    let group_id = load_cell_type(index, input_source)?
-        .unwrap_or_default()
-        .args();
-
-    for i in 0..group_cell_in_outputs.len() {
-        let output_index = group_cell_in_outputs.get(i).unwrap();
-        let output_group_id = load_cell_type(*output_index, output_source)?
-            .unwrap_or_default()
-            .args();
-
-        if group_id.as_slice()[..] == output_group_id.as_slice()[..] {
-            let group_data = load_cluster_data(index, input_source)?;
-            let output_group_data = load_cluster_data(i, output_source)?;
-
-            if group_data.name().as_slice()[..] != output_group_data.name().as_slice()[..] {
-                return Err(Error::ModifyClusterPermanentField);
-            }
-
-            group_cell_in_outputs.remove(i);
-            return Ok(());
-        }
-    }
-
-    // can not destroy a group cell now
-    Err(Error::InvalidClusterOperation)
-}
-
 fn load_cluster_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
     let cluster_data = ClusterData::from_compatible_slice(raw_data.as_slice())
@@ -108,7 +74,8 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum()
+    else {
         return Err(Error::SporeActionMismatch);
     };
     if transfer.cluster_id().as_slice() != &load_self_id()? {
