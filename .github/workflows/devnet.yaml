@@ -61,10 +61,8 @@ jobs:
         run: bash prepare.sh -b $GITHUB_HEAD_REF
 
       - name: Start devenv services
-        run: npm run test:start > /dev/null 2>&1 &
-
-      - name: Wait for 5 seconds
-        run: sleep 5
+        working-directory: spore-devenv
+        run: npm run test:start
 
       - name: Move generated config file to spore-sdk
         working-directory: spore-devenv

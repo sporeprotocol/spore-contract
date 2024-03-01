@@ -241,7 +241,7 @@ fn process_transfer() -> Result<(), Error> {
 }
 
 fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
-    let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
+    let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
     let mut extension_hash = [0u8; 32];
     for mutant_id in mime.mutants.iter() {
         let mutant_index =
@@ -328,12 +328,6 @@ fn check_payment(
             *payment_threshold += threshold;
             *payment_threshold
         };
-<<<<<<< HEAD
-        let minimal_payment = 10u128.pow(payment_power as u32);
-
-        debug!("check mutant payment: {minimal_payment}");
-=======
->>>>>>> ab12bb7 (feat: change payment from u8 to u64)
         if input_capacity + minimal_payment > output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }
