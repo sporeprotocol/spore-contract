@@ -40,6 +40,7 @@ struct CKBLuaLib {
 
 impl CKBLuaLib {
     pub fn new() -> Result<Self, Error> {
+        debug!("prepare lua lib");
         let mut context = unsafe { CKBDLContext::<[u8; 270 * 1024]>::new() };
         #[allow(deprecated)]
         let lib = context
@@ -187,6 +188,7 @@ fn execute_code_destroy(extension_index: usize, input_index: usize) -> Result<()
 
 pub fn main(argv: &[Arg]) -> Result<(), WrappedError> {
     if argv.is_empty() {
+        debug!("running internally");
         // creation/transfer mode
         let extension_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
             .map(|script| script.unwrap_or_default())
@@ -218,6 +220,7 @@ pub fn main(argv: &[Arg]) -> Result<(), WrappedError> {
         };
     } else {
         // execution mode
+        debug!("running externally");
         match argv[0].to_bytes() {
             &[48] => {
                 // 0, CREATE SPORE

@@ -227,7 +227,8 @@ fn process_transfer() -> Result<(), Error> {
     }
 
     // check co-build action @lyk
-    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum() else {
+    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum()
+    else {
         return Err(Error::SporeActionMismatch);
     };
     if transfer.spore_id().as_slice() != &load_self_id()? {
@@ -261,6 +262,7 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                 }
 
                 let lua_programe_hash = load_cell_data_hash(mutant_index, CellDep)?;
+                debug!("run mutant_id({mutant_index}): {mutant_id:?} <= {lua_programe_hash:?}");
                 match op {
                     Operation::Mint | Operation::Burn => {
                         ckb_std::high_level::exec_cell(
@@ -324,6 +326,7 @@ fn check_payment(
         };
         let minimal_payment = 10u128.pow(payment_power as u32);
 
+        debug!("check mutant payment: {minimal_payment}");
         if input_capacity + minimal_payment > output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }
