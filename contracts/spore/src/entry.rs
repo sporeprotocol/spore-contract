@@ -7,7 +7,7 @@ use core::result::Result;
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_data_hash, load_cell_lock_hash, load_script};
+use ckb_std::high_level::{load_cell_lock_hash, load_script};
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -242,11 +242,13 @@ fn process_transfer() -> Result<(), Error> {
 
 fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
     let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
+    let mut extension_hash = [0u8; 32];
     for mutant_id in mime.mutants.iter() {
         let mutant_index =
             QueryIter::new(load_cell_type, CellDep).position(|script| match script {
                 Some(script) => {
-                    if crate::hash::MUTANT_CODE_HASHES.contains(&script.code_hash().unpack()) {
+                    extension_hash = script.code_hash().unpack();
+                    if crate::hash::MUTANT_CODE_HASHES.contains(&extension_hash) {
                         return mutant_id[..] == script.args().raw_data()[..32];
                     }
                     false
@@ -261,12 +263,11 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                     check_payment(mutant_index, &mut payment_map)?;
                 }
 
-                let lua_programe_hash = load_cell_data_hash(mutant_index, CellDep)?;
-                debug!("run mutant_id({mutant_index}): {mutant_id:?} <= {lua_programe_hash:?}");
+                debug!("run mutant_id({mutant_index}): {mutant_id:?} <= {extension_hash:?}");
                 match op {
                     Operation::Mint | Operation::Burn => {
                         ckb_std::high_level::exec_cell(
-                            &lua_programe_hash,
+                            &extension_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
@@ -281,7 +282,7 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                     }
                     Operation::Transfer => {
                         ckb_std::high_level::exec_cell(
-                            &lua_programe_hash,
+                            &extension_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),

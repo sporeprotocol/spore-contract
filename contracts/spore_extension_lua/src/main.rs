@@ -26,9 +26,8 @@ default_alloc!(6 * 1024, 800 * 1024, 64);
 pub fn program_entry() -> i8 {
     // Call main function and return error code
     ckb_std::debug!("into spore lua");
-    // match entry::main(ckb_std::env::argv()) {
-    //     Ok(_) => 0,
-    //     Err(err) => err.into(),
-    // }
-    0
+    match entry::main(ckb_std::env::argv()) {
+        Ok(_) => 0,
+        Err(err) => err.into(),
+    }
 }
