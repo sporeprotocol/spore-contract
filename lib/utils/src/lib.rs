@@ -25,6 +25,12 @@ pub mod co_build_types {
 
 mod mime;
 
+pub const MUTANT_ID_LEN: usize = 32;
+pub const MUTANT_ID_WITH_PAYMENT_LEN: usize = MUTANT_ID_LEN + 8;
+
+pub const CLUSTER_PROXY_ID_LEN: usize = 32;
+pub const CLUSTER_PROXY_ID_WITH_PAYMENT_LEN: usize = CLUSTER_PROXY_ID_LEN + 8;
+
 pub fn load_self_id() -> Result<Vec<u8>, Error> {
     Ok(load_script()?.args().raw_data()[..32].to_vec())
 }
@@ -147,10 +153,10 @@ pub fn find_position_by_lock_hash(lock_hash: &[u8; 32], source: Source) -> Optio
     QueryIter::new(load_cell_lock_hash, source).position(|hash| hash[..] == lock_hash[..])
 }
 
-pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u128 {
+pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u64 {
     QueryIter::new(load_cell, source)
         .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
-        .map(|cell| cell.capacity().unpack() as u128)
+        .map(|cell| cell.capacity().unpack())
         .sum()
 }
 

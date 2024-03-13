@@ -200,7 +200,7 @@ fn test_cluster_agent_mint() {
         build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
     let agent_out_cell = build_normal_output_cell_with_type(&mut context, agent_type.clone())
         .as_builder()
-        .capacity((UNIFORM_CAPACITY + 10).pack())
+        .capacity((2 * CAPACITY_UNIT).pack())
         .build();
 
     let tx = TransactionBuilder::default()

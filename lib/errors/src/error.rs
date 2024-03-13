@@ -36,6 +36,7 @@ pub enum Error {
     InvalidProxyOperation = 30,
     ImmutableProxyFieldModification,
     InvalidProxyID,
+    InvalidProxyArgs,
 
     // cluster_agent errors
     InvalidAgentOperation = 40,
@@ -69,6 +70,7 @@ pub enum Error {
     ExtensionCellNotInDep,
     ExtensionPaymentNotEnough,
     ClusterRequiresMutantApplied,
+    InvalidExtensionPaymentFormat,
 
     // mime errors
     Illformed = 80,

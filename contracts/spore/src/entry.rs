@@ -21,7 +21,7 @@ use spore_types::generated::spore::SporeData;
 use spore_utils::{
     calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
     find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME,
+    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -241,7 +241,7 @@ fn process_transfer() -> Result<(), Error> {
 }
 
 fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
-    let mut payment_map: BTreeMap<[u8; 32], u8> = BTreeMap::new();
+    let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
     let mut extension_hash = [0u8; 32];
     for mutant_id in mime.mutants.iter() {
         let mutant_index =
@@ -306,28 +306,28 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
 
 fn check_payment(
     mutant_index: usize,
-    payment_map: &mut BTreeMap<[u8; 32], u8>,
+    payment_map: &mut BTreeMap<[u8; 32], u64>,
 ) -> Result<(), Error> {
     let mutant_type = load_cell_type(mutant_index, CellDep)?.unwrap_or_default();
     let args = mutant_type.args().raw_data();
-    // CAUTION: only check 33 size pattern, leave room for user customization
-    if args.len() > 32 {
+    // CAUTION: only check bytes in [32, 40) pattern, leave room for user customization
+    if args.len() > MUTANT_ID_LEN {
+        if args.len() < MUTANT_ID_WITH_PAYMENT_LEN {
+            return Err(Error::InvalidExtensionPaymentFormat);
+        }
         // we need a payment
         let self_lock_hash = load_cell_lock_hash(0, GroupOutput)?;
         let mutant_lock_hash = load_cell_lock_hash(mutant_index, CellDep)?;
 
         let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
         let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
-        let payment_power = {
-            let previous_power = payment_map.entry(mutant_lock_hash).or_default();
-            let current_power = args.get(32).cloned().unwrap_or(0);
-            let power = *previous_power + current_power;
-            *previous_power = power;
-            power
+        let minimal_payment = {
+            let range = MUTANT_ID_LEN..MUTANT_ID_WITH_PAYMENT_LEN;
+            let threshold = u64::from_le_bytes(args[range].try_into().unwrap_or_default());
+            let payment_threshold = payment_map.entry(mutant_lock_hash).or_default();
+            *payment_threshold += threshold;
+            *payment_threshold
         };
-        let minimal_payment = 10u128.pow(payment_power as u32);
-
-        debug!("check mutant payment: {minimal_payment}");
         if input_capacity + minimal_payment > output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }
