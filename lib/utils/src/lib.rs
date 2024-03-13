@@ -47,7 +47,8 @@ pub fn verify_type_id(output_index: usize) -> Option<[u8; 32]> {
     let expected_id = calc_type_id(first_input.as_slice(), output_index);
     let type_id_args = load_type_args(output_index, Source::Output);
 
-    debug!("wanted: {:?}, got: {:?}", expected_id, type_id_args);
+    debug!("wanted: {expected_id:?}");
+    debug!("got({output_index}): {type_id_args:?}");
     if type_id_args.len() < 32 {
         return None;
     }
