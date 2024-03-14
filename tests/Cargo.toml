@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 ckb-testtool = "0.10.0"
+ckb-sdk = "3.0.1"
+hex = { version = "0.4.3" }
+serde_json = "1.0"
+
 spore-types = { path = "../lib/types" }
 spore-utils = { path = "../lib/utils" }
-hex = { version = "0.4.3" }
