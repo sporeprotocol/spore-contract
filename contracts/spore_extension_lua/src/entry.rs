@@ -32,7 +32,7 @@ type EvaluateLuaInstanceType = unsafe extern "C" fn(
 ) -> c_int;
 
 const SPORE_EXT_NORMAL_ARG_LEN: usize = 32;
-const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 33;
+const SPORE_EXT_MINIMAL_PAYMENT_ARG_LEN: usize = 32 + 8; // 32 bytes hash + u64 payment
 
 struct CKBLuaLib {
     lib: Library,
