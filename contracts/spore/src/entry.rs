@@ -315,11 +315,8 @@ fn check_payment(
         if args.len() < MUTANT_ID_WITH_PAYMENT_LEN {
             return Err(Error::InvalidExtensionPaymentFormat);
         }
-        // we need a payment
-        let self_lock_hash = load_cell_lock_hash(0, GroupOutput)?;
         let mutant_lock_hash = load_cell_lock_hash(mutant_index, CellDep)?;
-
-        let input_capacity = calc_capacity_sum(&self_lock_hash, Input);
+        let input_capacity = calc_capacity_sum(&mutant_lock_hash, Input);
         let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
         let minimal_payment = {
             let range = MUTANT_ID_LEN..MUTANT_ID_WITH_PAYMENT_LEN;
