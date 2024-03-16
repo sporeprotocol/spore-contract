@@ -2,7 +2,7 @@
 
 [[cells]]
 name = "cluster_proxy"
-enable_type_id = false
+enable_type_id = true
 location = { file = "../build/release/cluster_proxy" }
 
 # The lock script set to output cells
