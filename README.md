@@ -53,7 +53,7 @@ The versioning philosophy is **"Using code_hash as version"** for Spore Protocol
 
 Make sure you are using the proper version you want, because there's no such an "upgrade/downgrade" method but we suggest to use "destroy/reconstruct" method instead, which requires no modification of any fields in Spore cell.
 
-Our `forzen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
+Our `frozen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
 
 In addition, using Mutant contract requires the binary of Lua library. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
 

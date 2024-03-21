@@ -2,7 +2,7 @@
 
 [[cells]]
 name = "spore_extension_lua"
-enable_type_id = false
+enable_type_id = true
 location = { file = "../build/release/spore_extension_lua" }
 
 # The lock script set to output cells

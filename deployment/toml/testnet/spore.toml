@@ -2,7 +2,7 @@
 
 [[cells]]
 name = "spore"
-enable_type_id = false
+enable_type_id = true
 location = { file = "../build/release/spore" }
 
 # The lock script set to output cells

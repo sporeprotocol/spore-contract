@@ -2,7 +2,7 @@
 
 [[cells]]
 name = "cluster"
-enable_type_id = false
+enable_type_id = true
 location = { file = "../build/release/cluster" }
 
 # The lock script set to output cells

@@ -45,3 +45,40 @@
 |tx_hash|0xe464b7fb9311c5e2820e61c99afc615d6b98bdefbe318c34868c010cbd0dc938|
 |index|0|
 |code_hash|0x7366a61534fa7c7e6225ecc0d828ea3b5366adec2b58206f2ee84995fe030075|
+
+## tag 0.2.2-beta.2 (testnet)
+
+**spore**:
+| | |
+|-|-|
+|tx_hash|0x5e8d2a517d50fd4bb4d01737a7952a1f1d35c8afc77240695bb569cd7d9d5a1f|
+|index|0|
+|code_hash|0x685a60219309029d01310311dba953d67029170ca4848a4ff638e57002130a0d|
+
+**cluster**:
+| | |
+|-|-|
+|tx_hash|0xcebb174d6e300e26074aea2f5dbd7f694bb4fe3de52b6dfe205e54f90164510a|
+|index|0|
+|code_hash|0x0bbe768b519d8ea7b96d58f1182eb7e6ef96c541fbd9526975077ee09f049058|
+
+**cluster_agent**:
+| | |
+|-|-|
+|tx_hash|0x52210232292d10c51b48e72a2cea60d8f0a08c2680a97a8ee7ca0a39379f0036|
+|index|0|
+|code_hash|0x923e997654b2697ee3f77052cb884e98f28799a4270fd412c3edb8f3987ca622|
+
+**cluster_proxy**:
+| | |
+|-|-|
+|tx_hash|0xc5a41d58155b11ecd87a5a49fdcb6e83bd6684d3b72b2f3686f081945461c156|
+|index|0|
+|code_hash|0x4349889bda064adab8f49f7dd8810d217917f7df28e9b2a1df0b74442399670a|
+
+**spore_extension_lua**:
+| | |
+|-|-|
+|tx_hash|0x9b2098e5b6f575b2fd34ffd0212bc1c96e1f9e86fcdb146511849c174dfe0d02|
+|index|0|
+|code_hash|0x5ff1a403458b436ea4b2ceb72f1fa70a6507968493315b646f5302661cb68e57|
