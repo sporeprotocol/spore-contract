@@ -265,18 +265,14 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
 
                 debug!("run mutant_id({mutant_index}): {mutant_id:?} <= {extension_hash:?}");
                 match op {
-                    Operation::Mint | Operation::Burn => {
+                    Operation::Mint => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul(
-                                    [b'0' + mutant_index as u8, 0].as_slice(),
-                                )
-                                .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
-                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -285,15 +281,21 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             &extension_hash,
                             ScriptHashType::Data1,
                             &[
-                                CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul(
-                                    [b'0' + mutant_index as u8, 0].as_slice(),
-                                )
-                                .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
-                                    .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
-                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
+                            ],
+                        )?;
+                    }
+                    Operation::Burn => {
+                        ckb_std::high_level::exec_cell(
+                            &extension_hash,
+                            ScriptHashType::Data1,
+                            &[
+                                CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
                             ],
                         )?;
                     }
