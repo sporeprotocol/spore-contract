@@ -560,7 +560,7 @@ dependencies = [
 [[package]]
 name = "ckb-transaction-cobuild"
 version = "0.1.0"
-source = "git+https://github.com/cryptape/ckb-transaction-cobuild-poc?rev=bdb0c74#bdb0c745a76c1aa349a0e881ad4ccdd4af286723"
+source = "git+https://github.com/cryptape/ckb-transaction-cobuild-poc?rev=e29514f#bdb0c745a76c1aa349a0e881ad4ccdd4af286723"
 dependencies = [
  "blake2b-ref",
  "ckb-gen-types",
