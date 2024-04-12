@@ -76,6 +76,7 @@ jobs:
         env:
           VITE_ACCOUNT_CHARLIE: ${{ secrets.ACCOUNT_CHARLIE }}
           VITE_ACCOUNT_ALICE: ${{ secrets.ACCOUNT_ALICE }}
+          VITE_ACCOUNT_BOB: ${{ secrets.ACCOUNT_BOB }}
 
       - name: Prepare spore-sdk
         working-directory: spore-sdk
@@ -87,4 +88,5 @@ jobs:
         env:
           VITE_ACCOUNT_CHARLIE: ${{ secrets.ACCOUNT_CHARLIE }}
           VITE_ACCOUNT_ALICE: ${{ secrets.ACCOUNT_ALICE }}
+          VITE_ACCOUNT_BOB: ${{ secrets.ACCOUNT_BOB }}
           VITE_NETWORK: devnet
