@@ -50,16 +50,16 @@ fn process_creation(index: usize) -> Result<(), Error> {
             .ok_or(Error::MutantNotInDeps)?;
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::MintCluster(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if cluster_id != mint.cluster_id().as_slice()
-        || blake2b_256(cluster_data.as_slice()) != mint.data_hash().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
+    // // check co-build action @lyk
+    // let action::SporeActionUnion::MintCluster(mint) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if cluster_id != mint.cluster_id().as_slice()
+    //     || blake2b_256(cluster_data.as_slice()) != mint.data_hash().as_slice()
+    // {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
@@ -73,16 +73,16 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ModifyClusterPermanentField);
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if transfer.cluster_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
+    // // check co-build action @lyk
+    // let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum()
+    // else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if transfer.cluster_id().as_slice() != &load_self_id()? {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, transfer.from())?;
+    // check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }
