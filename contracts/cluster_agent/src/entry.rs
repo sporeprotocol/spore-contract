@@ -97,16 +97,16 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         }
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::MintAgent(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &cluster_id != mint.cluster_id().as_slice()
-        || &proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN] != mint.proxy_id().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
+    // // co-build check @lyk
+    // let action::SporeActionUnion::MintAgent(mint) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if &cluster_id != mint.cluster_id().as_slice()
+    //     || &proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN] != mint.proxy_id().as_slice()
+    // {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
@@ -119,29 +119,29 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ImmutableAgentFieldModification);
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &load_self_id()? != transfer.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
+    // // co-build check @lyk
+    // let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum()
+    // else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if &load_self_id()? != transfer.cluster_id().as_slice() {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, transfer.from())?;
+    // check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }
 
 fn process_destruction() -> Result<(), Error> {
-    // co-build check @lyk
-    let action::SporeActionUnion::BurnAgent(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &load_self_id()? != burn.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
+    // // co-build check @lyk
+    // let action::SporeActionUnion::BurnAgent(burn) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if &load_self_id()? != burn.cluster_id().as_slice() {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, burn.from())?;
     Ok(())
 }
 

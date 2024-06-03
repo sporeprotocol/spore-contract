@@ -159,16 +159,16 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if mint.spore_id().as_slice() != spore_id
-        || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
+    // // check co-build action @lyk
+    // let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if mint.spore_id().as_slice() != spore_id
+    //     || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
+    // {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
@@ -189,14 +189,14 @@ fn process_destruction() -> Result<(), Error> {
         verify_extension(&mime, Operation::Burn, vec![index as u8])?;
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if burn.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
+    // // check co-build action @lyk
+    // let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if burn.spore_id().as_slice() != &load_self_id()? {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, burn.from())?;
 
     Ok(())
 }
@@ -226,16 +226,16 @@ fn process_transfer() -> Result<(), Error> {
         )?;
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if transfer.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
+    // // check co-build action @lyk
+    // let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum()
+    // else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if transfer.spore_id().as_slice() != &load_self_id()? {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, transfer.from())?;
+    // check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }
@@ -271,8 +271,12 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -282,9 +286,14 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -294,8 +303,12 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }

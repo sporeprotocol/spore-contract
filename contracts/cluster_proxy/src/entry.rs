@@ -54,14 +54,14 @@ fn process_creation(index: usize) -> Result<(), Error> {
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::MintProxy(create) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if proxy_id != create.proxy_id().as_slice() || &cluster_id != create.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, create.to())?;
+    // // co-build check @lyk
+    // let action::SporeActionUnion::MintProxy(create) = extract_spore_action()?.to_enum() else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if proxy_id != create.proxy_id().as_slice() || &cluster_id != create.cluster_id().as_slice() {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupOutput, create.to())?;
 
     Ok(())
 }
@@ -74,18 +74,18 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ImmutableProxyFieldModification);
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if input_data.as_slice() != transfer.cluster_id().as_slice()
-        || &load_self_id()? != transfer.proxy_id().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
+    // // co-build check @lyk
+    // let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum()
+    // else {
+    //     return Err(Error::SporeActionMismatch);
+    // };
+    // if input_data.as_slice() != transfer.cluster_id().as_slice()
+    //     || &load_self_id()? != transfer.proxy_id().as_slice()
+    // {
+    //     return Err(Error::SporeActionFieldMismatch);
+    // }
+    // check_spore_address(GroupInput, transfer.from())?;
+    // check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }

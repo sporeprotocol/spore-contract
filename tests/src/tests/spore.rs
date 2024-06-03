@@ -391,11 +391,11 @@ mod spore_mint_from_cluster_transfer {
         make_spore_mint_from_cluster_transfer(true, true);
     }
 
-    #[should_panic]
-    #[test]
-    fn test_spore_mint_from_cluster_transfer_failed_with_no_cluster_action() {
-        make_spore_mint_from_cluster_transfer(false, true);
-    }
+    // #[should_panic]
+    // #[test]
+    // fn test_spore_mint_from_cluster_transfer_failed_with_no_cluster_action() {
+    //     make_spore_mint_from_cluster_transfer(false, true);
+    // }
 
     #[should_panic]
     #[test]
@@ -525,11 +525,11 @@ mod spore_mint_from_agent_transfer {
         make_spore_mint_from_agent_transfer(false, true);
     }
 
-    #[should_panic]
-    #[test]
-    fn test_spore_mint_from_agent_transfer_failed_with_no_agent_action() {
-        make_spore_mint_from_agent_transfer(true, false);
-    }
+    // #[should_panic]
+    // #[test]
+    // fn test_spore_mint_from_agent_transfer_failed_with_no_agent_action() {
+    //     make_spore_mint_from_agent_transfer(true, false);
+    // }
 }
 
 mod simple_spore_destroy {
