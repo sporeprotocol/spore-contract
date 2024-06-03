@@ -36,7 +36,7 @@ lock:
     - `immortal` is a param defines whether this NFT is undestructible or not, default is `false`. for example: `content-type: image/png;immortal=true`
 - `content` This field contains the main content of the NFT.
 - `cluster_id` An optional field used to denote the series or class collection of this Spore NFT item. Refer to the [Spore Cluster Cell](https://www.notion.so/Spore-NFT-Draft-Spec-old-27e391dc259f4c4bad924d1a2fc26dfc?pvs=21) section for more details.
-- `type` script is set to `SPORE_TYPE_DATA_HASH`  with args equals to `SPORE_ID`, which follows: `SPORE_ID = hash(this_transaction.inputs[0]) | Output_Index_Of_This_Cell`.
+- `type` script is set to `SPORE_TYPE_DATA_HASH`  with args equals to `SPORE_ID`, which follows: `SPORE_ID = hash(this_transaction.inputs[0] | output_index_of_this_cell)`.
 
 All the fields in a `Spore Cell` are immutable once created.
 
@@ -58,7 +58,7 @@ lock:
 
 - `name` Represents the name of the Spore Cluster.
 - `description` Provides a textual description of this Cluster.
-- `type` script is set to `CLUSTER_TYPE_DATA_HASH` with args equals to `CLUSTER_ID` , which follows the rules of Type ID script. And we define the `CLUSTER_ID = hash(this_transaction.inputs[0]) | Grouputput_index_of_this_cell`.
+- `type` script is set to `CLUSTER_TYPE_DATA_HASH` with args equals to `CLUSTER_ID` , which follows the rules of Type ID script. And we define the `CLUSTER_ID = hash(this_transaction.inputs[0] | output_index_of_this_cell)`.
 
 A `Spore Cluster Cell` is *indestructible*  and immutable once created.
 
