@@ -9,4 +9,4 @@ edition = "2021"
 ckb-std = "0.14.0"
 spore-types = { path = "../types" }
 spore-errors = { path = "../errors" }
-ckb-transaction-cobuild = { git = "https://github.com/cryptape/ckb-transaction-cobuild-poc", rev = "bdb0c74" }
+ckb-transaction-cobuild = { git = "https://github.com/cryptape/ckb-transaction-cobuild-poc", rev = "e29514f" }
