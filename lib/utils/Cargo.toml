@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ckb-std = "0.14.0"
+ckb-std = "0.15.3"
+blake2b-ref = { version = "0.3", default-features = false }
 spore-types = { path = "../types" }
 spore-errors = { path = "../errors" }
-ckb-transaction-cobuild = { git = "https://github.com/cryptape/ckb-transaction-cobuild-poc", rev = "bdb0c74" }
+ckb-transaction-cobuild = { git = "https://github.com/code-monad/ckb-transaction-cobuild-poc", rev = "89b0c0e" }

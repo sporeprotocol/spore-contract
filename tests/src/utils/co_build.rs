@@ -3,6 +3,8 @@ use ckb_testtool::ckb_types::core::TransactionView;
 use ckb_testtool::ckb_types::packed;
 use ckb_testtool::ckb_types::prelude::*;
 
+use molecule::prelude::*;
+
 use ckb_testtool::context::Context;
 use spore_types::generated::action::BurnAgent;
 use spore_types::generated::action::BurnProxy;

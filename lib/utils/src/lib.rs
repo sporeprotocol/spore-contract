@@ -3,11 +3,11 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use blake2b_ref::Blake2bBuilder;
 use ckb_std::ckb_constants::Source;
 use ckb_std::ckb_types::bytes::Bytes;
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::ckb_types::prelude::*;
-use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
     load_cell, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type,
@@ -94,7 +94,7 @@ pub fn find_position_by_type_args(
     QueryIter::new(load_cell_type, source).position(|script| {
         if let Some(script) = script {
             if let Some(filter) = filter_fn {
-                if !filter(&script.code_hash().unpack()) {
+                if !filter(&script.code_hash().as_slice().try_into().unwrap()) {
                     return false;
                 }
             }
@@ -156,7 +156,7 @@ pub fn find_position_by_lock_hash(lock_hash: &[u8; 32], source: Source) -> Optio
 pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u64 {
     QueryIter::new(load_cell, source)
         .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
-        .map(|cell| cell.capacity().unpack())
+        .map(|cell| ckb_std::ckb_types::prelude::Unpack::<u64>::unpack(&cell.capacity()))
         .sum()
 }
 
@@ -207,4 +207,14 @@ pub fn compatible_load_cluster_data(
                 .map_err(|_| Error::InvalidClusterData)?,
         )
     }
+}
+
+pub fn blake2b_256<T: AsRef<[u8]>>(s: T) -> [u8; 32] {
+    let mut result = [0u8; 32];
+    let mut blake2b = Blake2bBuilder::new(32)
+        .personal(b"ckb-default-hash")
+        .build();
+    blake2b.update(s.as_ref());
+    blake2b.finalize(&mut result);
+    result
 }

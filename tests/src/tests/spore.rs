@@ -6,6 +6,8 @@ use crate::utils::co_build::*;
 use crate::utils::*;
 use crate::MAX_CYCLES;
 
+use molecule::prelude::Entity;
+
 mod simple_spore_mint {
     use super::*;
     use std::fs::File;

@@ -1,20 +1,3 @@
-# Rust
-target
-.cache/.cargo/*
-
-# C
-contracts/c/build/*
-
-# others
-build/*
-!.gitkeep
-.tmp/
-
-.idea/
-
-# generated from build.rs
-contracts/cluster/src/hash.rs
-contracts/cluster_agent/src/hash.rs
-contracts/cluster_proxy/src/hash.rs
-contracts/spore/src/hash.rs
-contracts/spore_extension_lua/src/hash.rs
+/build
+/target
+/tests/failed_txs

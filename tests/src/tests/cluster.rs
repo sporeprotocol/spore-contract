@@ -6,6 +6,8 @@ use crate::utils::co_build::*;
 use crate::utils::*;
 use crate::MAX_CYCLES;
 
+use molecule::prelude::*;
+
 mod simple_cluster_mint {
     use super::*;
 

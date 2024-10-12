@@ -50,7 +50,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
     let proxy_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
         .ok_or(Error::ProxyCellNotInDep)?;
     let proxy_type = load_cell_type(proxy_index, CellDep)?.unwrap_or_default();
-    if !is_valid_cluster_proxy_cell(&proxy_type.code_hash().unpack()) {
+    if !is_valid_cluster_proxy_cell(&proxy_type.code_hash().as_slice().try_into().unwrap()) {
         return Err(Error::RefCellNotClusterProxy);
     }
 

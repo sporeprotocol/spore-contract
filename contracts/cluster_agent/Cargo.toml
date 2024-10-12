@@ -3,18 +3,13 @@ name = "cluster_agent"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-ckb-std = "0.14.3"
+ckb-std = "0.15.3"
 spore-utils = { path = "../../lib/utils" }
 spore-types = { path = "../../lib/types" }
 spore-errors = { path = "../../lib/errors" }
 
-[build-dependencies]
-ckb-hash = "0.112.1"
-spore-build-tools = { path = "../../lib/build" }
 
-[features]
-default = []
-release_export = []
+[build-dependencies]
+ckb-hash = "0.118.0"
+spore-build-tools = { path = "../../lib/build" }

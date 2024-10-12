@@ -9,7 +9,7 @@ fn load_code_hash(binary_name: &str, compile_mode: &str) -> [u8; 32] {
         .join("../../build")
         .join(compile_mode)
         .join(binary_name);
-    let binary = std::fs::read(binary_path).expect("load cluster");
+    let binary = std::fs::read(binary_path.clone()).expect(format!("load binary {}", binary_path.to_str().unwrap_or_default()).as_str());
     blake2b_256(binary)
 }
 

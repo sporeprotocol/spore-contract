@@ -1,6 +1,5 @@
 use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
-use ckb_std::ckb_types::util::hash::blake2b_256;
 use core::ffi::CStr;
 use core::result::Result;
 
@@ -19,9 +18,10 @@ use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
-    calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+    blake2b_256, calc_capacity_sum, check_spore_address, compatible_load_cluster_data,
+    extract_spore_action, find_position_by_lock_hash, find_position_by_type,
+    find_position_by_type_args, load_self_id, verify_type_id, MIME, MUTANT_ID_LEN,
+    MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -247,7 +247,7 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
         let mutant_index =
             QueryIter::new(load_cell_type, CellDep).position(|script| match script {
                 Some(script) => {
-                    extension_hash = script.code_hash().unpack();
+                    extension_hash = script.code_hash().as_slice().try_into().unwrap_or_default();
                     if crate::hash::MUTANT_CODE_HASHES.contains(&extension_hash) {
                         return mutant_id[..] == script.args().raw_data()[..32];
                     }
@@ -271,8 +271,12 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -282,9 +286,14 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -294,8 +303,12 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                             ScriptHashType::Data1,
                             &[
                                 CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }

@@ -7,6 +7,9 @@ use ckb_testtool::ckb_types::{
     bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed, packed::*, prelude::*,
 };
 use ckb_testtool::context::Context;
+
+use molecule::prelude::*;
+
 use spore_types::generated::action::SporeActionUnion;
 use std::num::ParseIntError;
 
