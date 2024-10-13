@@ -19,7 +19,7 @@ use ckb_std::default_alloc;
 #[cfg(not(test))]
 ckb_std::entry!(program_entry);
 #[cfg(not(test))]
-default_alloc!(6 * 1024, 3000 * 1024, 64);
+default_alloc!(6 * 1024, 2500 * 1024, 64);
 
 /// program entry
 pub fn program_entry() -> i8 {

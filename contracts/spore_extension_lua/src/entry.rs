@@ -13,7 +13,7 @@ use alloc::{format, vec, vec::Vec};
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::debug;
-use ckb_std::dynamic_loading_c_impl::{CKBDLContext, Library, Symbol};
+use ckb_std::dynamic_loading::{CKBDLContext, Library, Symbol};
 use ckb_std::env::Arg;
 use ckb_std::high_level::{load_cell_data, load_cell_type, QueryIter};
 use core::ffi::{c_char, c_int, c_ulong, c_void};

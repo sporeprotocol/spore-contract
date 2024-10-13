@@ -105,7 +105,7 @@ pub fn load_frozen_toml() -> FrozenVersions {
         .unwrap()
         .join("../../deployment/frozen")
         .join(format!("{net_type}.toml"));
-    let frozen = fs::read_to_string(frozen_path).unwrap();
+    let frozen = fs::read_to_string(frozen_path.clone()).expect(&format!("{} failed to load", frozen_path.to_str().unwrap()));
     toml::from_str(&frozen).unwrap()
 }
 

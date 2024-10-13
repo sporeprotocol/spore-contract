@@ -1,18 +1,25 @@
 [workspace]
 resolver = "2"
-members = [
-    "lib/types",
-    "lib/utils",
-    "lib/errors",
-    "lib/build",
 
-    "contracts/spore",
-    "contracts/cluster",
-    "contracts/cluster_proxy",
-    "contracts/cluster_agent",
-    "contracts/spore_extension_lua",
+members = [
+  # Please don't remove the following line, we use it to automatically
+  # detect insertion point for newly generated crates.
+  # @@INSERTION_POINT@@
+  "contracts/spore_extension_lua",
+  "contracts/cluster_proxy",
+  "contracts/cluster_agent",
+  "contracts/cluster",
+  "contracts/spore",
+
+  "lib/types",
+  "lib/utils",
+  "lib/errors",
+  "lib/build",
+
+  "tests",
 ]
-exclude = ["tests"]
+
+
 
 [profile.release]
 overflow-checks = true

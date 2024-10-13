@@ -18,3 +18,5 @@ contracts/cluster_agent/src/hash.rs
 contracts/cluster_proxy/src/hash.rs
 contracts/spore/src/hash.rs
 contracts/spore_extension_lua/src/hash.rs
+
+/tests/failed_txs

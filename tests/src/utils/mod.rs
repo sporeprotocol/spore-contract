@@ -3,10 +3,15 @@
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use ckb_testtool::ckb_hash::{new_blake2b, Blake2bBuilder};
 use ckb_testtool::ckb_types::core::ScriptHashType;
+use ckb_testtool::ckb_types::prelude::*;
 use ckb_testtool::ckb_types::{
-    bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed, packed::*, prelude::*,
+    bytes::Bytes, core::TransactionBuilder, core::TransactionView, packed, packed::*,
 };
+
 use ckb_testtool::context::Context;
+
+use molecule::prelude::*;
+
 use spore_types::generated::action::SporeActionUnion;
 use std::num::ParseIntError;
 
@@ -181,6 +186,7 @@ pub fn build_cluster_materials(
         build_spore_type_script(context, cluster_out_point, cluster_id.to_vec().into());
     let cluster_input = build_cluster_input(context, cluster_data.clone(), cluster_type.clone());
     let cluster_output = build_normal_output_cell_with_type(context, cluster_type.clone());
+
     let cluster_dep = build_normal_cell_dep_with_lock_args(
         context,
         cluster_data.as_slice(),

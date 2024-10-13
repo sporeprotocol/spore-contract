@@ -4,9 +4,10 @@ extern crate alloc;
 pub use crate::generated::spore::{Bytes, BytesOpt, SporeData};
 use alloc::string::String;
 use alloc::vec::Vec;
-use molecule::prelude::{Builder, Entity};
 
 pub mod generated;
+
+use molecule::prelude::{Builder, Entity};
 
 impl Into<Bytes> for &[u8] {
     fn into(self) -> Bytes {

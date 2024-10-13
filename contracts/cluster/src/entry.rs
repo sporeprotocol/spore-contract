@@ -1,7 +1,6 @@
 // Import heap related library from `alloc`
 // https://doc.rust-lang.org/alloc/index.html
 use alloc::vec::Vec;
-use ckb_std::ckb_types::util::hash::blake2b_256;
 use spore_types::generated::action;
 // Import from `core` instead of from `std` since we are in no-std mode
 use core::result::Result;
@@ -20,7 +19,7 @@ use spore_errors::error::Error;
 use spore_types::generated::spore::ClusterDataV2 as ClusterData;
 use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_type, find_position_by_type_args,
-    load_self_id, verify_type_id,
+    load_self_id, verify_type_id, blake2b_256
 };
 
 use crate::hash::SPORE_EXTENSION_LUA;

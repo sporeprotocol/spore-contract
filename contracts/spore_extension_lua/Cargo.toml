@@ -3,15 +3,14 @@ name = "spore_extension_lua"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-ckb-std = "0.14.3"
+ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "d74821c9", features = ["dlopen-c"] }
+
 spore-utils = { path = "../../lib/utils" }
 spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]
-ckb-hash = "0.112.1"
+ckb-hash = "0.118.0"
 
 [features]
 default = []

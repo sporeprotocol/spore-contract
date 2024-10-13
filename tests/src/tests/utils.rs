@@ -1,6 +1,7 @@
-use ckb_testtool::ckb_types::prelude::{Builder, Entity};
 use spore_types::generated::spore;
 use spore_utils::{compatible_load_cluster_data, MIME};
+
+use molecule::prelude::*;
 
 #[test]
 fn test_mime_basic() {
@@ -45,8 +46,8 @@ fn test_compatible_load_cluster_data() {
         .map_err(|_| "compatible_load_cluster_data error")
         .expect("test ClusterDataV1 -> ClusterDataV2");
     assert_eq!(
-        cluster_data_v2.name().as_slice(),
-        cluster_data_v1.name().as_slice()
+        cluster_data_v2.name().unpack(),
+        cluster_data_v1.name().unpack(),
     );
     assert_eq!(
         cluster_data_v2.description().as_slice(),
