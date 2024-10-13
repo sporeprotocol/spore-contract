@@ -20,7 +20,7 @@ CONTRACT :=
 # By default, we would clean build/{release,debug} folder first, in case old
 # contracts are mixed together with new ones, if for some reason you want to
 # revert this behavior, you can change this to anything other than true
-CLEAN_BUILD_DIR_FIRST := false
+CLEAN_BUILD_DIR_FIRST := true
 BUILD_DIR := build/$(MODE)
 
 ifeq (release,$(MODE))
@@ -65,7 +65,8 @@ run:
 # test, check, clippy and fmt here are provided for completeness,
 # there is nothing wrong invoking cargo directly instead of make.
 test:
-	cargo test $(CARGO_ARGS)
+	@set -eu; 
+	env MODE=debug cargo test $(CARGO_ARGS);
 
 check:
 	cargo check $(CARGO_ARGS)

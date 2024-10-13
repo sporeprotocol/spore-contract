@@ -83,6 +83,11 @@ pub enum Error {
     ContentOutOfRange,
 
     Unknown,
+    Waitfailure,
+    InvalidFd,
+    OtherEndClosed,
+    MaxVmsSpawned,
+    MaxFdsCreated,
 }
 
 impl From<SysError> for Error {
@@ -94,6 +99,11 @@ impl From<SysError> for Error {
             LengthNotEnough(_) => Self::LengthNotEnough,
             Encoding => Self::Encoding,
             Unknown(err_code) => panic!("unexpected sys error {}", err_code),
+            WaitFailure => Self::Waitfailure,
+            InvalidFd => Self::InvalidFd,
+            OtherEndClosed => Self::OtherEndClosed,
+            MaxVmsSpawned => Self::MaxVmsSpawned,
+            MaxFdsCreated => Self::MaxFdsCreated,
         }
     }
 }

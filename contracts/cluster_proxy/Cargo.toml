@@ -4,14 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ckb-std = "0.15.3"
+ckb-std = { git = "https://github.com/nervosnetwork/ckb-std", rev = "d74821c9" }
+
 
 spore-utils = { path = "../../lib/utils" }
 spore-types = { path = "../../lib/types" }
 spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]
-ckb-hash = "0.116.1"
+ckb-hash = "0.118.0"
 hex = "0.4.3"
 spore-build-tools = { path = "../../lib/build" }
 
