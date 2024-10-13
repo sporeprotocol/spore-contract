@@ -2,8 +2,7 @@ use ckb_testtool::ckb_hash::blake2b_256;
 use ckb_testtool::ckb_types::core::TransactionView;
 use ckb_testtool::ckb_types::packed;
 use ckb_testtool::ckb_types::prelude::*;
-
-use molecule::prelude::*;
+use ckb_testtool::ckb_types::H256;
 
 use ckb_testtool::context::Context;
 use spore_types::generated::action::BurnAgent;
@@ -22,21 +21,23 @@ use super::internal;
 fn h256_to_byte32(hash: [u8; 32]) -> Byte32 {
     let hash = hash
         .into_iter()
-        .map(packed::Byte::new)
-        .collect::<Vec<packed::Byte>>()
+        .map(molecule::prelude::Byte::new)
+        .collect::<Vec<molecule::prelude::Byte>>()
         .try_into()
         .unwrap();
-    Byte32::new_builder().set(hash).build()
+    {
+        return Byte32::new_builder().set(hash).build();
+    }
 }
 
 fn script_to_address(script: packed::Script) -> Address {
-    let code_hash = script.code_hash().unpack();
+    let code_hash: H256 = script.code_hash().unpack();
     let hash_type = script.hash_type();
     let args = script.args().raw_data();
 
     let code_hash = h256_to_byte32(code_hash.into());
     let args = Bytes::new_builder()
-        .set(args.into_iter().map(packed::Byte::new).collect())
+        .set(args.into_iter().map(molecule::prelude::Byte::new).collect())
         .build();
 
     let script = Script::new_builder()
@@ -61,7 +62,7 @@ pub fn complete_co_build_message_with_actions(
             let script_hash = if let Some(script_hash) = script_hash {
                 script_hash.calc_script_hash()
             } else {
-                packed::Byte32::default()
+                ckb_testtool::ckb_types::packed::Byte32::new_builder().build()
             };
             let spore_action = SporeAction::new_builder().set(action).build();
             Action::new_builder()

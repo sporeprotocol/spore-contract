@@ -11,7 +11,7 @@ spore-types = { path = "../../lib/types" }
 spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]
-ckb-hash = "0.118.0"
+ckb-hash = "0.116.1"
 hex = "0.4.3"
 spore-build-tools = { path = "../../lib/build" }
 

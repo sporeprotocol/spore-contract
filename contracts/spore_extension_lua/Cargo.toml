@@ -10,7 +10,7 @@ spore-utils = { path = "../../lib/utils" }
 spore-errors = { path = "../../lib/errors" }
 
 [build-dependencies]
-ckb-hash = "0.118.0"
+ckb-hash = "0.116.1"
 
 [features]
 default = []

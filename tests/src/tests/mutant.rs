@@ -17,7 +17,7 @@ fn test_simple_mutant_mint() {
 
     println!(
         "input cell hash: {:?}, out_index: {}",
-        input_cell.previous_output().tx_hash().unpack().to_string(),
+        &input_cell.previous_output().tx_hash().to_string(),
         0
     );
     let mutant_id = build_type_id(&input_cell, 0);

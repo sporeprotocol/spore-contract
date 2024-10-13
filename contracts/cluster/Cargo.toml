@@ -13,7 +13,7 @@ blake2b-ref = { version = "0.3", default-features = false }
 
 
 [build-dependencies]
-ckb-hash = "0.118.0"
+ckb-hash = "0.116.1"
 spore-build-tools = { path = "../../lib/build" }
 
 [features]
