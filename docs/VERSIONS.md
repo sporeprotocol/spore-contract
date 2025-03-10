@@ -1,6 +1,7 @@
 # Historical Versions
 
 ## tag 0.2.1 (testnet)
+**⚠️ Deprecated !!! This early beta release has been phased out. For optimal ecosystem compatibility, please upgrade to version 0.2.2-beta.2 or later.**
 
 **spore**:
 | | |
