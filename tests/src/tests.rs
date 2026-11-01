@@ -1,5 +1,4 @@
 mod cluster;
-mod mutant;
 mod mutant_rust;
 mod spore;
 mod utils;

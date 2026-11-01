@@ -118,11 +118,6 @@ impl Invocation {
     }
 }
 
-/// Run the pinned legacy interpreter with its original decimal argument ABI.
-pub fn execute_lua(code_index: usize, args: &[&CStr]) -> Result<(), Error> {
-    execute(code_index, Source::CellDep, args)
-}
-
 fn execute(index: usize, source: Source, args: &[&CStr]) -> Result<(), Error> {
     let pointers: Vec<*const i8> = args.iter().map(|a| a.as_ptr() as *const i8).collect();
     let mut pid = 0;

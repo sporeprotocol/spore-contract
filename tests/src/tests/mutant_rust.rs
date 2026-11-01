@@ -497,32 +497,59 @@ fn native_payment_is_aggregated_for_all_mutants_and_checked_for_overflow() {
     rejects(&context, &overflow, "error code 94");
 }
 
+// A historical Lua dependency is deliberately synthetic: the new contracts
+// must reject it by lifecycle hash, without loading or executing an interpreter.
+fn legacy_lua_rule(context: &mut Context) -> (CellDep, [u8; 32]) {
+    // data_hash recorded in deployment/migration/testnet/spore_extension_lua/
+    // 2024-03-16-0.2.2-beta.2.json.
+    let hash: [u8; 32] =
+        hex::decode("5ff1a403458b436ea4b2ceb72f1fa70a6507968493315b646f5302661cb68e57")
+            .unwrap()
+            .try_into()
+            .unwrap();
+    let id = [0x5a; 32];
+    let script = Script::new_builder()
+        .code_hash(hash.pack())
+        .hash_type(ScriptHashType::Data1.into())
+        .args(id.to_vec().pack())
+        .build();
+    let output = build_normal_output_cell_with_type(context, Some(script));
+    let point = context.create_cell(output, Bytes::from_static(b"assert(true)"));
+    (CellDep::new_builder().out_point(point).build(), id)
+}
+
 #[test]
-fn rust_and_legacy_lua_can_run_together_and_both_must_pass() {
-    for lua in [
-        "if spore_ext_mode == 1 then assert(true) end",
-        "if spore_ext_mode == 1 then assert(false) end",
+fn legacy_lua_dependencies_are_rejected_on_mint_transfer_and_burn() {
+    let mut context = Context::default();
+    let legacy = legacy_lua_rule(&mut context);
+    let mint = mint(&mut context, &[legacy], &[3, 4, 7]);
+    for tx in [
+        mint.clone(),
+        move_spore(&mut context, &mint, false),
+        move_spore(&mut context, &mint, true),
     ] {
-        let mut context = Context::default();
-        let native = rule(&mut context, "mutant_equipment", b"", None);
-        let (legacy, id) = build_single_mutant_celldep_tx(&mut context, lua, 0);
-        let mut rules = vec![native.clone()];
-        rules.push((legacy.cell_deps().get(0).unwrap(), id));
-        let tx = mint(&mut context, &rules, &[3, 4, 7]);
-        let tx = context.complete_tx(
-            tx.as_advanced_builder()
-                .cell_deps(legacy.cell_deps().into_iter().skip(1).collect::<Vec<_>>())
-                .build(),
-        );
-        if lua.contains("false") {
-            rejects(&context, &tx, "error code 93");
-        } else {
-            context.verify_tx(&tx, MAX_CYCLES).expect("native plus Lua");
-        }
+        rejects(&context, &tx, "error code 71");
     }
 }
 
-fn cluster(context: &mut Context, native: &(CellDep, [u8; 32])) -> (CellDep, [u8; 32]) {
+#[test]
+fn mixed_native_and_legacy_rules_are_rejected_in_either_order() {
+    let mut context = Context::default();
+    let native = rule(&mut context, "mutant_equipment", b"", None);
+    let legacy = legacy_lua_rule(&mut context);
+    for rules in [
+        [native.clone(), legacy.clone()],
+        [legacy.clone(), native.clone()],
+    ] {
+        let tx = mint(&mut context, &rules, &[3, 4, 7]);
+        rejects(&context, &tx, "error code 71");
+    }
+}
+
+fn cluster_creation(
+    context: &mut Context,
+    native: &(CellDep, [u8; 32]),
+) -> (TransactionView, [u8; 32]) {
     let (code, dep) = build_spore_contract_materials(context, "cluster");
     let input = build_normal_input(context);
     let id = build_type_id(&input, 0);
@@ -547,12 +574,20 @@ fn cluster(context: &mut Context, native: &(CellDep, [u8; 32])) -> (CellDep, [u8
         tx,
         &[(Some(script), action)],
     ));
+    (tx, id)
+}
+
+fn cluster(context: &mut Context, native: &(CellDep, [u8; 32])) -> (CellDep, [u8; 32]) {
+    let (tx, id) = cluster_creation(context, native);
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("cluster uses declared native Mutant ID, including payment args");
+    let output = tx.outputs().get(0).unwrap();
+    let data = tx.outputs_data().get(0).unwrap().raw_data();
+    let dep = tx.cell_deps().get(0).unwrap();
     let missing = context.complete_tx(tx.as_advanced_builder().set_cell_deps(vec![dep]).build());
     rejects(context, &missing, "error code 54");
-    let point = context.create_cell(output, Bytes::copy_from_slice(data.as_slice()));
+    let point = context.create_cell(output, data);
     (CellDep::new_builder().out_point(point).build(), id)
 }
 
@@ -670,31 +705,12 @@ fn native_creation_bounds_code_size_and_requires_riscv_elf64() {
 }
 
 #[test]
-fn legacy_lua_success_returns_to_later_native_rules_and_cobuild() {
-    for reject in [false, true] {
-        let mut context = Context::default();
-        let (lua, id) = build_single_mutant_celldep_tx(&mut context, "assert(true)", 0);
-        let native = rule(
-            &mut context,
-            "mutant_probe",
-            if reject { b"mint" } else { b"" },
-            None,
-        );
-        let rules = [(lua.cell_deps().get(0).unwrap(), id), native];
-        let tx = mint(&mut context, &rules, &[3, 4, 7]);
-        let tx = context.complete_tx(
-            tx.as_advanced_builder()
-                .cell_deps(lua.cell_deps().into_iter().skip(1).collect::<Vec<_>>())
-                .build(),
-        );
-        if reject {
-            rejects(&context, &tx, "error code 93");
-        } else {
-            context
-                .verify_tx(&tx, MAX_CYCLES)
-                .expect("Lua then native success");
-            let missing = tx.as_advanced_builder().set_witnesses(vec![]).build();
-            assert!(context.verify_tx(&missing, MAX_CYCLES).is_err());
-        }
-    }
+fn cluster_creation_rejects_a_legacy_lua_mutant() {
+    let mut context = Context::default();
+    let legacy = legacy_lua_rule(&mut context);
+    let (tx, _) = cluster_creation(&mut context, &legacy);
+    rejects(&context, &tx, "error code 54");
 }
+
+#[path = "mutant_performance.rs"]
+mod performance;

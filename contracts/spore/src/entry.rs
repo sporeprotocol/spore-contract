@@ -1,15 +1,11 @@
 use alloc::collections::BTreeMap;
-use alloc::ffi::CString;
 use alloc::{format, vec, vec::Vec};
 use ckb_std::ckb_types::util::hash::blake2b_256;
 use core::result::Result;
 
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
-use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{
-    load_cell_capacity, load_cell_data_hash, load_cell_lock_hash, load_script,
-};
+use ckb_std::high_level::{load_cell_capacity, load_cell_lock_hash, load_script};
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -253,54 +249,30 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<usize>) -> Result<(), 
             let hash: [u8; 32] = script.code_hash().unpack();
             let native = crate::hash::RUST_MUTANT_CODE_HASHES.contains(&hash)
                 && script.hash_type() == spore_mutant::VM2_HASH_TYPE.into();
-            let lua = crate::hash::LUA_MUTANT_CODE_HASHES.contains(&hash)
-                && script.hash_type() == ScriptHashType::Data1.into();
             let args = script.args().raw_data();
-            if (native || lua) && matches!(args.len(), 32 | 40) && args[..32] == mutant_id[..] {
-                selected = Some((index, hash, native));
+            if native && matches!(args.len(), 32 | 40) && args[..32] == mutant_id[..] {
+                selected = Some(index);
                 break;
             }
         }
-        let (mutant_index, extension_hash, native) =
-            selected.ok_or(Error::ExtensionCellNotInDep)?;
+        let mutant_index = selected.ok_or(Error::ExtensionCellNotInDep)?;
         if let Operation::Mint = op {
             check_payment(mutant_index, &mut payment_map)?;
         }
-        let result = if native {
-            use spore_mutant::{Invocation, Operation as NativeOperation};
-            let (operation, input_index, output_index) = match op {
-                Operation::Mint => (NativeOperation::Mint, None, Some(argv[0])),
-                Operation::Transfer => (NativeOperation::Transfer, Some(argv[0]), Some(argv[1])),
-                Operation::Burn => (NativeOperation::Burn, Some(argv[0]), None),
-            };
-            Invocation {
-                operation,
-                mutant_index,
-                input_index,
-                output_index,
-            }
-            .execute()
-        } else {
-            // Preserve the Lua interpreter's argument ABI, with full decimal indices.
-            // Spawn the pinned interpreter, not the Lua source cell itself.
-            let code_index = QueryIter::new(load_cell_data_hash, CellDep)
-                .position(|hash| hash == extension_hash)
-                .ok_or(Error::ExtensionCellNotInDep)?;
-            let operation = match op {
-                Operation::Mint => 0,
-                Operation::Transfer => 1,
-                Operation::Burn => 2,
-            };
-            let mut strings = vec![format!("{operation}"), format!("{mutant_index}")];
-            strings.extend(argv.iter().map(|index| format!("{index}")));
-            let cstrings: Vec<CString> = strings
-                .iter()
-                .map(|s| CString::new(s.as_bytes()).unwrap())
-                .collect();
-            let refs: Vec<_> = cstrings.iter().map(|s| s.as_c_str()).collect();
-            spore_mutant::execute_lua(code_index, &refs)
+        use spore_mutant::{Invocation, Operation as NativeOperation};
+        let (operation, input_index, output_index) = match op {
+            Operation::Mint => (NativeOperation::Mint, None, Some(argv[0])),
+            Operation::Transfer => (NativeOperation::Transfer, Some(argv[0]), Some(argv[1])),
+            Operation::Burn => (NativeOperation::Burn, Some(argv[0]), None),
         };
-        result.map_err(|error| {
+        Invocation {
+            operation,
+            mutant_index,
+            input_index,
+            output_index,
+        }
+        .execute()
+        .map_err(|error| {
             debug!("Mutant {mutant_index} failed: {error:?}");
             match error {
                 spore_mutant::Error::Rejected(_) => Error::NativeMutantRejected,

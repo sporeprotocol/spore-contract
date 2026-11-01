@@ -5,8 +5,8 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[allow(dead_code)]
-// Covers unoptimized Lua interpreter startup under the Meepo verifier as well
-// as native execution. Individual budget-exhaustion tests use a smaller limit.
+// Allows the unoptimized contract fixtures to run under the Meepo verifier.
+// Individual budget-exhaustion tests use a smaller limit.
 const MAX_CYCLES: u64 = 50_000_000;
 
 #[cfg(test)]

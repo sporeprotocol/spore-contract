@@ -335,16 +335,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spore_extension_lua"
-version = "0.1.0"
-dependencies = [
- "ckb-hash",
- "ckb-std 0.14.3",
- "spore-errors",
- "spore-utils",
-]
-
-[[package]]
 name = "spore_extension_rust"
 version = "0.1.0"
 dependencies = [

@@ -9,8 +9,9 @@ done
 runner=${SPORE_BUILD_RUNNER:-cross}
 target=riscv64imac-unknown-none-elf
 mkdir -p "build/$profile"
-for contract in spore_extension_lua spore_extension_rust cluster cluster_proxy cluster_agent spore mutant_equipment mutant_probe; do
+# Do not leave legacy runtimes in staged artifacts after an incremental build.
+rm -f "build/$profile/spore_extension_lua" "build/$profile/libckblua.so"
+for contract in spore_extension_rust cluster cluster_proxy cluster_agent spore mutant_equipment mutant_probe; do
     "$runner" build --locked --target "$target" -p "$contract" "$@"
     cp "target/$target/$profile/$contract" "build/$profile/$contract"
 done
-cp contracts/spore_extension_lua/lua/libckblua.so "build/$profile/libckblua.so"

@@ -18,7 +18,6 @@ pub fn main() {
     let compile_mode = env::var("PROFILE").unwrap();
     let cluster_code_hash = load_code_hash("cluster", &compile_mode);
     let cluster_agent_code_hash = load_code_hash("cluster_agent", &compile_mode);
-    let mutant_code_hash = load_code_hash("spore_extension_lua", &compile_mode);
     let rust_mutant_code_hash = load_code_hash("spore_extension_rust", &compile_mode);
 
     let frozen = load_frozen_toml();
@@ -28,11 +27,9 @@ pub fn main() {
         vec![cluster_agent_code_hash],
     ]
     .concat();
-    let mutant_code_hashes = [frozen.mutant_code_hashes(), vec![mutant_code_hash]].concat();
 
     let mut content = concat_code_hashes("CLUSTER_CODE_HASHES", &cluster_code_hashes);
     content += concat_code_hashes("CLUSTER_AGENT_CODE_HASHES", &cluster_agent_code_hashes).as_str();
-    content += concat_code_hashes("LUA_MUTANT_CODE_HASHES", &mutant_code_hashes).as_str();
     content += concat_code_hashes("RUST_MUTANT_CODE_HASHES", &[rust_mutant_code_hash]).as_str();
     fs::write(
         std::path::PathBuf::from(env::var("OUT_DIR").unwrap()).join("hash.rs"),

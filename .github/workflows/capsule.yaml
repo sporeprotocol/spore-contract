@@ -69,25 +69,15 @@ jobs:
         target: [debug, testnet, mainnet]
     runs-on: ubuntu-24.04
     steps:
-      # TODO: add this codehash util into the `tests` directory
-      # or, simply use `ckb-cli util blake2b --binary-path ...` to get the codehash
-      - name: Checkout a code_hash tool
+      - name: Checkout repository code-hash tool
         uses: actions/checkout@v4
-        with:
-          repository: Flouse/spore-contract
-          ref: codehash-tool
 
       - uses: actions/download-artifact@v4
         with:
           name: contract-binaries-${{ matrix.target }}-${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}
           path: build
 
-      - name: Build codehash-tool
-        working-directory: build
-        run: cargo build
-
       - name: Record code_hash of contract binaries
-        working-directory: build
         run: |
           echo "spore-contract-commit: ${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}\n"
-          ./target/debug/code_hash
+          python3 scripts/code-hashes.py build

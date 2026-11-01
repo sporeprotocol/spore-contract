@@ -434,29 +434,3 @@ pub fn build_single_spore_mint_in_cluster_tx(
         &[(cluster_script, cluster_transfer), (nft_script, nft_action)],
     )
 }
-
-pub fn build_single_mutant_celldep_tx(
-    context: &mut Context,
-    lua_code: &str,
-    out_index: usize,
-) -> (TransactionView, [u8; 32]) {
-    let (_, lua_lib_dep) = build_spore_contract_materials(context, "libckblua.so");
-    let (lua_extension_out_point, lua_extension_script_dep) =
-        build_spore_contract_materials(context, "spore_extension_lua");
-
-    let input_cell = build_normal_input(context);
-    let mutant_id = build_type_id(&input_cell, out_index);
-    let type_ = context.build_script_with_hash_type(
-        &lua_extension_out_point,
-        ScriptHashType::Data1,
-        mutant_id.to_vec().into(),
-    );
-
-    let mutant_celldep =
-        build_normal_cell_dep_with_lock_args(context, lua_code.as_bytes(), type_, &mutant_id);
-    let tx = TransactionBuilder::default()
-        .cell_deps(vec![mutant_celldep, lua_extension_script_dep, lua_lib_dep])
-        .build();
-
-    (tx, mutant_id)
-}

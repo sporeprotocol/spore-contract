@@ -26,8 +26,9 @@ to it. Creation has no target Spore; use it for rule initialization checks.
 
 The example checks three content bytes `[left, right, result]` at mint: both
 levels must be positive, addition must fit in a byte, and the sum must equal
-result. `[3,4,7]` succeeds; `[3,4,8]` and `[255,1,0]` fail. It permits transfer
-and burn. This certifies a recipe in a new immutable asset; it does not consume
+result. `[3,4,7]` succeeds; `[3,4,8]` and `[255,1,0]` fail. It accepts Create,
+Transfer and Burn without application-specific checks. Add checks for those
+operations if your application needs them. This certifies a recipe in a new immutable asset; it does not consume
 equipment NFTs, conserve supply, or implement a stateful NFT protocol.
 
 ## Build and use
@@ -42,8 +43,8 @@ CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml
 cargo test --locked -p spore-mutant --lib
 ```
 
-Build order matters: `spore_extension_rust` and the legacy Lua interpreter must
-exist before cluster, and cluster/agent before Spore. `capsule.toml` records this
+Build order matters: `spore_extension_rust` must exist before cluster, and
+cluster/agent before Spore. The default build contains no Lua interpreter or library. `capsule.toml` records this
 order, as does the build script (which passes the target explicitly). The native
 example and test fixture are built last. Do not build the whole contracts workspace in parallel: build scripts pin prerequisite binaries'
 data hashes. Generated hash modules live in each build's `OUT_DIR`; prerequisite
@@ -51,6 +52,34 @@ binaries and frozen lists are declared build inputs, so configuration switches
 recompute the appropriate pins. With a host RISC-V C compiler configured,
 `SPORE_BUILD_RUNNER=cargo` selects direct Cargo builds instead of Cross.
 Development ELFs strip symbols/DWARF to remain within the native code cell size limit; assertions and CKB debug output remain enabled.
+
+### Build without Docker
+
+With a local Clang that supports RISC-V, use the checked-in compiler adapter
+instead of installing the GNU cross compiler. This path was tested with
+Clang 22.1.8 and the pinned Rust 1.92.0 toolchain:
+
+```sh
+rustup target add riscv64imac-unknown-none-elf
+SPORE_BUILD_RUNNER=cargo \
+CC_riscv64imac_unknown_none_elf="$PWD/scripts/clang-riscv.sh" \
+./scripts/build-contracts.sh --release
+CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml
+cargo test --locked -p spore-mutant --lib
+```
+
+Run these commands from the repository root. The adapter targets `rv64imac`,
+translates the Rust target triple for Clang, and filters three legacy
+GCC-specific flags from the C dependencies. It uses `clang` on `PATH`; set
+`SPORE_CLANG` to a compiler executable path to select another installation.
+For debug, omit `--release` and set `CAPSULE_TEST_ENV=debug`. For mainnet,
+add `--features release_export` to the release build and keep
+`CAPSULE_TEST_ENV=release`. Build and test one configuration at a time so the
+staged binaries and embedded dependency hashes belong to the same build.
+Clang and the Cross/GNU toolchain may produce different binaries and code hashes;
+deploy the exact binaries produced by your chosen build.
+
+### Construct transactions
 
 1. Deploy the new native Mutant lifecycle and Spore code cells (and new cluster
    code if using native Mutants in clusters). This PR does not deploy them.
@@ -101,15 +130,16 @@ The invocation parameters are validation context, not a new authorization grant.
 ## Execution and compatibility
 
 The parent matches the immutable Mutant ID only under pinned lifecycle code
-hashes and exact hash types. Rust cells require data2; recognized Lua cells
-require data1 and keep their original decimal interpreter ABI. Lua remains
-available for compatibility; new native rules do not depend on it.
+hashes and exact hash types. Mutant cells require data2. This version only
+executes native Rust/RISC-V rules; Lua dependencies are rejected by both Spore
+and cluster. No Lua dispatcher, interpreter hash list or invocation ABI is linked
+into the new execution path.
 
 Each rule runs in a fresh child VM. Spore waits for its exit and rejects any
 nonzero result or spawn/wait failure. It runs **every** declared Mutant before
 continuing multipart, cluster and co-build validation. The prior successful
-`exec` replacement/early-exit behavior is removed in this new Spore version,
-including for legacy Lua rules. Mint payments accumulate per payee across the Mutants of each Spore script
+`exec` replacement/early-exit behavior is removed in this new Spore version.
+Mint payments accumulate per payee across the Mutants of each Spore script
 group, with checked arithmetic for thresholds and capacity sums. The existing
 per-group model is retained; no cross-Spore payment accounting is added.
 
@@ -130,15 +160,41 @@ execution, writable asset state or child-supplied transaction mutation is added.
 Validation does not prove every arbitrary rule is correct: rule authors must
 check the inputs and operations their application requires.
 
+## Version boundaries
+
+This is a new deployment, not an in-place upgrade. Existing assets using older
+Spore binaries bound by `data`/`data1` code hashes continue to use those binaries,
+their original rules and their original dependencies. Keep those deployed code
+dependencies available. The repository's Lua source, frozen hashes and deployment
+records are preserved, but Lua is excluded from the new workspace and default
+build/test path.
+
+New Spore and cluster contracts recognize only the new native Mutant lifecycle
+hash with `data2` and exactly 32 or 40 bytes of args. They reject old Lua Mutant
+dependencies; they do not reinterpret their source as Rust, ignore their rules,
+or automatically convert existing assets. A historical cluster that requires a
+Lua Mutant cannot be used to mint a new-version Spore: that required rule cannot
+be satisfied on the new path. Its existing Spore version retains its behavior.
+A native rule receives its own identity; it does not replace a Lua rule under the
+old identity.
+
+Transaction builders for the new version must supply valid co-build actions and
+witnesses for mint, transfer and burn, and satisfy all applicable multipart,
+cluster dependency/ownership and required-Mutant checks. Success from a rule
+always returns to Spore's remaining validation.
+
 ## Verification
 
 The VM integration tests cover native creation and immutable lifecycle, recipe
-acceptance/rejection, deterministic replay, mint/transfer/burn rejection, mixed
-Rust/Lua and multiple rules, full-width dependency/output indices, code/type/ID
+acceptance/rejection, deterministic replay, mint/transfer/burn rejection,
+multiple native rules, explicit rejection of Lua dependencies and mixed lists,
+full-width dependency/output indices, code/type/ID
 binding, payment accumulation/overflow, cycle exhaustion, and continued Spore
 multipart, cluster, co-build and input-lock checks. `mutant_probe` is a test-only
 executable and has no deployment configuration. `equipment-merge.lua` is retained
-as a legacy Lua recipe reference.
+for the isolated [historical benchmark](../../benchmarks/legacy-lua/README.md),
+not as a supported rule for the new contracts. See the
+[performance report](./PERFORMANCE.md) for measured cycles and reproduction commands.
 
 No live deployment or production wallet/signature-lock integration is included.
 There is no performance claim based on the old companion PoC measurements;

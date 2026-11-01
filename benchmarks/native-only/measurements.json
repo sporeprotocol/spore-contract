@@ -1,0 +1,88 @@
+{
+  "method": {
+    "repetitions": 5,
+    "max_cycles": 500000000,
+    "content": [
+      3,
+      4,
+      7
+    ],
+    "lock": "ALWAYS_SUCCESS",
+    "cluster": null,
+    "payment": null,
+    "verifier": "ckb-testtool 0.15.1 / ckb-script 0.200.0 / ckb-vm 0.24.13",
+    "contract_toolchain": "Rust 1.92.0 / Clang 22.1.8"
+  },
+  "configurations": {
+    "testnet": {
+      "operations": {
+        "baseline": {
+          "mint": 99430,
+          "transfer": 87193,
+          "burn": 70092,
+          "deps": 2,
+          "tx_bytes": 679
+        },
+        "rust1": {
+          "mint": 258039,
+          "transfer": 261975,
+          "burn": 230263,
+          "deps": 3,
+          "tx_bytes": 790
+        },
+        "rust2": {
+          "mint": 418324,
+          "transfer": 408673,
+          "burn": 380815,
+          "deps": 4,
+          "tx_bytes": 892
+        },
+        "rust4": {
+          "mint": 753937,
+          "transfer": 728150,
+          "burn": 695444,
+          "deps": 6,
+          "tx_bytes": 1096
+        }
+      },
+      "creation": {
+        "rust": 163012
+      }
+    },
+    "mainnet": {
+      "operations": {
+        "baseline": {
+          "mint": 99502,
+          "transfer": 87265,
+          "burn": 70164,
+          "deps": 2,
+          "tx_bytes": 679
+        },
+        "rust1": {
+          "mint": 258111,
+          "transfer": 262047,
+          "burn": 230335,
+          "deps": 3,
+          "tx_bytes": 790
+        },
+        "rust2": {
+          "mint": 418396,
+          "transfer": 408745,
+          "burn": 380887,
+          "deps": 4,
+          "tx_bytes": 892
+        },
+        "rust4": {
+          "mint": 754009,
+          "transfer": 728222,
+          "burn": 695516,
+          "deps": 6,
+          "tx_bytes": 1096
+        }
+      },
+      "creation": {
+        "rust": 163012
+      }
+    }
+  }
+}

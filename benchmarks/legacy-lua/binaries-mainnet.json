@@ -1,0 +1,26 @@
+{
+  "spore": {
+    "bytes": 74992,
+    "sha256": "6ed3eb69e57ca40c4f3d4dd493c8e9526713d6d328c036615d941f994da0bbb2"
+  },
+  "spore_extension_rust": {
+    "bytes": 26528,
+    "sha256": "8e06ae69d004a1f986021c7938e648a9b37819c7026f789a5ea5a1594174b8e0"
+  },
+  "spore_extension_lua": {
+    "bytes": 32424,
+    "sha256": "a73c18a41d297922b2f6a264aa73910a8b182ff3737254c6e42a87ee157ac52f"
+  },
+  "mutant_equipment": {
+    "bytes": 9736,
+    "sha256": "efef0ecbd87e51ed18c7ec0a3bd9cd7dba5828fe8ee6d456ac7eae02bbb72846"
+  },
+  "libckblua.so": {
+    "bytes": 267432,
+    "sha256": "7d4abc0dae889e400c4e8da1bc9dba32417e36dc905e701291cf46d56087027e"
+  },
+  "examples/mutant-rust/equipment-merge.lua": {
+    "bytes": 594,
+    "sha256": "f193ec9168d1417a3b04526ef1e0b2dab35a6a93a126d38df694971089a0935b"
+  }
+}

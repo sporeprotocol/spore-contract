@@ -4,6 +4,11 @@ The new native Rust implementation and versioned execution ABI are documented in
 the [Rust Mutant guide](../examples/mutant-rust/README.md). It requires new contract
 code hashes and VM V2 (`data2`), and preserves validation continuation with
 spawn/wait. Existing deployed Spore versions retain their original behavior.
+The new version accepts native Rust/RISC-V Mutants only. It does not recognize
+or execute Lua Mutants. Historical Lua source and deployment records remain in
+the repository, outside the default workspace/build/test path. See the
+[version boundaries](../examples/mutant-rust/README.md#version-boundaries)
+for existing assets and clusters that require a Lua Mutant.
 
 The remainder of this document describes the historical Lua design; its opcode
 description is not the native ABI. Actual Lua variables are mode 0 for Mutant

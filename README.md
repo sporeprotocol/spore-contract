@@ -60,7 +60,10 @@ Make sure you are using the proper version you want, because there's no such an 
 
 Our `frozen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
 
-Legacy Lua Mutants additionally require the Lua library binary. Native Rust Mutants do not. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
+The new contracts support native Rust/RISC-V Mutants only. Existing assets using
+older data-hash-bound Spore contracts retain their original rules. The Lua source
+and the following deployment information are retained as historical records;
+they are not dependencies of the new contracts or the default build.
 
 #### Spore Lua Lib
 - tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`
