@@ -48,6 +48,10 @@ For method 1, the flow is:
 3. Implementing your contract rules in `entry.rs`
 4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to
 
+For an opt-in Rust-authored rule using the existing Lua Mutant interface, see
+the [Rust/RISC-V companion example](./examples/mutant-rust/README.md). It runs as
+a separate CKB type script and does not add a backend to the deployed contracts.
+
 ## Deployed Code Hashes
 The versioning philosophy is **"Using code_hash as version"** for Spore Protocol, which means the different code hash matches the different version.
 
