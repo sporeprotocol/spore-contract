@@ -29,3 +29,8 @@ template_type = "Rust"
 [[contracts]]
 name = "spore"
 template_type = "Rust"
+
+# Opt-in companion example; no existing contract depends on its code hash.
+[[contracts]]
+name = "mutant_equipment"
+template_type = "Rust"

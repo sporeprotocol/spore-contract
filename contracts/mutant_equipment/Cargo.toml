@@ -1,0 +1,13 @@
+[package]
+name = "mutant_equipment"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+ckb-std = "0.14.3"
+spore-types = { path = "../../lib/types" }
+
+[features]
+default = []
+release_export = []

@@ -11,6 +11,7 @@ members = [
     "contracts/cluster_proxy",
     "contracts/cluster_agent",
     "contracts/spore_extension_lua",
+    "contracts/mutant_equipment",
 ]
 exclude = ["tests"]
 

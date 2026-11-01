@@ -197,6 +197,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "mutant_equipment"
+version = "0.1.0"
+dependencies = [
+ "ckb-std",
+ "spore-types",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
