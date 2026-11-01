@@ -48,9 +48,10 @@ For method 1, the flow is:
 3. Implementing your contract rules in `entry.rs`
 4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to
 
-For an opt-in Rust-authored rule using the existing Lua Mutant interface, see
-the [Rust/RISC-V companion example](./examples/mutant-rust/README.md). It runs as
-a separate CKB type script and does not add a backend to the deployed contracts.
+For native Rust Mutants, see the [Rust Mutant guide](./examples/mutant-rust/README.md).
+The new Spore version executes rule ELFs directly using CKB-VM V2 spawn/wait,
+then continues all Spore checks. Native rules need no Lua bridge or receipt.
+Existing deployed assets retain their original contracts and execution rules.
 
 ## Deployed Code Hashes
 The versioning philosophy is **"Using code_hash as version"** for Spore Protocol, which means the different code hash matches the different version.
@@ -59,7 +60,7 @@ Make sure you are using the proper version you want, because there's no such an 
 
 Our `frozen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
 
-In addition, using Mutant contract requires the binary of Lua library. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
+Legacy Lua Mutants additionally require the Lua library binary. Native Rust Mutants do not. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
 
 #### Spore Lua Lib
 - tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`

@@ -5,7 +5,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[allow(dead_code)]
-const MAX_CYCLES: u64 = 10_000_000;
+// Covers unoptimized Lua interpreter startup under the Meepo verifier as well
+// as native execution. Individual budget-exhaustion tests use a smaller limit.
+const MAX_CYCLES: u64 = 50_000_000;
 
 #[cfg(test)]
 mod tests;

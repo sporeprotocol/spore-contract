@@ -15,6 +15,10 @@ name = "spore_extension_lua"
 template_type = "Rust"
 
 [[contracts]]
+name = "spore_extension_rust"
+template_type = "Rust"
+
+[[contracts]]
 name = "cluster"
 template_type = "Rust"
 
@@ -30,7 +34,12 @@ template_type = "Rust"
 name = "spore"
 template_type = "Rust"
 
-# Opt-in companion example; no existing contract depends on its code hash.
+# Native Mutant example, stored directly in the Mutant cell's data.
 [[contracts]]
 name = "mutant_equipment"
+template_type = "Rust"
+
+# Test-only executable; not part of any deployment configuration.
+[[contracts]]
+name = "mutant_probe"
 template_type = "Rust"

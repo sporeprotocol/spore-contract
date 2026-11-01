@@ -1,0 +1,9 @@
+[package]
+name = "spore-mutant"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# The final Meepo spawn/wait ABI, without changing the legacy contracts' SDK.
+ckb-std = { version = "=0.16.4", default-features = false }

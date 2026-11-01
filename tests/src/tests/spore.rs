@@ -1,6 +1,8 @@
 use ckb_testtool::ckb_hash::blake2b_256;
 use ckb_testtool::ckb_types::{bytes::Bytes, core::TransactionBuilder, packed, prelude::*};
 use ckb_testtool::context::Context;
+#[allow(unused_imports)]
+use molecule::prelude::{Builder as SporeBuilder, Entity as SporeEntity};
 
 use crate::utils::co_build::*;
 use crate::utils::*;

@@ -1,355 +1,650 @@
+//! Native execution and continuation tests use the real Meepo VM scheduler.
+use crate::{utils::*, Loader, MAX_CYCLES};
 use ckb_testtool::{
     ckb_types::{
         bytes::Bytes,
-        core::{TransactionBuilder, TransactionView},
-        packed::{CellDep, CellInput},
+        core::{ScriptHashType, TransactionBuilder, TransactionView},
+        packed::*,
         prelude::*,
     },
     context::Context,
 };
+#[allow(unused_imports)]
+use molecule::prelude::{Builder as SporeBuilder, Entity as SporeEntity};
+use spore_types::generated::spore::SporeData;
 
-use crate::{utils::*, Loader, MAX_CYCLES};
+fn binary(name: &str) -> Bytes {
+    Loader::default().load_binary(name)
+}
 
-const LUA_RECIPE: &str = include_str!("../../../examples/mutant-rust/equipment-merge.lua");
-const RUST_BRIDGE: &str = include_str!("../../../examples/mutant-rust/require-rust.lua");
+fn rejects(context: &Context, tx: &TransactionView, fragment: &str) {
+    let error = format!(
+        "{:?}",
+        context.verify_tx(tx, MAX_CYCLES).expect_err("must reject")
+    );
+    assert!(error.contains(fragment), "expected {fragment}, got {error}");
+}
 
-// A genuine Spore mint, with the same content and Lua Mutant interface for both
-// implementations. Some(binary) selects the opt-in Rust companion example.
-fn mint(context: &mut Context, content: &[u8], rust: Option<Bytes>) -> TransactionView {
-    let lua = match &rust {
-        Some(binary) => {
-            RUST_BRIDGE.replace("@CODE_HASH@", &hex::encode(calc_code_hash(binary.clone())))
-        }
-        None => LUA_RECIPE.to_owned(),
-    };
-    let (mutant_deps, id) = build_single_mutant_celldep_tx(context, &lua, 0);
+fn creation(
+    context: &mut Context,
+    code: Bytes,
+    mode: &[u8],
+    payment: Option<u64>,
+) -> TransactionView {
+    let (contract, dep) = build_spore_contract_materials(context, "spore_extension_rust");
+    let input = build_normal_input(context);
+    let id = build_type_id(&input, 0);
+    let mut args = id.to_vec();
+    if let Some(payment) = payment {
+        args.extend_from_slice(&payment.to_le_bytes());
+    }
+    let script = context
+        .build_script_with_hash_type(&contract, ScriptHashType::Data2, args.into())
+        .unwrap();
+    let lock_code = context.deploy_cell(ckb_testtool::builtin::ALWAYS_SUCCESS.clone());
+    let lock = context
+        .build_script(&lock_code, mode.to_vec().into())
+        .unwrap();
+    let output = build_normal_output_cell_with_type(context, Some(script))
+        .as_builder()
+        .lock(lock)
+        .build();
+    context.complete_tx(
+        TransactionBuilder::default()
+            .input(input)
+            .output(output)
+            .output_data(code.pack())
+            .cell_dep(dep)
+            .build(),
+    )
+}
+
+fn rule(
+    context: &mut Context,
+    name: &str,
+    mode: &[u8],
+    payment: Option<u64>,
+) -> (CellDep, [u8; 32]) {
+    let tx = creation(context, binary(name), mode, payment);
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("native Mutant creation");
+    let output = tx.outputs().get(0).unwrap();
+    let id = output.type_().to_opt().unwrap().args().raw_data()[..32]
+        .try_into()
+        .unwrap();
+    let point = context.create_cell(output, tx.outputs_data().get(0).unwrap().raw_data());
+    (CellDep::new_builder().out_point(point).build(), id)
+}
+
+fn mint(context: &mut Context, rules: &[(CellDep, [u8; 32])], content: &[u8]) -> TransactionView {
+    let ids = rules
+        .iter()
+        .map(|(_, id)| hex::encode(id))
+        .collect::<Vec<_>>()
+        .join(",");
     let tx = build_single_spore_mint_tx(
         context,
         content.to_vec(),
-        &format!("application/x.spore-equipment;mutant[]={}", hex::encode(id)),
+        &format!("application/x.equipment;mutant[]={ids}"),
         None,
         None,
     );
-    let mut builder = tx.as_advanced_builder().cell_deps(mutant_deps.cell_deps());
-    if let Some(binary) = rust {
-        let outpoint = context.deploy_cell(binary);
-        let target = tx
-            .outputs()
-            .get(0)
-            .unwrap()
+    let tx = tx
+        .as_advanced_builder()
+        .cell_deps(rules.iter().map(|(dep, _)| dep.clone()).collect::<Vec<_>>())
+        .build();
+    context.complete_tx(tx)
+}
+
+fn move_spore(context: &mut Context, minted: &TransactionView, burn: bool) -> TransactionView {
+    let output = minted.outputs().get(0).unwrap();
+    let data = minted.outputs_data().get(0).unwrap();
+    let script = output.type_().to_opt().unwrap();
+    let id = script.args().raw_data()[..32].try_into().unwrap();
+    let input = CellInput::new_builder()
+        .previous_output(context.create_cell(output.clone(), data.raw_data()))
+        .build();
+    let tx = TransactionBuilder::default()
+        .input(input)
+        .cell_deps(minted.cell_deps());
+    let tx = if burn {
+        tx.build()
+    } else {
+        tx.output(output).output_data(data).build()
+    };
+    let action = if burn {
+        co_build::build_burn_spore_action(context, id)
+    } else {
+        co_build::build_transfer_spore_action(context, id)
+    };
+    co_build::complete_co_build_message_with_actions(tx, &[(Some(script), action)])
+}
+
+fn replace_content(
+    context: &mut Context,
+    tx: &TransactionView,
+    mime: Option<&str>,
+    content: Option<&[u8]>,
+) -> TransactionView {
+    let original = SporeData::from_slice(&tx.outputs_data().get(0).unwrap().raw_data()).unwrap();
+    let mut builder = original.as_builder();
+    if let Some(mime) = mime {
+        builder = builder.content_type(mime.as_bytes().into());
+    }
+    if let Some(content) = content {
+        builder = builder.content(content.into());
+    }
+    let data = builder.build();
+    let script = tx.outputs().get(0).unwrap().type_().to_opt().unwrap();
+    let id = script.args().raw_data()[..32].try_into().unwrap();
+    let action = co_build::build_mint_spore_action(context, id, data.as_slice());
+    let tx = tx
+        .as_advanced_builder()
+        .set_outputs_data(vec![data.as_slice().pack()])
+        .set_witnesses(vec![])
+        .build();
+    co_build::complete_co_build_message_with_actions(tx, &[(Some(script), action)])
+}
+
+#[test]
+fn rust_mutant_executes_without_lua_or_receipt_and_is_deterministic() {
+    let mut context = Context::default();
+    let rule = rule(&mut context, "mutant_equipment", b"", None);
+    let tx = mint(&mut context, &[rule], &[3, 4, 7]);
+    assert_eq!(tx.outputs().len(), 1);
+    let cycles = context.verify_tx(&tx, MAX_CYCLES).unwrap();
+    for _ in 0..3 {
+        assert_eq!(context.verify_tx(&tx, MAX_CYCLES).unwrap(), cycles);
+    }
+    println!("native Rust Mutant [3,4,7]: {cycles} transaction cycles");
+}
+
+#[test]
+fn native_recipe_rejects_invalid_zero_overflow_and_oversized_content() {
+    for content in [
+        vec![3, 4, 8],
+        vec![0, 4, 4],
+        vec![255, 1, 0],
+        vec![3, 4],
+        vec![1; 4097],
+    ] {
+        let mut context = Context::default();
+        let rule = rule(&mut context, "mutant_equipment", b"", None);
+        let tx = mint(&mut context, &[rule], &content);
+        rejects(&context, &tx, "error code 93");
+    }
+}
+
+#[test]
+fn native_creation_rejects_invalid_elf_wrong_id_args_and_vm_version() {
+    let mut context = Context::default();
+    let invalid = creation(&mut context, Bytes::from_static(b"not an ELF"), b"", None);
+    rejects(&context, &invalid, "error code 91");
+    let valid = creation(&mut context, binary("mutant_equipment"), b"", None);
+    for (args, hash_type, expected) in [
+        (vec![0; 32], ScriptHashType::Data2, "error code 19"),
+        (vec![0; 31], ScriptHashType::Data2, "error code 20"),
+        (vec![0; 41], ScriptHashType::Data2, "error code 20"),
+        (vec![0; 32], ScriptHashType::Data1, "error code 90"),
+    ] {
+        let output = valid.outputs().get(0).unwrap();
+        let script = output
             .type_()
             .to_opt()
             .unwrap()
-            .calc_script_hash();
-        let receipt_type = build_spore_type_script(context, &outpoint, target.as_bytes());
-        let receipt = build_normal_output_cell_with_type(context, receipt_type);
-        builder = builder
-            .output(receipt)
-            .output_data(Bytes::new().pack())
-            .cell_dep(CellDep::new_builder().out_point(outpoint).build());
-    }
-    context.complete_tx(builder.build())
-}
-
-fn rust_binary() -> Bytes {
-    Loader::default().load_binary("mutant_equipment")
-}
-
-fn rejects(context: &Context, tx: &TransactionView, expected: &str) {
-    let error = context.verify_tx(tx, MAX_CYCLES).expect_err("must reject");
-    assert!(format!("{error:?}").contains(expected), "{error:?}");
-}
-
-#[test]
-fn equipment_lua_and_rust_execution_and_cycles() {
-    for (name, binary) in [("lua", None), ("rust-companion", Some(rust_binary()))] {
-        let mut context = Context::default();
-        let tx = mint(&mut context, &[3, 4, 7], binary);
-        let cycles = context.verify_tx(&tx, MAX_CYCLES).expect("valid recipe");
-        assert_eq!(cycles, context.verify_tx(&tx, MAX_CYCLES).unwrap());
-        println!("equipment [3,4,7] {name}: {cycles} total transaction cycles");
-        let error = context
-            .verify_tx(&tx, cycles - 1)
-            .expect_err("cycle budget enforced");
-        assert!(
-            format!("{error:?}").contains("ExceededMaximumCycles"),
-            "{error:?}"
-        );
-    }
-}
-
-#[test]
-fn equipment_invalid_recipes_fail_in_both_languages() {
-    for content in [
-        &[3, 4, 8][..],
-        &[0, 4, 4],
-        &[255, 1, 0],
-        &[3, 4],
-        &[3, 4, 7, 0],
-    ] {
-        for binary in [None, Some(rust_binary())] {
-            let mut context = Context::default();
-            let native = binary.is_some();
-            let tx = mint(&mut context, content, binary);
-            rejects(
-                &context,
-                &tx,
-                if native {
-                    "error code 9"
-                } else {
-                    "error code -1"
-                },
-            );
-        }
-    }
-}
-
-#[test]
-fn equipment_boundary_recipe_is_valid() {
-    for binary in [None, Some(rust_binary())] {
-        let mut context = Context::default();
-        let tx = mint(&mut context, &[254, 1, 255], binary);
-        context
-            .verify_tx(&tx, MAX_CYCLES)
-            .expect("non-overflowing byte sum");
-    }
-}
-
-#[test]
-fn rust_bridge_requires_an_output_not_just_a_dependency() {
-    let mut context = Context::default();
-    let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-    let tx = tx
-        .as_advanced_builder()
-        .set_outputs(vec![tx.outputs().get(0).unwrap()])
-        .set_outputs_data(vec![tx.outputs_data().get(0).unwrap()])
-        .build();
-    rejects(&context, &tx, "error code -1");
-}
-
-#[test]
-fn rust_bridge_rejects_wrong_target_or_backend() {
-    for wrong_backend in [false, true] {
-        let mut context = Context::default();
-        let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-        let receipt = tx.outputs().get(1).unwrap();
-        let script = receipt.type_().to_opt().unwrap();
-        let script = if wrong_backend {
-            // Data2 can execute this ELF, but is not the pinned Data1 backend.
-            // Data (VM V0) could fail while loading the ELF before the bridge
-            // runs, making an exact bridge-error assertion order-dependent.
-            script.as_builder().hash_type(4u8.into()).build()
-        } else {
-            script.as_builder().args(vec![0u8; 32].pack()).build()
-        };
-        let receipt = receipt.as_builder().type_(Some(script).pack()).build();
-        let tx = tx
-            .as_advanced_builder()
-            .set_outputs(vec![tx.outputs().get(0).unwrap(), receipt])
+            .as_builder()
+            .args(args.pack())
+            .hash_type(hash_type.into())
             .build();
-        let error = context
-            .verify_tx(&tx, MAX_CYCLES)
-            .expect_err("wrong binding");
-        let error = format!("{error:?}");
-        // Script-group order is hash-dependent: either the bridge rejects the
-        // binding or the companion rejects the nonexistent target first.
+        let tx = valid
+            .as_advanced_builder()
+            .set_outputs(vec![output.as_builder().type_(Some(script).pack()).build()])
+            .build();
+        rejects(&context, &tx, expected);
+    }
+}
+
+#[test]
+fn native_creation_runs_validator_and_propagates_nonzero_status() {
+    let mut context = Context::default();
+    let tx = creation(&mut context, binary("mutant_probe"), b"create", None);
+    rejects(&context, &tx, "error code 93");
+    // ELF-looking garbage still must pass the VM loader and execute successfully.
+    let mut garbage = vec![0; 128];
+    garbage[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+    garbage[16..20].copy_from_slice(&[2, 0, 243, 0]);
+    let tx = creation(&mut context, garbage.into(), b"", None);
+    assert!(context.verify_tx(&tx, MAX_CYCLES).is_err());
+}
+
+#[test]
+fn native_mutant_code_is_immutable_and_cannot_be_destroyed_or_duplicated() {
+    let mut context = Context::default();
+    let created = creation(&mut context, binary("mutant_equipment"), b"", None);
+    context.verify_tx(&created, MAX_CYCLES).unwrap();
+    let output = created.outputs().get(0).unwrap();
+    let data = created.outputs_data().get(0).unwrap();
+    let input = CellInput::new_builder()
+        .previous_output(context.create_cell(output.clone(), data.raw_data()))
+        .build();
+    let tx = TransactionBuilder::default()
+        .input(input)
+        .output(output.clone())
+        .output_data(data)
+        .cell_deps(created.cell_deps())
+        .build();
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("unchanged Mutant transfer");
+    let changed = tx
+        .as_advanced_builder()
+        .set_outputs_data(vec![binary("mutant_probe").pack()])
+        .build();
+    rejects(&context, &changed, "error code 15");
+    let destroyed = tx
+        .as_advanced_builder()
+        .set_outputs(vec![])
+        .set_outputs_data(vec![])
+        .build();
+    rejects(&context, &destroyed, "error code 18");
+    let duplicated = tx
+        .as_advanced_builder()
+        .output(output)
+        .output_data(tx.outputs_data().get(0).unwrap())
+        .build();
+    rejects(&context, &duplicated, "error code 18");
+}
+
+#[test]
+fn native_transfer_burn_and_spore_immutability() {
+    let mut context = Context::default();
+    let rule = rule(&mut context, "mutant_equipment", b"", None);
+    let tx = mint(&mut context, &[rule], &[3, 4, 7]);
+    context.verify_tx(&tx, MAX_CYCLES).unwrap();
+    let transfer = move_spore(&mut context, &tx, false);
+    context
+        .verify_tx(&transfer, MAX_CYCLES)
+        .expect("native transfer");
+    let data = SporeData::from_slice(&transfer.outputs_data().get(0).unwrap().raw_data())
+        .unwrap()
+        .as_builder()
+        .content([3u8, 4, 8].as_slice().into())
+        .build();
+    let changed = transfer
+        .as_advanced_builder()
+        .set_outputs_data(vec![data.as_slice().pack()])
+        .build();
+    rejects(&context, &changed, "error code 61");
+    let burn = move_spore(&mut context, &tx, true);
+    context.verify_tx(&burn, MAX_CYCLES).expect("native burn");
+}
+
+#[test]
+fn native_rules_can_reject_each_spore_operation() {
+    for mode in [b"mint".as_slice(), b"transfer", b"burn"] {
+        let mut context = Context::default();
+        let rule = rule(&mut context, "mutant_probe", mode, None);
+        let tx = mint(&mut context, &[rule], &[3, 4, 7]);
+        let target = if mode == b"mint" {
+            tx
+        } else {
+            context.verify_tx(&tx, MAX_CYCLES).unwrap();
+            move_spore(&mut context, &tx, mode == b"burn")
+        };
+        rejects(&context, &target, "error code 93");
+    }
+}
+
+#[test]
+fn every_native_mutant_runs_in_declared_order() {
+    let mut context = Context::default();
+    let first = rule(&mut context, "mutant_probe", b"", None);
+    let second = rule(&mut context, "mutant_probe", b"mint", None);
+    let tx = mint(&mut context, &[first.clone(), second.clone()], &[3, 4, 7]);
+    rejects(&context, &tx, "error code 93");
+    let tx = mint(&mut context, &[second, first], &[3, 4, 7]);
+    rejects(&context, &tx, "error code 93");
+}
+
+#[test]
+fn successful_mutant_never_skips_cobuild_on_any_operation() {
+    let mut context = Context::default();
+    let rule = rule(&mut context, "mutant_equipment", b"", None);
+    let mint = mint(&mut context, &[rule], &[3, 4, 7]);
+    for tx in [
+        mint.clone(),
+        move_spore(&mut context, &mint, false),
+        move_spore(&mut context, &mint, true),
+    ] {
+        context.verify_tx(&tx, MAX_CYCLES).unwrap();
+        let missing = tx.as_advanced_builder().set_witnesses(vec![]).build();
         assert!(
-            error.contains("error code -1") || (!wrong_backend && error.contains("error code 7")),
-            "{error}"
+            context.verify_tx(&missing, MAX_CYCLES).is_err(),
+            "missing co-build accepted"
         );
     }
 }
 
 #[test]
-fn rust_bridge_rejects_a_different_code_hash() {
+fn successful_mutant_never_skips_multipart_validation() {
     let mut context = Context::default();
-    let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-    let receipt = tx.outputs().get(1).unwrap();
-    // ALWAYS_SUCCESS is already a code dependency for the normal input lock.
-    // Its type group succeeds, so only the bridge can reject this substitution.
-    let substitute = calc_code_hash(ckb_testtool::builtin::ALWAYS_SUCCESS.clone()).pack();
-    let script = receipt
+    let rule = rule(&mut context, "mutant_probe", b"", None);
+    let tx = mint(&mut context, &[rule.clone()], b"bad multipart");
+    for (suffix, error) in [("", "error code 64"), (";boundary=abc", "error code 69")] {
+        let mime = format!("multipart/mixed;mutant[]={}{suffix}", hex::encode(rule.1));
+        let invalid = replace_content(&mut context, &tx, Some(&mime), None);
+        rejects(&context, &invalid, error);
+    }
+}
+
+#[test]
+fn native_dependency_type_hash_and_vm_binding_are_exact() {
+    let mut context = Context::default();
+    let (dep, id) = rule(&mut context, "mutant_equipment", b"", None);
+    let (output, data) = context.get_cell(&dep.out_point()).unwrap();
+    let original = output.type_().to_opt().unwrap();
+    for script in [
+        original
+            .clone()
+            .as_builder()
+            .hash_type(ScriptHashType::Data1.into())
+            .build(),
+        original
+            .clone()
+            .as_builder()
+            .code_hash([9u8; 32].pack())
+            .build(),
+        original
+            .clone()
+            .as_builder()
+            .args(vec![0u8; 31].pack())
+            .build(),
+        original
+            .clone()
+            .as_builder()
+            .args(vec![0u8; 41].pack())
+            .build(),
+        original
+            .clone()
+            .as_builder()
+            .args(vec![0u8; 32].pack())
+            .build(),
+    ] {
+        let output = output
+            .clone()
+            .as_builder()
+            .type_(Some(script).pack())
+            .build();
+        let dep = CellDep::new_builder()
+            .out_point(context.create_cell(output, data.clone()))
+            .build();
+        let tx = mint(&mut context, &[(dep, id)], &[3, 4, 7]);
+        rejects(&context, &tx, "error code 71");
+    }
+    let tx = mint(&mut context, &[(dep.clone(), id)], &[3, 4, 7]);
+    let without_rule = tx
+        .as_advanced_builder()
+        .set_cell_deps(
+            tx.cell_deps()
+                .into_iter()
+                .filter(|candidate| candidate != &dep)
+                .collect(),
+        )
+        .build();
+    rejects(&context, &without_rule, "error code 71");
+}
+
+#[test]
+fn native_mutants_require_spore_vm2() {
+    let mut context = Context::default();
+    let rule = rule(&mut context, "mutant_equipment", b"", None);
+    let tx = mint(&mut context, &[rule], &[3, 4, 7]);
+    let output = tx.outputs().get(0).unwrap();
+    let script = output
         .type_()
         .to_opt()
         .unwrap()
         .as_builder()
-        .code_hash(substitute)
+        .hash_type(ScriptHashType::Data1.into())
         .build();
-    let receipt = receipt.as_builder().type_(Some(script).pack()).build();
     let tx = tx
         .as_advanced_builder()
-        .set_outputs(vec![tx.outputs().get(0).unwrap(), receipt])
+        .set_outputs(vec![output.as_builder().type_(Some(script).pack()).build()])
         .build();
-    rejects(&context, &tx, "error code -1");
+    rejects(&context, &tx, "error code 90");
 }
 
 #[test]
-fn rust_receipt_spending_and_recreation_do_not_cache_validation() {
+fn native_code_at_dependency_and_output_indices_above_255_executes() {
     let mut context = Context::default();
-    let minted = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-    context.verify_tx(&minted, MAX_CYCLES).unwrap();
-    let receipt = minted.outputs().get(1).unwrap();
-    let input = CellInput::new_builder()
-        .previous_output(context.create_cell(receipt.clone(), Bytes::new()))
+    let native = rule(&mut context, "mutant_equipment", b"", None);
+    let input = build_normal_input(&mut context);
+    let index = 260;
+    let id = build_type_id(&input, index);
+    let (code, code_dep) = build_spore_contract_materials(&mut context, "spore");
+    let script = build_spore_type_script(&mut context, &code, id.to_vec().into()).unwrap();
+    let data = build_serialized_spore_data(
+        vec![3, 4, 7],
+        &format!("application/x.equipment;mutant[]={}", hex::encode(native.1)),
+        None,
+    );
+    let mut builder = TransactionBuilder::default().input(input);
+    for n in 0..260u32 {
+        let output = build_normal_output(&mut context);
+        builder = builder
+            .output(output.clone())
+            .output_data(Bytes::new().pack());
+        let point = context.create_cell(output, n.to_le_bytes().to_vec().into());
+        builder = builder.cell_dep(CellDep::new_builder().out_point(point).build());
+    }
+    let output = build_normal_output_cell_with_type(&mut context, Some(script.clone()));
+    let tx = builder
+        .output(output)
+        .output_data(data.as_slice().pack())
+        .cell_dep(code_dep)
+        .cell_dep(native.0)
         .build();
-
-    // An empty-data receipt is disposable; spending it grants no asset rights.
-    let spend = TransactionBuilder::default()
-        .input(input.clone())
-        .cell_deps(minted.cell_deps())
-        .build();
+    let action = co_build::build_mint_spore_action(&mut context, id, data.as_slice());
+    let tx = context.complete_tx(co_build::complete_co_build_message_with_actions(
+        tx,
+        &[(Some(script), action)],
+    ));
     context
-        .verify_tx(&spend, MAX_CYCLES)
-        .expect("receipt disposal");
+        .verify_tx(&tx, 30_000_000)
+        .expect("full-width indices");
+}
 
-    let recreated = spend
+#[test]
+fn native_child_infinite_loop_exhausts_shared_cycle_budget() {
+    let mut context = Context::default();
+    let rule = rule(&mut context, "mutant_probe", b"loop", None);
+    let tx = mint(&mut context, &[rule], &[3, 4, 7]);
+    let error = context
+        .verify_tx(&tx, 10_000_000)
+        .expect_err("child loop exhausts budget");
+    assert!(format!("{error:?}").contains("ExceededMaximumCycles"));
+}
+
+#[test]
+fn native_payment_is_aggregated_for_all_mutants_and_checked_for_overflow() {
+    let mut context = Context::default();
+    let a = rule(&mut context, "mutant_equipment", b"payee", Some(100));
+    let b = rule(&mut context, "mutant_equipment", b"payee", Some(200));
+    let tx = mint(&mut context, &[a.clone(), b], &[3, 4, 7]);
+    rejects(&context, &tx, "error code 72");
+    let (payee, _) = context.get_cell(&a.0.out_point()).unwrap();
+    let output = CellOutput::new_builder()
+        .capacity(300u64.pack())
+        .lock(payee.lock())
+        .build();
+    let enough = tx
         .as_advanced_builder()
-        .output(receipt)
+        .output(output.clone())
         .output_data(Bytes::new().pack())
         .build();
-    rejects(&context, &recreated, "error code 7");
-
-    // Use the previously valid receipt as an input to a new invalid mint. Its
-    // old target must not satisfy the bridge's binding to the new Spore.
-    let invalid = mint(&mut context, &[3, 4, 8], Some(rust_binary()));
-    let invalid = invalid
+    context
+        .verify_tx(&enough, MAX_CYCLES)
+        .expect("sum of both payments");
+    let short = tx
         .as_advanced_builder()
-        .input(input)
-        .set_outputs(vec![invalid.outputs().get(0).unwrap()])
-        .set_outputs_data(vec![invalid.outputs_data().get(0).unwrap()])
+        .output(output.as_builder().capacity(299u64.pack()).build())
+        .output_data(Bytes::new().pack())
         .build();
-    rejects(&context, &invalid, "error code -1");
+    rejects(&context, &short, "error code 72");
+    let huge = rule(&mut context, "mutant_equipment", b"", Some(u64::MAX));
+    let overflow = mint(&mut context, &[huge], &[3, 4, 7]);
+    rejects(&context, &overflow, "error code 94");
 }
 
 #[test]
-fn rust_invalid_binary_is_not_a_native_success() {
-    let mut context = Context::default();
-    let tx = mint(
-        &mut context,
-        &[3, 4, 7],
-        Some(Bytes::from_static(b"not an ELF")),
-    );
-    let error = context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect_err("VM rejects invalid ELF");
-    assert!(format!("{error:?}").contains("ElfParseError"), "{error:?}");
-}
-
-#[test]
-fn rust_receipt_rejects_data_and_duplicate_outputs() {
-    for duplicate in [false, true] {
-        let mut context = Context::default();
-        let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-        let tx = if duplicate {
-            tx.as_advanced_builder()
-                .output(tx.outputs().get(1).unwrap())
-                .output_data(Bytes::new().pack())
-                .build()
-        } else {
-            tx.as_advanced_builder()
-                .set_outputs_data(vec![tx.outputs_data().get(0).unwrap(), vec![1u8].pack()])
-                .build()
-        };
-        rejects(&context, &tx, "error code 6");
-    }
-}
-
-#[test]
-fn rust_target_data_is_bounded() {
-    let mut context = Context::default();
-    let tx = mint(&mut context, &vec![1; 4097], Some(rust_binary()));
-    rejects(&context, &tx, "error code 8");
-}
-
-#[test]
-fn recipe_mutants_can_be_created_normally() {
+fn rust_and_legacy_lua_can_run_together_and_both_must_pass() {
     for lua in [
-        LUA_RECIPE.to_owned(),
-        RUST_BRIDGE.replace("@CODE_HASH@", &hex::encode(calc_code_hash(rust_binary()))),
+        "if spore_ext_mode == 1 then assert(true) end",
+        "if spore_ext_mode == 1 then assert(false) end",
     ] {
         let mut context = Context::default();
-        let (_, library) = build_spore_contract_materials(&mut context, "libckblua.so");
-        let (code, dep) = build_spore_contract_materials(&mut context, "spore_extension_lua");
-        let input = build_normal_input(&mut context);
-        let id = build_type_id(&input, 0);
-        let script = build_spore_type_script(&mut context, &code, id.to_vec().into());
-        let output = build_normal_output_cell_with_type(&mut context, script);
+        let native = rule(&mut context, "mutant_equipment", b"", None);
+        let (legacy, id) = build_single_mutant_celldep_tx(&mut context, lua, 0);
+        let mut rules = vec![native.clone()];
+        rules.push((legacy.cell_deps().get(0).unwrap(), id));
+        let tx = mint(&mut context, &rules, &[3, 4, 7]);
         let tx = context.complete_tx(
-            TransactionBuilder::default()
-                .input(input)
-                .output(output)
-                .output_data(lua.pack())
-                .cell_deps(vec![library, dep])
+            tx.as_advanced_builder()
+                .cell_deps(legacy.cell_deps().into_iter().skip(1).collect::<Vec<_>>())
                 .build(),
         );
-        context
-            .verify_tx(&tx, MAX_CYCLES)
-            .expect("ordinary Lua Mutant creation");
+        if lua.contains("false") {
+            rejects(&context, &tx, "error code 93");
+        } else {
+            context.verify_tx(&tx, MAX_CYCLES).expect("native plus Lua");
+        }
     }
 }
 
-#[test]
-fn equipment_transfer_melt_and_immutability() {
-    for binary in [None, Some(rust_binary())] {
-        let mut context = Context::default();
-        let minted = mint(&mut context, &[3, 4, 7], binary);
-        context.verify_tx(&minted, MAX_CYCLES).unwrap();
-        let output = minted.outputs().get(0).unwrap();
-        let data = minted.outputs_data().get(0).unwrap();
-        let script = output.type_().to_opt().unwrap();
-        let id: [u8; 32] = script.args().raw_data().as_ref().try_into().unwrap();
-        let input = CellInput::new_builder()
-            .previous_output(context.create_cell(output.clone(), data.raw_data()))
-            .build();
-        let transfer = TransactionBuilder::default()
-            .input(input.clone())
-            .output(output)
-            .output_data(data)
-            .cell_deps(minted.cell_deps())
-            .build();
-        let action = co_build::build_transfer_spore_action(&mut context, id);
-        let transfer = co_build::complete_co_build_message_with_actions(
-            transfer,
-            &[(Some(script.clone()), action)],
-        );
-        context
-            .verify_tx(&transfer, MAX_CYCLES)
-            .expect("transfer needs no receipt");
+fn cluster(context: &mut Context, native: &(CellDep, [u8; 32])) -> (CellDep, [u8; 32]) {
+    let (code, dep) = build_spore_contract_materials(context, "cluster");
+    let input = build_normal_input(context);
+    let id = build_type_id(&input, 0);
+    assert_ne!(
+        id, native.1,
+        "cluster and Mutant identities must be independent"
+    );
+    let script = build_spore_type_script(context, &code, id.to_vec().into()).unwrap();
+    let data = build_serialized_cluster_data("native cluster", "Rust rule")
+        .as_builder()
+        .mutant_id(native.1.as_slice().into())
+        .build();
+    let output = build_normal_output_cell_with_type(context, Some(script.clone()));
+    let action = co_build::build_mint_cluster_action(context, id, data.as_slice());
+    let tx = TransactionBuilder::default()
+        .input(input)
+        .output(output.clone())
+        .output_data(data.as_slice().pack())
+        .cell_deps(vec![dep.clone(), native.0.clone()])
+        .build();
+    let tx = context.complete_tx(co_build::complete_co_build_message_with_actions(
+        tx,
+        &[(Some(script), action)],
+    ));
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("cluster uses declared native Mutant ID, including payment args");
+    let missing = context.complete_tx(tx.as_advanced_builder().set_cell_deps(vec![dep]).build());
+    rejects(context, &missing, "error code 54");
+    let point = context.create_cell(output, Bytes::copy_from_slice(data.as_slice()));
+    (CellDep::new_builder().out_point(point).build(), id)
+}
 
-        let original = spore_types::generated::spore::SporeData::from_slice(
-            &transfer.outputs_data().get(0).unwrap().raw_data(),
-        )
-        .unwrap();
-        let modified = original
-            .as_builder()
-            .content([3u8, 4, 8].as_slice().into())
-            .build();
-        let changed = transfer
-            .as_advanced_builder()
-            .set_outputs_data(vec![modified.as_slice().pack()])
-            .build();
-        rejects(&context, &changed, "error code 61");
-
-        let melt = TransactionBuilder::default()
-            .input(input)
-            .cell_deps(minted.cell_deps())
-            .build();
-        let action = co_build::build_burn_spore_action(&mut context, id);
-        let melt =
-            co_build::complete_co_build_message_with_actions(melt, &[(Some(script), action)]);
-        context
-            .verify_tx(&melt, MAX_CYCLES)
-            .expect("melt needs no receipt");
-    }
+fn clustered_mint(
+    context: &mut Context,
+    native: &(CellDep, [u8; 32]),
+    cluster: &(CellDep, [u8; 32]),
+) -> TransactionView {
+    let tx = build_single_spore_mint_tx(
+        context,
+        vec![3, 4, 7],
+        &format!("application/x.equipment;mutant[]={}", hex::encode(native.1)),
+        None,
+        Some(cluster.1),
+    );
+    context.complete_tx(
+        tx.as_advanced_builder()
+            .cell_deps(vec![native.0.clone(), cluster.0.clone()])
+            .build(),
+    )
 }
 
 #[test]
-fn rust_receipt_does_not_bypass_input_locks() {
+fn native_cluster_creation_looks_up_mutant_id_and_accepts_payment_args() {
     let mut context = Context::default();
-    let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
+    let native = rule(&mut context, "mutant_equipment", b"", Some(0));
+    let cluster = cluster(&mut context, &native);
+    let tx = clustered_mint(&mut context, &native, &cluster);
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("native rule inside native cluster");
+}
+
+#[test]
+fn successful_mutant_never_skips_cluster_dependency_or_ownership() {
+    let mut context = Context::default();
+    let native = rule(&mut context, "mutant_equipment", b"", None);
+    let cluster = cluster(&mut context, &native);
+    let tx = clustered_mint(&mut context, &native, &cluster);
+    context.verify_tx(&tx, MAX_CYCLES).unwrap();
+    let no_cluster = tx
+        .as_advanced_builder()
+        .set_cell_deps(
+            tx.cell_deps()
+                .into_iter()
+                .filter(|dep| dep != &cluster.0)
+                .collect(),
+        )
+        .build();
+    rejects(&context, &no_cluster, "error code 6");
+    let (output, data) = context.get_cell(&cluster.0.out_point()).unwrap();
+    let code = context.deploy_cell(ckb_testtool::builtin::ALWAYS_SUCCESS.clone());
+    let lock = context
+        .build_script(&code, Bytes::from_static(b"other owner"))
+        .unwrap();
+    let cluster = (
+        CellDep::new_builder()
+            .out_point(context.create_cell(output.as_builder().lock(lock).build(), data))
+            .build(),
+        cluster.1,
+    );
+    let no_authorization = clustered_mint(&mut context, &native, &cluster);
+    rejects(&context, &no_authorization, "error code 7");
+}
+
+#[test]
+fn successful_mutant_never_skips_cluster_required_mutant() {
+    let mut context = Context::default();
+    let a = rule(&mut context, "mutant_equipment", b"", None);
+    let b = rule(&mut context, "mutant_equipment", b"", None);
+    let cluster = cluster(&mut context, &b);
+    let tx = clustered_mint(&mut context, &a, &cluster);
+    rejects(&context, &tx, "error code 73");
+}
+
+#[test]
+fn native_success_does_not_bypass_input_locks_or_cobuild_fields() {
+    let mut context = Context::default();
+    let native = rule(&mut context, "mutant_equipment", b"", None);
+    let tx = mint(&mut context, &[native], &[3, 4, 7]);
+    let script = tx.outputs().get(0).unwrap().type_().to_opt().unwrap();
+    let action = co_build::build_mint_spore_action(
+        &mut context,
+        [0; 32],
+        &tx.outputs_data().get(0).unwrap().raw_data(),
+    );
+    let invalid = co_build::complete_co_build_message_with_actions(
+        tx.as_advanced_builder().set_witnesses(vec![]).build(),
+        &[(Some(script), action)],
+    );
+    rejects(&context, &invalid, "error code 12");
     let (code, dep) = build_spore_contract_materials(&mut context, "mutant_equipment");
-    // This deliberately rejecting lock returns Arguments (5). Output validation
-    // through Lua must never turn an unauthorized input into a valid spend.
     let lock = build_spore_type_script(&mut context, &code, Bytes::new()).unwrap();
     let output = build_normal_output(&mut context)
         .as_builder()
@@ -358,72 +653,48 @@ fn rust_receipt_does_not_bypass_input_locks() {
     let input = CellInput::new_builder()
         .previous_output(context.create_cell(output, Bytes::new()))
         .build();
-    let tx = tx.as_advanced_builder().input(input).cell_dep(dep).build();
-    rejects(&context, &tx, "Inputs[1].Lock");
+    let invalid = tx.as_advanced_builder().input(input).cell_dep(dep).build();
+    rejects(&context, &invalid, "Inputs[1].Lock");
 }
 
 #[test]
-fn native_arguments_missing_target_and_malformed_molecule_fail() {
+fn native_creation_bounds_code_size_and_requires_riscv_elf64() {
     let mut context = Context::default();
-    let tx = mint(&mut context, &[3, 4, 7], Some(rust_binary()));
-    let receipt = tx.outputs().get(1).unwrap();
-    let only_receipt = tx
-        .as_advanced_builder()
-        .set_outputs(vec![receipt.clone()])
-        .set_outputs_data(vec![Bytes::new().pack()])
-        .build();
-    rejects(&context, &only_receipt, "error code 7");
-    let script = receipt
-        .type_()
-        .to_opt()
-        .unwrap()
-        .as_builder()
-        .args(Bytes::new().pack())
-        .build();
-    let bad_args = only_receipt
-        .as_advanced_builder()
-        .set_outputs(vec![receipt
-            .as_builder()
-            .type_(Some(script).pack())
-            .build()])
-        .build();
-    rejects(&context, &bad_args, "error code 5");
-
-    // Isolate native Molecule parsing without Spore rejecting the data first.
-    let target_type = build_normal_output(&mut context).lock();
-    let target = build_normal_output_cell_with_type(&mut context, Some(target_type.clone()));
-    let receipt = tx.outputs().get(1).unwrap();
-    let script = receipt
-        .type_()
-        .to_opt()
-        .unwrap()
-        .as_builder()
-        .args(target_type.calc_script_hash().as_bytes().pack())
-        .build();
-    let receipt = receipt.as_builder().type_(Some(script).pack()).build();
-    let malformed = tx
-        .as_advanced_builder()
-        .set_outputs(vec![target, receipt])
-        .set_outputs_data(vec![vec![0u8; 16].pack(), Bytes::new().pack()])
-        .build();
-    rejects(&context, &malformed, "error code 8");
+    for (size, machine) in [(256 * 1024 + 1, 243u8), (128, 62u8)] {
+        let mut code = vec![0; size];
+        code[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+        code[16..20].copy_from_slice(&[2, 0, machine, 0]);
+        let tx = creation(&mut context, code.into(), b"", None);
+        rejects(&context, &tx, "error code 91");
+    }
 }
 
 #[test]
-fn lua_infinite_loop_exhausts_transaction_budget() {
-    let mut context = Context::default();
-    let (deps, id) = build_single_mutant_celldep_tx(
-        &mut context,
-        "if spore_ext_mode == 1 then while true do end end",
-        0,
-    );
-    let tx = build_single_spore_mint_tx(
-        &mut context,
-        vec![3, 4, 7],
-        &format!("application/x.spore-equipment;mutant[]={}", hex::encode(id)),
-        None,
-        None,
-    );
-    let tx = context.complete_tx(tx.as_advanced_builder().cell_deps(deps.cell_deps()).build());
-    rejects(&context, &tx, "ExceededMaximumCycles");
+fn legacy_lua_success_returns_to_later_native_rules_and_cobuild() {
+    for reject in [false, true] {
+        let mut context = Context::default();
+        let (lua, id) = build_single_mutant_celldep_tx(&mut context, "assert(true)", 0);
+        let native = rule(
+            &mut context,
+            "mutant_probe",
+            if reject { b"mint" } else { b"" },
+            None,
+        );
+        let rules = [(lua.cell_deps().get(0).unwrap(), id), native];
+        let tx = mint(&mut context, &rules, &[3, 4, 7]);
+        let tx = context.complete_tx(
+            tx.as_advanced_builder()
+                .cell_deps(lua.cell_deps().into_iter().skip(1).collect::<Vec<_>>())
+                .build(),
+        );
+        if reject {
+            rejects(&context, &tx, "error code 93");
+        } else {
+            context
+                .verify_tx(&tx, MAX_CYCLES)
+                .expect("Lua then native success");
+            let missing = tx.as_advanced_builder().set_witnesses(vec![]).build();
+            assert!(context.verify_tx(&missing, MAX_CYCLES).is_err());
+        }
+    }
 }

@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#[allow(unused_imports)]
+use molecule::prelude::{Builder as SporeBuilder, Entity as SporeEntity};
 
 use ckb_testtool::builtin::ALWAYS_SUCCESS;
 use ckb_testtool::ckb_hash::{new_blake2b, Blake2bBuilder};
@@ -58,7 +60,7 @@ pub fn build_spore_type_script(
     out_point: &OutPoint,
     args: Bytes,
 ) -> Option<Script> {
-    context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args)
+    context.build_script_with_hash_type(out_point, ScriptHashType::Data2, args)
 }
 
 pub fn build_spore_type_script_with_payment(
@@ -444,8 +446,11 @@ pub fn build_single_mutant_celldep_tx(
 
     let input_cell = build_normal_input(context);
     let mutant_id = build_type_id(&input_cell, out_index);
-    let type_ =
-        build_spore_type_script(context, &lua_extension_out_point, mutant_id.to_vec().into());
+    let type_ = context.build_script_with_hash_type(
+        &lua_extension_out_point,
+        ScriptHashType::Data1,
+        mutant_id.to_vec().into(),
+    );
 
     let mutant_celldep =
         build_normal_cell_dep_with_lock_args(context, lua_code.as_bytes(), type_, &mutant_id);

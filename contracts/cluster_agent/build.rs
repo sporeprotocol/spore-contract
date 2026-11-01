@@ -10,6 +10,7 @@ pub fn main() {
         .join("../../build")
         .join(compile_mode)
         .join("cluster_proxy");
+    println!("cargo:rerun-if-changed={}", cluster_proxy_path.display());
     let cluster_proxy = std::fs::read(cluster_proxy_path).expect("load cluster_proxy");
     let code_hash = blake2b_256(cluster_proxy);
 
@@ -17,5 +18,9 @@ pub fn main() {
     let code_hashes = [frozen.cluster_proxy_code_hashes(), vec![code_hash]].concat();
 
     let file = concat_code_hashes("CLUSTER_PROXY_CODE_HASHES", &code_hashes);
-    fs::write("./src/hash.rs", file).unwrap();
+    fs::write(
+        std::path::PathBuf::from(env::var("OUT_DIR").unwrap()).join("hash.rs"),
+        file,
+    )
+    .unwrap();
 }

@@ -83,6 +83,13 @@ pub enum Error {
     ContentOutOfRange,
 
     Unknown,
+
+    // Native Mutant errors; preserve all existing error numbers above.
+    NativeMutantRequiresVm2 = 90,
+    InvalidNativeMutantCode,
+    NativeMutantSpawnFailed,
+    NativeMutantRejected,
+    ExtensionPaymentOverflow,
 }
 
 impl From<SysError> for Error {

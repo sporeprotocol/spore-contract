@@ -10,6 +10,7 @@ pub fn main() {
         .join("../../build")
         .join(&compile_mode)
         .join("cluster");
+    println!("cargo:rerun-if-changed={}", cluster_path.display());
     let cluster = std::fs::read(cluster_path).expect("load cluster");
     let code_hash = blake2b_256(cluster);
 
@@ -17,5 +18,9 @@ pub fn main() {
     let cluster_code_hashes = [frozen.cluster_code_hashes(), vec![code_hash]].concat();
 
     let content = concat_code_hashes("CLUSTER_CODE_HASHES", &cluster_code_hashes);
-    fs::write("./src/hash.rs", content).unwrap();
+    fs::write(
+        std::path::PathBuf::from(env::var("OUT_DIR").unwrap()).join("hash.rs"),
+        content,
+    )
+    .unwrap();
 }

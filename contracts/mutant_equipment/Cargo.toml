@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 ckb-std = "0.14.3"
 spore-types = { path = "../../lib/types" }
+spore-mutant = { path = "../../lib/mutant" }
 
 [features]
 default = []

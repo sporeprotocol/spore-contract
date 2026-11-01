@@ -1,4 +1,14 @@
 # Mutant
+
+The new native Rust implementation and versioned execution ABI are documented in
+the [Rust Mutant guide](../examples/mutant-rust/README.md). It requires new contract
+code hashes and VM V2 (`data2`), and preserves validation continuation with
+spawn/wait. Existing deployed Spore versions retain their original behavior.
+
+The remainder of this document describes the historical Lua design; its opcode
+description is not the native ABI. Actual Lua variables are mode 0 for Mutant
+creation, 1 for mint, 2 for transfer and 3 for burn.
+
 Mutant is a special extension cell in Spore eco. It stores Lua scripting code inside the data field, and will be executed & evaluated in every referenced transaction once applied. One can apply mutants to:
 
 1. A Spore by specifying in `content-type` using param `mutant[] = MUTANT_ID_1, MUTANT_ID2,…;`, and including the referenced mutant cell in `CellDep`. You'll also need to include Spore Lua Lib binary in CellDeps.

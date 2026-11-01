@@ -94,7 +94,7 @@ impl CKBLuaLib {
                 let ret = unsafe {
                     (lua_run_code as Symbol<EvaluateLuaInstanceType>)(
                         instance,
-                        code.as_ptr() as *const i8,
+                        code.as_ptr() as *const c_char,
                         size,
                         CString::new("SporeExtension").unwrap_or_default().as_ptr(),
                     )
