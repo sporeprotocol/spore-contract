@@ -238,21 +238,19 @@ mod cluster_agent_transfer {
         // agent in Input
         let old_cluster_id = build_type_id(&input_cell, 0);
         let old_agent_data = blake2b_256("12345676890");
-        let old_agent_type = build_spore_type_script_with_payment(
+        let old_agent_type = build_spore_type_script(
             &mut context,
             &agent_out_point,
-            &old_cluster_id,
-            1,
+            old_cluster_id.to_vec().into(),
         );
         let old_agent_cell = build_agent_proxy_input(&mut context, &old_agent_data, old_agent_type);
 
         // agent in Output
         let new_cluster_id = build_type_id(&input_cell, new_cluster_out_index);
-        let new_agent_type = build_spore_type_script_with_payment(
+        let new_agent_type = build_spore_type_script(
             &mut context,
             &agent_out_point,
-            &new_cluster_id,
-            1,
+            new_cluster_id.to_vec().into(),
         );
         let new_agent_cell =
             build_normal_output_cell_with_type(&mut context, new_agent_type.clone());
@@ -306,7 +304,7 @@ fn test_cluster_agent_burn() {
     let cluster_id = build_type_id(&input_cell, 0);
     let agent_data = blake2b_256("12345676890");
     let agent_type =
-        build_spore_type_script_with_payment(&mut context, &agent_out_point, &cluster_id, 1);
+        build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
     let agent_cell = build_agent_proxy_input(&mut context, &agent_data, agent_type.clone());
 
     // build agent burn tx

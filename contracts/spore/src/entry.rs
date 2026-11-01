@@ -1,6 +1,5 @@
 use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
-use ckb_std::ckb_types::util::hash::blake2b_256;
 use core::ffi::CStr;
 use core::result::Result;
 
@@ -16,12 +15,11 @@ use ckb_std::{
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::action;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
-    calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+    calc_capacity_sum, compatible_load_cluster_data, find_position_by_lock_hash,
+    find_position_by_type, find_position_by_type_args, verify_type_id, MIME, MUTANT_ID_LEN,
+    MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -62,9 +60,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // verify Spore ID
-    let Some(spore_id) = verify_type_id(index) else {
-        return Err(Error::InvalidSporeID);
-    };
+    verify_type_id(index).ok_or(Error::InvalidSporeID)?;
 
     // content_type validation
     let content_type = spore_data.content_type().raw_data();
@@ -159,17 +155,6 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if mint.spore_id().as_slice() != spore_id
-        || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
-
     Ok(())
 }
 
@@ -188,15 +173,6 @@ fn process_destruction() -> Result<(), Error> {
         let index = find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
         verify_extension(&mime, Operation::Burn, vec![index as u8])?;
     }
-
-    // check co-build action @lyk
-    let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if burn.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
 
     Ok(())
 }
@@ -225,17 +201,6 @@ fn process_transfer() -> Result<(), Error> {
             vec![input_index as u8, output_index as u8],
         )?;
     }
-
-    // check co-build action @lyk
-    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if transfer.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
 
     Ok(())
 }
@@ -335,6 +300,9 @@ fn check_payment(
 }
 
 pub fn main() -> Result<(), Error> {
+    if load_script()?.args().raw_data().len() < 32 {
+        return Err(Error::InvalidSporeID);
+    }
     let spore_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
         .map(|script| script.unwrap_or_default())
         .collect();

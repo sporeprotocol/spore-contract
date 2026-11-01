@@ -2100,8 +2100,10 @@ name = "tests"
 version = "0.1.0"
 dependencies = [
  "ckb-sdk",
+ "ckb-system-scripts",
  "ckb-testtool",
  "hex",
+ "secp256k1",
  "serde_json",
  "spore-types",
  "spore-utils",

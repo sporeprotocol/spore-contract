@@ -10,20 +10,26 @@ use ckb_std::ckb_types::prelude::*;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
-    load_cell, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type,
-    load_cell_type_hash, load_input, load_script, load_script_hash, QueryIter,
+    load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, load_cell_type_hash,
+    load_input, load_script, QueryIter,
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::{action, spore};
+use spore_types::generated::spore;
 
 pub use mime::MIME;
+#[cfg(feature = "cobuild")]
 pub mod co_build_types {
     pub use ckb_transaction_cobuild::schemas::basic::*;
     pub use ckb_transaction_cobuild::schemas::top_level::*;
 }
 
 mod mime;
+
+#[cfg(feature = "cobuild")]
+mod cobuild;
+#[cfg(feature = "cobuild")]
+pub use cobuild::{check_spore_address, extract_spore_action};
 
 pub const MUTANT_ID_LEN: usize = 32;
 pub const MUTANT_ID_WITH_PAYMENT_LEN: usize = MUTANT_ID_LEN + 8;
@@ -158,35 +164,6 @@ pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u64 {
         .filter(|cell| cell.lock().calc_script_hash().raw_data().as_ref() == lock_hash)
         .map(|cell| cell.capacity().unpack())
         .sum()
-}
-
-pub fn check_spore_address(
-    group_source: Source,
-    spore_address: action::Address,
-) -> Result<(), Error> {
-    let address = load_cell_lock(0, group_source)?;
-    let action::AddressUnion::Script(expected_script) = spore_address.to_enum();
-    if address.as_slice() != expected_script.as_slice() {
-        return Err(Error::SporeActionAddressesMismatch);
-    }
-    Ok(())
-}
-
-pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
-    let message = ckb_transaction_cobuild::fetch_message()
-        .map_err(|_| Error::InvliadCoBuildWitnessLayout)?
-        .ok_or(Error::InvliadCoBuildWitnessLayout)?;
-    let script_hash = load_script_hash()?;
-
-    let mut iter = message
-        .actions()
-        .into_iter()
-        .filter(|value| value.script_hash().as_slice() == script_hash.as_slice());
-    match (iter.next(), iter.next()) {
-        (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data())
-            .map_err(|_| Error::InvliadCoBuildMessage),
-        _ => Err(Error::SporeActionDuplicated),
-    }
 }
 
 pub fn compatible_load_cluster_data(

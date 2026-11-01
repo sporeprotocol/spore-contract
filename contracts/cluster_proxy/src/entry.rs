@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use ckb_std::ckb_types::prelude::Entity;
 use core::result::Result;
 
 // Import from `core` instead of from `std` since we are in no-std mode
@@ -10,34 +9,33 @@ use ckb_std::high_level::{
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::action;
 use spore_utils::{
-    check_spore_address, extract_spore_action, find_position_by_lock_hash, find_position_by_type,
-    find_position_by_type_args, load_self_id, verify_type_id, CLUSTER_PROXY_ID_LEN,
-    CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, verify_type_id,
+    CLUSTER_PROXY_ID_LEN, CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
 };
 
 fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_CODE_HASHES.contains(script_hash)
 }
 
+// Cluster IDs were previously constrained by the Action's Byte32 field.
+fn load_cluster_id(source: ckb_std::ckb_constants::Source) -> Result<Vec<u8>, Error> {
+    let data = load_cell_data(0, source)?;
+    if data.len() != 32 {
+        return Err(Error::InvalidProxyData);
+    }
+    Ok(data)
+}
+
 fn process_creation(index: usize) -> Result<(), Error> {
-    let cluster_id = load_cell_data(0, GroupOutput)?;
+    let cluster_id = load_cluster_id(GroupOutput)?;
     // check cluster in Deps
     let cell_dep_index =
         find_position_by_type_args(&cluster_id, CellDep, Some(is_valid_cluster_cell))
             .ok_or(Error::ClusterCellNotInDep)?;
 
-    // verify script args format
-    let args = load_script()?.args().raw_data();
-    if args.len() != CLUSTER_PROXY_ID_LEN && args.len() != CLUSTER_PROXY_ID_WITH_PAYMENT_LEN {
-        return Err(Error::InvalidProxyArgs);
-    }
-
     // verify Proxy ID
-    let Some(proxy_id) = verify_type_id(index) else {
-        return Err(Error::InvalidProxyID);
-    };
+    verify_type_id(index).ok_or(Error::InvalidProxyID)?;
 
     // Condition 1: Check if cluster exist in Inputs & Outputs
     let cluster_cell_in_input =
@@ -54,60 +52,33 @@ fn process_creation(index: usize) -> Result<(), Error> {
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::MintProxy(create) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if proxy_id != create.proxy_id().as_slice() || &cluster_id != create.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, create.to())?;
-
     Ok(())
 }
 
 fn process_transfer() -> Result<(), Error> {
-    let input_data = load_cell_data(0, GroupInput)?;
-    let output_data = load_cell_data(0, GroupOutput)?;
+    let input_data = load_cluster_id(GroupInput)?;
+    let output_data = load_cluster_id(GroupOutput)?;
 
     if input_data != output_data {
         return Err(Error::ImmutableProxyFieldModification);
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::TransferProxy(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if input_data.as_slice() != transfer.cluster_id().as_slice()
-        || &load_self_id()? != transfer.proxy_id().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
-
     Ok(())
 }
 
 fn process_destruction() -> Result<(), Error> {
-    let cluster_id = load_cell_data(0, GroupInput)?;
-    let proxy_id = load_self_id()?;
-
-    // co-build check @lyk
-    let action::SporeActionUnion::BurnProxy(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if cluster_id.as_slice() != burn.cluster_id().as_slice()
-        || &proxy_id != burn.proxy_id().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
+    load_cluster_id(GroupInput)?;
     Ok(())
 }
 
 pub fn main() -> Result<(), Error> {
+    let args = load_script()?.args().raw_data();
+    if !matches!(
+        args.len(),
+        CLUSTER_PROXY_ID_LEN | CLUSTER_PROXY_ID_WITH_PAYMENT_LEN
+    ) {
+        return Err(Error::InvalidProxyArgs);
+    }
     let proxy_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
         .map(|script| script.unwrap_or_default())
         .collect();

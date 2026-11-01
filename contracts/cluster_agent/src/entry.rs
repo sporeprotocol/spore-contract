@@ -13,14 +13,8 @@ use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, Q
 use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
 
 use spore_errors::error::Error;
-use spore_types::generated::action;
-use spore_utils::{
-    calc_capacity_sum, find_position_by_type, find_position_by_type_hash, load_self_id,
-};
-use spore_utils::{
-    check_spore_address, extract_spore_action, CLUSTER_PROXY_ID_LEN,
-    CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
-};
+use spore_utils::{calc_capacity_sum, find_position_by_type, find_position_by_type_hash};
+use spore_utils::{CLUSTER_PROXY_ID_LEN, CLUSTER_PROXY_ID_WITH_PAYMENT_LEN};
 
 fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
     crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
@@ -44,8 +38,17 @@ fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
     agents_count > 1
 }
 
+// Agent data is the proxy's full type-script hash, not an intent field.
+fn load_proxy_hash(source: Source) -> Result<Vec<u8>, Error> {
+    let data = load_cell_data(0, source)?;
+    if data.len() != 32 {
+        return Err(Error::InvalidAgentData);
+    }
+    Ok(data)
+}
+
 fn process_creation(_index: usize) -> Result<(), Error> {
-    let proxy_type_hash = load_cell_data(0, GroupOutput)?;
+    let proxy_type_hash = load_proxy_hash(GroupOutput)?;
     // check cluster proxy in Deps
     let proxy_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
         .ok_or(Error::ProxyCellNotInDep)?;
@@ -56,6 +59,9 @@ fn process_creation(_index: usize) -> Result<(), Error> {
 
     // verify cluster id
     let cluster_id = load_cell_data(proxy_index, CellDep)?;
+    if cluster_id.len() != 32 {
+        return Err(Error::InvalidAgentData);
+    }
     let script = load_script()?;
     if script.args().raw_data().as_ref() != &cluster_id {
         return Err(Error::InvalidAgentArgs);
@@ -97,55 +103,29 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         }
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::MintAgent(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &cluster_id != mint.cluster_id().as_slice()
-        || &proxy_type.args().raw_data()[..CLUSTER_PROXY_ID_LEN] != mint.proxy_id().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
-
     Ok(())
 }
 
 fn process_transfer() -> Result<(), Error> {
-    let input_agent_data = load_cell_data(0, GroupInput)?;
-    let output_agent_data = load_cell_data(0, GroupOutput)?;
+    let input_agent_data = load_proxy_hash(GroupInput)?;
+    let output_agent_data = load_proxy_hash(GroupOutput)?;
 
     if input_agent_data != output_agent_data || input_agent_data.is_empty() {
         return Err(Error::ImmutableAgentFieldModification);
     }
 
-    // co-build check @lyk
-    let action::SporeActionUnion::TransferAgent(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &load_self_id()? != transfer.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
-
     Ok(())
 }
 
 fn process_destruction() -> Result<(), Error> {
-    // co-build check @lyk
-    let action::SporeActionUnion::BurnAgent(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if &load_self_id()? != burn.cluster_id().as_slice() {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
+    load_proxy_hash(GroupInput)?;
     Ok(())
 }
 
 pub fn main() -> Result<(), Error> {
+    if load_script()?.args().raw_data().len() != 32 {
+        return Err(Error::InvalidAgentArgs);
+    }
     let agent_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
         .map(|script| script.unwrap_or_default())
         .collect();
