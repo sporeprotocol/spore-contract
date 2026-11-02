@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "cluster"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std 0.14.3",
@@ -117,7 +117,7 @@ dependencies = [
 
 [[package]]
 name = "cluster_agent"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std 0.14.3",
@@ -129,7 +129,7 @@ dependencies = [
 
 [[package]]
 name = "cluster_proxy"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std 0.14.3",
@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "mutant_equipment"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.14.3",
  "spore-mutant",
@@ -224,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "mutant_probe"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.14.3",
  "spore-mutant",
@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "spore"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std 0.14.3",
@@ -296,7 +296,7 @@ dependencies = [
 
 [[package]]
 name = "spore-build-tools"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "faster-hex",
  "serde",
@@ -305,28 +305,28 @@ dependencies = [
 
 [[package]]
 name = "spore-errors"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.14.3",
 ]
 
 [[package]]
 name = "spore-mutant"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.16.4",
 ]
 
 [[package]]
 name = "spore-types"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "molecule",
 ]
 
 [[package]]
 name = "spore-utils"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.14.3",
  "ckb-transaction-cobuild",
@@ -336,7 +336,7 @@ dependencies = [
 
 [[package]]
 name = "spore_extension_rust"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std 0.14.3",
  "spore-errors",

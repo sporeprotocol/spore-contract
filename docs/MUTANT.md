@@ -1,6 +1,6 @@
 # Mutant
 
-The new native Rust implementation and versioned execution ABI are documented in
+The Spore v3 candidate (`0.3.0-alpha.1`, unreleased) native Rust implementation and versioned execution ABI are documented in
 the [Rust Mutant guide](../examples/mutant-rust/README.md). It requires new contract
 code hashes and VM V2 (`data2`), and preserves validation continuation with
 spawn/wait. Existing deployed Spore versions retain their original behavior.

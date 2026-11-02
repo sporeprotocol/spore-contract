@@ -4,7 +4,7 @@ Spore now executes Rust-authored RISC-V ELF code directly from a Mutant cell's
 data using CKB-VM V2 `spawn` and `wait`. No Lua bridge, companion type group,
 receipt output or per-rule deployed interpreter is required for this path.
 
-This is a **new contract version**, identified by new code hashes. Deploy the
+This is the native-execution part of **Spore v3 / `0.3.0-alpha.1` (unreleased)**, identified by new code hashes. Deploy the
 new `spore_extension_rust`, `cluster`, and `spore` binaries and use `hash_type =
 data2` for new Spore and Rust Mutant scripts. Frozen hashes, deployment records,
 and the Molecule asset schemas are unchanged. Existing assets continue to use
@@ -178,10 +178,14 @@ be satisfied on the new path. Its existing Spore version retains its behavior.
 A native rule receives its own identity; it does not replace a Lua rule under the
 old identity.
 
-Transaction builders for the new version must supply valid co-build actions and
-witnesses for mint, transfer and burn, and satisfy all applicable multipart,
-cluster dependency/ownership and required-Mutant checks. Success from a rule
-always returns to Spore's remaining validation.
+This #75 branch still requires core CoBuild Actions for mint, transfer and burn.
+The companion [#76](https://github.com/sporeprotocol/spore-contract/pull/76)
+removes that requirement for the combined v3 candidate. After both changes,
+Actions are optional for the core, while Locks and custom rules retain their own
+witness requirements. Multipart, Cluster authority and required-Mutant checks
+still apply. Success from a rule always returns to Spore's remaining validation.
+See the [release plan](../../docs/VERSIONS.md#spore-v3--030-alpha1-unreleased);
+CKB-VM V2 and the `spore-mutant-v1` ABI are independent version labels.
 
 ## Verification
 

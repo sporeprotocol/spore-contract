@@ -1,4 +1,54 @@
-# Historical Versions
+# Contract Versions
+
+## Spore v3 / 0.3.0-alpha.1 (unreleased)
+
+The proposed next contract generation is **Spore v3**, with source package
+version **`0.3.0-alpha.1`**. This is an unreleased candidate, not a deployment or
+an official Git tag. It requires both changes below before a release is built:
+
+| Change | Review | Responsibility |
+| --- | --- | --- |
+| Native-only Rust/RISC-V Mutants | [#75](https://github.com/sporeprotocol/spore-contract/pull/75) | Execute every declared rule with returning `spawn/wait`; reject Lua on the new path |
+| Optional CoBuild intent | [#76](https://github.com/sporeprotocol/spore-contract/pull/76) | Validate cells without requiring Actions; leave optional intent to tooling and each Lock's own rules |
+
+The PRs remain separate for review. Neither intermediate branch is the complete
+v3 release: #75 alone still requires core CoBuild Actions, while #76 alone uses
+the upstream legacy executor. The combined candidate is **native-only with no
+mandatory core CoBuild Action**. Build and test that combined tree before
+recording deployment hashes. An integration branch is maintained at
+[`codex/spore-v3-integration`](https://github.com/a19q3/spore-contract/tree/codex/spore-v3-integration).
+
+### Why v3 rather than v2?
+
+The [upstream SDK configuration](https://github.com/sporeprotocol/spore-sdk/blob/beta/packages/core/src/config/predefined.ts)
+already labels the `0.2.2-beta.1` mainnet and `0.2.2-beta.2` testnet contract
+hashes listed below as `v2`. Reusing that generation name would confuse clients.
+The existing repository tags run from `0.1.0` through `0.2.2-beta.2`; the candidate
+continues that source-version series at `0.3.0-alpha.1`.
+
+These version labels describe different things:
+
+| Label | Meaning |
+| --- | --- |
+| Spore v3 | Proposed protocol/contract generation |
+| `0.3.0-alpha.1` | Unreleased source package version for current contracts and libraries; historical Lua package stays unchanged |
+| CKB-VM V2 / `data2` | VM/script hash-type requirement of the native execution path |
+| `spore-mutant-v1` | Native invocation ABI, unchanged by this release label |
+| `ClusterDataV2` | Existing cell schema name; no schema rename or reinterpretation is implied |
+
+The semantic version does not select a contract on chain. Clients must still
+bind the exact deployed code hash, hash type and dependency. Existing cells
+bound by `data`/`data1` hashes keep their original binaries, Lua dependencies
+where applicable, and validation rules. New contracts do not upgrade or convert
+those cells. Historical sources, deployment records and frozen hash lists stay
+unchanged. Do not infer that every historical deployment uses a data hash;
+clients must resolve the script binding they actually selected.
+
+No v3 deployment, release tag or published SDK configuration is created by
+these PRs. Deployment records must be added only after the combined candidate
+has been reviewed, built and deployed.
+
+## Historical deployments
 
 ## tag 0.2.1 (testnet)
 **⚠️ Deprecated !!! This early beta release has been phased out. For optimal ecosystem compatibility, please upgrade to version 0.2.2-beta.2 or later.**

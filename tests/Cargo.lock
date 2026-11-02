@@ -2221,21 +2221,21 @@ dependencies = [
 
 [[package]]
 name = "spore-errors"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std",
 ]
 
 [[package]]
 name = "spore-types"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "molecule 0.7.5",
 ]
 
 [[package]]
 name = "spore-utils"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std",
  "ckb-transaction-cobuild",
