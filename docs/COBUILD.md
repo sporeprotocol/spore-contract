@@ -1,5 +1,11 @@
 # Optional CoBuild transaction intent
 
+This is the intent-decoupling part of **Spore v3 / `0.3.0-alpha.1`
+(unreleased)**. The final candidate also requires the native-only Rust executor
+from #75. This PR stays based on upstream master for a focused CoBuild review;
+its standalone Lua tests describe that intermediate tree, not v3 runtime support.
+See the [shared release plan](./VERSIONS.md#spore-v3--030-alpha1-unreleased).
+
 ## Consensus boundary
 
 This source version removes mandatory CoBuild Action extraction from the four
@@ -72,7 +78,7 @@ changing an appended Message after signing invalidates that signature.
 
 ## Deployment and migration
 
-This is a consensus change for newly built contracts, not an update to existing
+This is a consensus change for the combined v3 candidate, not an update to existing
 assets. Deploy new binaries under new code hashes, rebuild dependent contracts
 in dependency order, and explicitly select the resulting version in clients.
 Existing frozen deployments and code-hash records are left unchanged. Cells

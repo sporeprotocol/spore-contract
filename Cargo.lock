@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "cluster"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std",
@@ -106,7 +106,7 @@ dependencies = [
 
 [[package]]
 name = "cluster_agent"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std",
@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "cluster_proxy"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std",
@@ -245,7 +245,7 @@ dependencies = [
 
 [[package]]
 name = "spore"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-hash",
  "ckb-std",
@@ -260,7 +260,7 @@ dependencies = [
 
 [[package]]
 name = "spore-build-tools"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "faster-hex",
  "serde",
@@ -269,21 +269,21 @@ dependencies = [
 
 [[package]]
 name = "spore-errors"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std",
 ]
 
 [[package]]
 name = "spore-types"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "molecule",
 ]
 
 [[package]]
 name = "spore-utils"
-version = "0.1.0"
+version = "0.3.0-alpha.1"
 dependencies = [
  "ckb-std",
  "ckb-transaction-cobuild",

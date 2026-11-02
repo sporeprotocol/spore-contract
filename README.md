@@ -5,6 +5,15 @@
 
 Developers are recommended to use the [Spore SDK](https://github.com/sporeprotocol/spore-sdk) for building applications with Spore, instead of directly interacting with the contracts. If you're interested in testing, extending the contracts, or deploying them on a local blockchain, feel free to explore the [Development](#⚙️-development) section for guidance.
 
+## Spore v3 candidate
+
+The proposed next generation is **Spore v3 / `0.3.0-alpha.1` (unreleased)**.
+Its release combines native-only Rust Mutants ([#75](https://github.com/sporeprotocol/spore-contract/pull/75))
+and optional core CoBuild intent ([#76](https://github.com/sporeprotocol/spore-contract/pull/76)).
+The PRs are separate review steps, not two independently deployable v3 releases.
+See the [version plan](./docs/VERSIONS.md#spore-v3--030-alpha1-unreleased)
+for the existing v2 naming, exact code-hash boundary, and combined verification.
+
 ## About
 
 Spore is an on-chain protocol to power digital asset ownership, distribution, and value capture. For more, check out https://spore.pro
