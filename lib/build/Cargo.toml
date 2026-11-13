@@ -11,3 +11,4 @@ serde = { version = "1.0", default-features = false, features = [
     "serde_derive",
 ] }
 faster-hex = { version = "0.9", default-features = false }
+ckb-hash = "0.112.1"

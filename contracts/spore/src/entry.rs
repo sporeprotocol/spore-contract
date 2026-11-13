@@ -18,8 +18,8 @@ use spore_errors::error::Error;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
     calc_capacity_sum, compatible_load_cluster_data, find_position_by_lock_hash,
-    find_position_by_type, find_position_by_type_args, verify_type_id, MIME, MUTANT_ID_LEN,
-    MUTANT_ID_WITH_PAYMENT_LEN,
+    find_position_by_type, find_position_by_type_args_matching, verify_type_id, MIME,
+    MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -30,12 +30,20 @@ enum Operation {
     Burn,
 }
 
-fn check_cluster_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_CODE_HASHES.contains(code_hash)
+fn check_cluster_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_CODE_HASHES,
+        &crate::hash::CLUSTER_TYPE_HASHES,
+    )
 }
 
-fn check_agent_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_AGENT_CODE_HASHES.contains(code_hash)
+fn check_agent_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_AGENT_CODE_HASHES,
+        &crate::hash::CLUSTER_AGENT_TYPE_HASHES,
+    )
 }
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
@@ -98,7 +106,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // check if cluster cell is in deps
         let cluster_id = cluster_id.raw_data();
         let cell_dep_index =
-            find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, CellDep, check_cluster_code_hash)
                 .ok_or(Error::ClusterCellNotInDep)?;
 
         // the cluster contract guarantees the cluster data will always be correct once created
@@ -119,23 +127,26 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
         // Condition 1: Check if cluster exists in Inputs & Outputs
         let cluster_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_cluster_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_cluster_code_hash)
+                .is_some();
         let cluster_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, Output, check_cluster_code_hash)
                 .is_some();
 
         // Condition 2: Check if cluster agent exists in Inputs & Outputs
         let agent_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_agent_code_hash)
+                .is_some();
         let agent_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Output, check_agent_code_hash)
+                .is_some();
 
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
             // Condition 3: Use cluster agent in Lock Proxy mode
             if let Some(agent_index) =
-                find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
+                find_position_by_type_args_matching(&cluster_id, CellDep, check_agent_code_hash)
             {
                 debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
@@ -208,12 +219,22 @@ fn process_transfer() -> Result<(), Error> {
 fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
     let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
     let mut extension_hash = [0u8; 32];
+    let mut extension_hash_type = ScriptHashType::Data1;
     for mutant_id in mime.mutants.iter() {
         let mutant_index =
             QueryIter::new(load_cell_type, CellDep).position(|script| match script {
                 Some(script) => {
                     extension_hash = script.code_hash().unpack();
-                    if crate::hash::MUTANT_CODE_HASHES.contains(&extension_hash) {
+                    extension_hash_type = if script.hash_type() == ScriptHashType::Type.into() {
+                        ScriptHashType::Type
+                    } else {
+                        ScriptHashType::Data1
+                    };
+                    if spore_utils::matches_code_identity(
+                        &script,
+                        &crate::hash::MUTANT_CODE_HASHES,
+                        &crate::hash::MUTANT_TYPE_HASHES,
+                    ) {
                         return mutant_id[..] == script.args().raw_data()[..32];
                     }
                     false
@@ -233,34 +254,47 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                     Operation::Mint => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
                     Operation::Transfer => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
                     Operation::Burn => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }

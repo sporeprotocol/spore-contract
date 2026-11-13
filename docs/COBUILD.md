@@ -1,3 +1,5 @@
+> Type-bound candidate update: see [code identity, governance and build plans](./TYPE_BINDING.md). Historical validation below is revision-specific.
+
 # Optional CoBuild transaction intent
 
 This is the intent-decoupling part of **Spore v3 / `0.3.0-alpha.1`

@@ -10,12 +10,16 @@ use ckb_std::high_level::{
 
 use spore_errors::error::Error;
 use spore_utils::{
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, verify_type_id,
-    CLUSTER_PROXY_ID_LEN, CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args_matching,
+    verify_type_id, CLUSTER_PROXY_ID_LEN, CLUSTER_PROXY_ID_WITH_PAYMENT_LEN,
 };
 
-fn is_valid_cluster_cell(script_hash: &[u8; 32]) -> bool {
-    crate::hash::CLUSTER_CODE_HASHES.contains(script_hash)
+fn is_valid_cluster_cell(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &crate::hash::CLUSTER_CODE_HASHES,
+        &crate::hash::CLUSTER_TYPE_HASHES,
+    )
 }
 
 // Cluster IDs were previously constrained by the Action's Byte32 field.
@@ -31,7 +35,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     let cluster_id = load_cluster_id(GroupOutput)?;
     // check cluster in Deps
     let cell_dep_index =
-        find_position_by_type_args(&cluster_id, CellDep, Some(is_valid_cluster_cell))
+        find_position_by_type_args_matching(&cluster_id, CellDep, is_valid_cluster_cell)
             .ok_or(Error::ClusterCellNotInDep)?;
 
     // verify Proxy ID
@@ -39,9 +43,9 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
     // Condition 1: Check if cluster exist in Inputs & Outputs
     let cluster_cell_in_input =
-        find_position_by_type_args(&cluster_id, Input, Some(is_valid_cluster_cell)).is_some();
+        find_position_by_type_args_matching(&cluster_id, Input, is_valid_cluster_cell).is_some();
     let cluster_cell_in_output =
-        find_position_by_type_args(&cluster_id, Output, Some(is_valid_cluster_cell)).is_some();
+        find_position_by_type_args_matching(&cluster_id, Output, is_valid_cluster_cell).is_some();
 
     if !cluster_cell_in_input || !cluster_cell_in_output {
         // Condition 2: Check if Lock Proxy exist in Inputs & Outputs

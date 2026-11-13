@@ -6,6 +6,13 @@ on:
       - contracts/**
       - lib/**
       - tests/**
+      - deployment/**
+      - scripts/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain
+      - Cross.toml
+      - .github/workflows/capsule.yaml
 
 jobs:
   capsule-build-and-test:
@@ -22,9 +29,14 @@ jobs:
           - target: mainnet
             cargo-option: "--release -- --features release_export"
             target-dir: "build/release"
-    runs-on: ubuntu-20.04
+    env:
+      SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       
       - name: Prepare capsule v0.10.2
         run: |
@@ -35,10 +47,16 @@ jobs:
           echo "/tmp/capsule_v0.10.2_x86_64-linux" >> $GITHUB_PATH
     
       - name: Install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo install cross --version 0.2.5 --locked
 
       - name: Capsule build
         run: capsule build ${{ matrix.cargo-option }}
+
+      - name: Stage code Type ID plan
+        run: python3 scripts/type-id-plan.py "$SPORE_DEPLOYMENT_MANIFEST" "${{ matrix.target-dir }}/code-type-ids.json"
+
+      - name: Deployment plan tests
+        run: cargo test --locked -p spore-build-tools --lib
 
       - name: Capsule test
         run: capsule test ${{ matrix.cargo-option }}
@@ -61,7 +79,7 @@ jobs:
     strategy:
       matrix:
         target: [debug, testnet, mainnet]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       # TODO: add this codehash util into the `tests` directory
       # or, simply use `ckb-cli util blake2b --binary-path ...` to get the codehash

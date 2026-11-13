@@ -185,3 +185,29 @@ pub fn compatible_load_cluster_data(
         )
     }
 }
+
+/// Match stable code Type IDs separately from historical data-hash deployments.
+pub fn matches_code_identity(
+    script: &Script,
+    data_hashes: &[[u8; 32]],
+    type_hashes: &[[u8; 32]],
+) -> bool {
+    let hash: [u8; 32] = script.code_hash().unpack();
+    match u8::from(script.hash_type()) {
+        1 => type_hashes.contains(&hash),
+        0 | 2 | 4 => data_hashes.contains(&hash),
+        _ => false,
+    }
+}
+
+pub fn find_position_by_type_args_matching(
+    args: &[u8],
+    source: Source,
+    filter: fn(&Script) -> bool,
+) -> Option<usize> {
+    QueryIter::new(load_cell_type, source).position(|script| {
+        script
+            .map(|script| filter(&script) && script.args().raw_data().as_ref() == args)
+            .unwrap_or(false)
+    })
+}

@@ -16,7 +16,7 @@ use ckb_std::{
 use ckb_std::high_level::{load_script, QueryIter};
 use spore_errors::error::Error;
 use spore_types::generated::spore::ClusterDataV2 as ClusterData;
-use spore_utils::{find_position_by_type, find_position_by_type_args, verify_type_id};
+use spore_utils::{find_position_by_type, find_position_by_type_args_matching, verify_type_id};
 
 use crate::hash::SPORE_EXTENSION_LUA;
 
@@ -37,9 +37,15 @@ fn process_creation(index: usize) -> Result<(), Error> {
     // Verify if mutant is set
     if cluster_data.mutant_id().is_some() {
         let script = load_script().unwrap_or_default();
-        let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { SPORE_EXTENSION_LUA.contains(x) };
+        let filter_fn: fn(&Script) -> bool = |script| {
+            spore_utils::matches_code_identity(
+                script,
+                &SPORE_EXTENSION_LUA,
+                &crate::hash::SPORE_EXTENSION_LUA_TYPE_HASHES,
+            )
+        };
         let args: Vec<u8> = script.args().unpack();
-        find_position_by_type_args(&args, CellDep, Some(filter_fn))
+        find_position_by_type_args_matching(&args, CellDep, filter_fn)
             .ok_or(Error::MutantNotInDeps)?;
     }
 

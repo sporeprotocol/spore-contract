@@ -16,8 +16,12 @@ use spore_errors::error::Error;
 use spore_utils::{calc_capacity_sum, find_position_by_type, find_position_by_type_hash};
 use spore_utils::{CLUSTER_PROXY_ID_LEN, CLUSTER_PROXY_ID_WITH_PAYMENT_LEN};
 
-fn is_valid_cluster_proxy_cell(script_hash: &[u8; 32]) -> bool {
-    crate::hash::CLUSTER_PROXY_CODE_HASHES.contains(script_hash)
+fn is_valid_cluster_proxy_cell(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &crate::hash::CLUSTER_PROXY_CODE_HASHES,
+        &crate::hash::CLUSTER_PROXY_TYPE_HASHES,
+    )
 }
 
 fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
@@ -27,7 +31,9 @@ fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
         .enumerate()
         .filter(|(index, type_)| {
             if let Some(type_) = type_ {
-                if type_.code_hash().as_slice() == self_code_hash.as_slice() {
+                if type_.code_hash().as_slice() == self_code_hash.as_slice()
+                    && type_.hash_type() == script.hash_type()
+                {
                     let data = load_cell_data(*index, source).unwrap();
                     return cell_data == data;
                 }
@@ -53,7 +59,7 @@ fn process_creation(_index: usize) -> Result<(), Error> {
     let proxy_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
         .ok_or(Error::ProxyCellNotInDep)?;
     let proxy_type = load_cell_type(proxy_index, CellDep)?.unwrap_or_default();
-    if !is_valid_cluster_proxy_cell(&proxy_type.code_hash().unpack()) {
+    if !is_valid_cluster_proxy_cell(&proxy_type) {
         return Err(Error::RefCellNotClusterProxy);
     }
 
