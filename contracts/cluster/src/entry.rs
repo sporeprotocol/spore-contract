@@ -1,8 +1,6 @@
 // Import heap related library from `alloc`
 // https://doc.rust-lang.org/alloc/index.html
 use alloc::vec::Vec;
-use ckb_std::ckb_types::util::hash::blake2b_256;
-use spore_types::generated::action;
 // Import from `core` instead of from `std` since we are in no-std mode
 use core::result::Result;
 
@@ -18,10 +16,7 @@ use ckb_std::{
 use ckb_std::high_level::{load_script, QueryIter};
 use spore_errors::error::Error;
 use spore_types::generated::spore::ClusterDataV2 as ClusterData;
-use spore_utils::{
-    check_spore_address, extract_spore_action, find_position_by_type, find_position_by_type_args,
-    load_self_id, verify_type_id,
-};
+use spore_utils::{find_position_by_type, find_position_by_type_args_matching, verify_type_id};
 
 use crate::hash::SPORE_EXTENSION_LUA;
 
@@ -37,29 +32,22 @@ fn process_creation(index: usize) -> Result<(), Error> {
     if cluster_data.name().is_empty() {
         return Err(Error::EmptyName);
     }
-    let Some(cluster_id) = verify_type_id(index) else {
-        return Err(Error::InvalidClusterID);
-    };
+    verify_type_id(index).ok_or(Error::InvalidClusterID)?;
 
     // Verify if mutant is set
     if cluster_data.mutant_id().is_some() {
         let script = load_script().unwrap_or_default();
-        let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { SPORE_EXTENSION_LUA.contains(x) };
+        let filter_fn: fn(&Script) -> bool = |script| {
+            spore_utils::matches_code_identity(
+                script,
+                &SPORE_EXTENSION_LUA,
+                &crate::hash::SPORE_EXTENSION_LUA_TYPE_HASHES,
+            )
+        };
         let args: Vec<u8> = script.args().unpack();
-        find_position_by_type_args(&args, CellDep, Some(filter_fn))
+        find_position_by_type_args_matching(&args, CellDep, filter_fn)
             .ok_or(Error::MutantNotInDeps)?;
     }
-
-    // check co-build action @lyk
-    let action::SporeActionUnion::MintCluster(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if cluster_id != mint.cluster_id().as_slice()
-        || blake2b_256(cluster_data.as_slice()) != mint.data_hash().as_slice()
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
 
     Ok(())
 }
@@ -73,21 +61,13 @@ fn process_transfer() -> Result<(), Error> {
         return Err(Error::ModifyClusterPermanentField);
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::TransferCluster(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if transfer.cluster_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
-
     Ok(())
 }
 
 pub fn main() -> Result<(), Error> {
+    if load_script()?.args().raw_data().len() < 32 {
+        return Err(Error::InvalidClusterID);
+    }
     let cluster_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
         .map(|script| script.unwrap_or_default())
         .collect();

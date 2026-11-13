@@ -58,7 +58,7 @@ pub fn build_spore_type_script(
     out_point: &OutPoint,
     args: Bytes,
 ) -> Option<Script> {
-    context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args)
+    context.build_script_with_hash_type(out_point, ScriptHashType::Type, args)
 }
 
 pub fn build_spore_type_script_with_payment(
@@ -69,7 +69,7 @@ pub fn build_spore_type_script_with_payment(
 ) -> Option<Script> {
     let payment_in_ckb = payment * CAPACITY_UNIT;
     let args = vec![args.to_vec(), payment_in_ckb.to_le_bytes().to_vec()].concat();
-    context.build_script_with_hash_type(out_point, ScriptHashType::Data1, args.into())
+    context.build_script_with_hash_type(out_point, ScriptHashType::Type, args.into())
 }
 
 pub fn build_spore_input(
@@ -163,7 +163,31 @@ pub fn build_spore_contract_materials(
     binary_name: &str,
 ) -> (OutPoint, CellDep) {
     let binary = Loader::default().load_binary(binary_name);
-    let out_point = context.deploy_cell(binary);
+    let out_point = context.deploy_cell(binary.clone());
+    let role = match binary_name {
+        "spore" => Some("spore"),
+        "cluster" => Some("cluster"),
+        "cluster_proxy" => Some("cluster_proxy"),
+        "cluster_agent" => Some("cluster_agent"),
+        "spore_extension_rust" | "spore_extension_lua" => Some("mutant"),
+        _ => None,
+    };
+    if let Some(role) = role {
+        let args = code_type_id_args(role);
+        let mut type_id_code = [0u8; 32];
+        type_id_code[25..].copy_from_slice(b"TYPE_ID");
+        let code_type = Script::new_builder()
+            .code_hash(type_id_code.pack())
+            .hash_type(ScriptHashType::Type.into())
+            .args(args.to_vec().pack())
+            .build();
+        let (cell, _) = context.get_cell(&out_point).unwrap();
+        context.create_cell_with_out_point(
+            out_point.clone(),
+            cell.as_builder().type_(Some(code_type).pack()).build(),
+            binary,
+        );
+    }
     let script_dep = CellDep::new_builder().out_point(out_point.clone()).build();
     (out_point, script_dep)
 }
@@ -307,10 +331,8 @@ pub fn build_single_spore_mint_in_cluster_tx(
     cluster_id: [u8; 32],
 ) -> TransactionView {
     let cluster_data = build_serialized_cluster_data("Spore Cluster!", "Spore Description!");
-    let nft_bin: Bytes = Loader::default().load_binary("spore");
-    let nft_out_point = context.deploy_cell(nft_bin);
-    let cluster_bin: Bytes = Loader::default().load_binary("cluster");
-    let cluster_out_point = context.deploy_cell(cluster_bin);
+    let (nft_out_point, _) = build_spore_contract_materials(context, "spore");
+    let (cluster_out_point, _) = build_spore_contract_materials(context, "cluster");
     let input_ckb = spore_data.total_size() as u64;
 
     let output_ckb = input_ckb;
@@ -336,7 +358,7 @@ pub fn build_single_spore_mint_in_cluster_tx(
 
     let cluster_script = context.build_script_with_hash_type(
         &cluster_out_point,
-        ScriptHashType::Data1,
+        ScriptHashType::Type,
         cluster_id.to_vec().into(),
     );
 
@@ -386,7 +408,7 @@ pub fn build_single_spore_mint_in_cluster_tx(
 
     let nft_script = context.build_script_with_hash_type(
         &nft_out_point,
-        ScriptHashType::Data1,
+        ScriptHashType::Type,
         nft_id.to_vec().into(),
     );
 
@@ -454,4 +476,17 @@ pub fn build_single_mutant_celldep_tx(
         .build();
 
     (tx, mutant_id)
+}
+
+/// Read the exact identities staged by the contract build.
+pub fn code_type_id_args(role: &str) -> Vec<u8> {
+    let plan: serde_json::Value =
+        serde_json::from_slice(&Loader::default().load_binary("code-type-ids.json")).unwrap();
+    hex::decode(
+        plan["type_ids"][role]
+            .as_str()
+            .unwrap()
+            .trim_start_matches("0x"),
+    )
+    .unwrap()
 }

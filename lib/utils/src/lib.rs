@@ -10,20 +10,26 @@ use ckb_std::ckb_types::prelude::*;
 use ckb_std::ckb_types::util::hash::Blake2bBuilder;
 use ckb_std::debug;
 use ckb_std::high_level::{
-    load_cell, load_cell_data, load_cell_lock, load_cell_lock_hash, load_cell_type,
-    load_cell_type_hash, load_input, load_script, load_script_hash, QueryIter,
+    load_cell, load_cell_data, load_cell_lock_hash, load_cell_type, load_cell_type_hash,
+    load_input, load_script, QueryIter,
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::{action, spore};
+use spore_types::generated::spore;
 
 pub use mime::MIME;
+#[cfg(feature = "cobuild")]
 pub mod co_build_types {
     pub use ckb_transaction_cobuild::schemas::basic::*;
     pub use ckb_transaction_cobuild::schemas::top_level::*;
 }
 
 mod mime;
+
+#[cfg(feature = "cobuild")]
+mod cobuild;
+#[cfg(feature = "cobuild")]
+pub use cobuild::{check_spore_address, extract_spore_action};
 
 pub const MUTANT_ID_LEN: usize = 32;
 pub const MUTANT_ID_WITH_PAYMENT_LEN: usize = MUTANT_ID_LEN + 8;
@@ -160,35 +166,6 @@ pub fn calc_capacity_sum(lock_hash: &[u8; 32], source: Source) -> u64 {
         .sum()
 }
 
-pub fn check_spore_address(
-    group_source: Source,
-    spore_address: action::Address,
-) -> Result<(), Error> {
-    let address = load_cell_lock(0, group_source)?;
-    let action::AddressUnion::Script(expected_script) = spore_address.to_enum();
-    if address.as_slice() != expected_script.as_slice() {
-        return Err(Error::SporeActionAddressesMismatch);
-    }
-    Ok(())
-}
-
-pub fn extract_spore_action() -> Result<action::SporeAction, Error> {
-    let message = ckb_transaction_cobuild::fetch_message()
-        .map_err(|_| Error::InvliadCoBuildWitnessLayout)?
-        .ok_or(Error::InvliadCoBuildWitnessLayout)?;
-    let script_hash = load_script_hash()?;
-
-    let mut iter = message
-        .actions()
-        .into_iter()
-        .filter(|value| value.script_hash().as_slice() == script_hash.as_slice());
-    match (iter.next(), iter.next()) {
-        (Some(action), None) => action::SporeAction::from_slice(&action.data().raw_data())
-            .map_err(|_| Error::InvliadCoBuildMessage),
-        _ => Err(Error::SporeActionDuplicated),
-    }
-}
-
 pub fn compatible_load_cluster_data(
     raw_cluster_data: &[u8],
 ) -> Result<spore::ClusterDataV2, Error> {
@@ -207,4 +184,30 @@ pub fn compatible_load_cluster_data(
                 .map_err(|_| Error::InvalidClusterData)?,
         )
     }
+}
+
+/// Match stable code Type IDs separately from historical data-hash deployments.
+pub fn matches_code_identity(
+    script: &Script,
+    data_hashes: &[[u8; 32]],
+    type_hashes: &[[u8; 32]],
+) -> bool {
+    let hash: [u8; 32] = script.code_hash().unpack();
+    match u8::from(script.hash_type()) {
+        1 => type_hashes.contains(&hash),
+        0 | 2 | 4 => data_hashes.contains(&hash),
+        _ => false,
+    }
+}
+
+pub fn find_position_by_type_args_matching(
+    args: &[u8],
+    source: Source,
+    filter: fn(&Script) -> bool,
+) -> Option<usize> {
+    QueryIter::new(load_cell_type, source).position(|script| {
+        script
+            .map(|script| filter(&script) && script.args().raw_data().as_ref() == args)
+            .unwrap_or(false)
+    })
 }

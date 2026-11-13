@@ -1,6 +1,5 @@
 use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
-use ckb_std::ckb_types::util::hash::blake2b_256;
 use core::ffi::CStr;
 use core::result::Result;
 
@@ -16,12 +15,11 @@ use ckb_std::{
 };
 
 use spore_errors::error::Error;
-use spore_types::generated::action;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
-    calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+    calc_capacity_sum, compatible_load_cluster_data, find_position_by_lock_hash,
+    find_position_by_type, find_position_by_type_args_matching, verify_type_id, MIME,
+    MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -32,12 +30,20 @@ enum Operation {
     Burn,
 }
 
-fn check_cluster_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_CODE_HASHES.contains(code_hash)
+fn check_cluster_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_CODE_HASHES,
+        &crate::hash::CLUSTER_TYPE_HASHES,
+    )
 }
 
-fn check_agent_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_AGENT_CODE_HASHES.contains(code_hash)
+fn check_agent_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_AGENT_CODE_HASHES,
+        &crate::hash::CLUSTER_AGENT_TYPE_HASHES,
+    )
 }
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
@@ -62,9 +68,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     }
 
     // verify Spore ID
-    let Some(spore_id) = verify_type_id(index) else {
-        return Err(Error::InvalidSporeID);
-    };
+    verify_type_id(index).ok_or(Error::InvalidSporeID)?;
 
     // content_type validation
     let content_type = spore_data.content_type().raw_data();
@@ -102,7 +106,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // check if cluster cell is in deps
         let cluster_id = cluster_id.raw_data();
         let cell_dep_index =
-            find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, CellDep, check_cluster_code_hash)
                 .ok_or(Error::ClusterCellNotInDep)?;
 
         // the cluster contract guarantees the cluster data will always be correct once created
@@ -123,23 +127,26 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
         // Condition 1: Check if cluster exists in Inputs & Outputs
         let cluster_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_cluster_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_cluster_code_hash)
+                .is_some();
         let cluster_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, Output, check_cluster_code_hash)
                 .is_some();
 
         // Condition 2: Check if cluster agent exists in Inputs & Outputs
         let agent_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_agent_code_hash)
+                .is_some();
         let agent_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Output, check_agent_code_hash)
+                .is_some();
 
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
             // Condition 3: Use cluster agent in Lock Proxy mode
             if let Some(agent_index) =
-                find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
+                find_position_by_type_args_matching(&cluster_id, CellDep, check_agent_code_hash)
             {
                 debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
@@ -159,17 +166,6 @@ fn process_creation(index: usize) -> Result<(), Error> {
         }
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::MintSpore(mint) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if mint.spore_id().as_slice() != spore_id
-        || mint.data_hash().as_slice() != blake2b_256(spore_data.as_slice())
-    {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupOutput, mint.to())?;
-
     Ok(())
 }
 
@@ -188,15 +184,6 @@ fn process_destruction() -> Result<(), Error> {
         let index = find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
         verify_extension(&mime, Operation::Burn, vec![index as u8])?;
     }
-
-    // check co-build action @lyk
-    let action::SporeActionUnion::BurnSpore(burn) = extract_spore_action()?.to_enum() else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if burn.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, burn.from())?;
 
     Ok(())
 }
@@ -226,29 +213,28 @@ fn process_transfer() -> Result<(), Error> {
         )?;
     }
 
-    // check co-build action @lyk
-    let action::SporeActionUnion::TransferSpore(transfer) = extract_spore_action()?.to_enum()
-    else {
-        return Err(Error::SporeActionMismatch);
-    };
-    if transfer.spore_id().as_slice() != &load_self_id()? {
-        return Err(Error::SporeActionFieldMismatch);
-    }
-    check_spore_address(GroupInput, transfer.from())?;
-    check_spore_address(GroupOutput, transfer.to())?;
-
     Ok(())
 }
 
 fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
     let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
     let mut extension_hash = [0u8; 32];
+    let mut extension_hash_type = ScriptHashType::Data1;
     for mutant_id in mime.mutants.iter() {
         let mutant_index =
             QueryIter::new(load_cell_type, CellDep).position(|script| match script {
                 Some(script) => {
                     extension_hash = script.code_hash().unpack();
-                    if crate::hash::MUTANT_CODE_HASHES.contains(&extension_hash) {
+                    extension_hash_type = if script.hash_type() == ScriptHashType::Type.into() {
+                        ScriptHashType::Type
+                    } else {
+                        ScriptHashType::Data1
+                    };
+                    if spore_utils::matches_code_identity(
+                        &script,
+                        &crate::hash::MUTANT_CODE_HASHES,
+                        &crate::hash::MUTANT_TYPE_HASHES,
+                    ) {
                         return mutant_id[..] == script.args().raw_data()[..32];
                     }
                     false
@@ -268,34 +254,47 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Err
                     Operation::Mint => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
                     Operation::Transfer => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
                     Operation::Burn => {
                         ckb_std::high_level::exec_cell(
                             &extension_hash,
-                            ScriptHashType::Data1,
+                            extension_hash_type,
                             &[
                                 CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
+                                CStr::from_bytes_with_nul(
+                                    [b'0' + mutant_index as u8, 0].as_slice(),
+                                )
+                                .unwrap_or_default(),
+                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice())
+                                    .unwrap_or_default(),
                             ],
                         )?;
                     }
@@ -335,6 +334,9 @@ fn check_payment(
 }
 
 pub fn main() -> Result<(), Error> {
+    if load_script()?.args().raw_data().len() < 32 {
+        return Err(Error::InvalidSporeID);
+    }
     let spore_in_output: Vec<Script> = QueryIter::new(load_cell_type, GroupOutput)
         .map(|script| script.unwrap_or_default())
         .collect();
