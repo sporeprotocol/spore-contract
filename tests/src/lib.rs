@@ -5,7 +5,9 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 #[allow(dead_code)]
-const MAX_CYCLES: u64 = 10_000_000;
+// Allows the unoptimized contract fixtures to run under the Meepo verifier.
+// Individual budget-exhaustion tests use a smaller limit.
+const MAX_CYCLES: u64 = 50_000_000;
 
 #[cfg(test)]
 mod tests;

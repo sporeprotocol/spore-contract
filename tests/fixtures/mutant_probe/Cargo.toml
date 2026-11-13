@@ -1,0 +1,13 @@
+[package]
+name = "mutant_probe"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+ckb-std = "0.14.3"
+spore-mutant = { path = "../../../lib/mutant" }
+
+[features]
+default = []
+release_export = []

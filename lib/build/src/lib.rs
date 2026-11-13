@@ -1,3 +1,4 @@
+pub mod deployment;
 use faster_hex::hex_decode;
 use std::env;
 use std::fs;
@@ -105,6 +106,7 @@ pub fn load_frozen_toml() -> FrozenVersions {
         .unwrap()
         .join("../../deployment/frozen")
         .join(format!("{net_type}.toml"));
+    println!("cargo:rerun-if-changed={}", frozen_path.display());
     let frozen = fs::read_to_string(frozen_path).unwrap();
     toml::from_str(&frozen).unwrap()
 }

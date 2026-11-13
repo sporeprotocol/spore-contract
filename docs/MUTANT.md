@@ -1,4 +1,21 @@
+> Type-bound candidate update: see [code identity, governance and build plans](./TYPE_BINDING.md). Historical validation below is revision-specific.
+
 # Mutant
+
+The Spore v3 candidate (`0.3.0-alpha.1`, unreleased) native Rust implementation and versioned execution ABI are documented in
+the [Rust Mutant guide](../examples/mutant-rust/README.md). It requires new contract
+code hashes and Type ID binding on a Meepo-active VM2 chain, and preserves validation continuation with
+spawn/wait. Existing deployed Spore versions retain their original behavior.
+The new version accepts native Rust/RISC-V Mutants only. It does not recognize
+or execute Lua Mutants. Historical Lua source and deployment records remain in
+the repository, outside the default workspace/build/test path. See the
+[version boundaries](../examples/mutant-rust/README.md#version-boundaries)
+for existing assets and clusters that require a Lua Mutant.
+
+The remainder of this document describes the historical Lua design; its opcode
+description is not the native ABI. Actual Lua variables are mode 0 for Mutant
+creation, 1 for mint, 2 for transfer and 3 for burn.
+
 Mutant is a special extension cell in Spore eco. It stores Lua scripting code inside the data field, and will be executed & evaluated in every referenced transaction once applied. One can apply mutants to:
 
 1. A Spore by specifying in `content-type` using param `mutant[] = MUTANT_ID_1, MUTANT_ID2,…;`, and including the referenced mutant cell in `CellDep`. You'll also need to include Spore Lua Lib binary in CellDeps.

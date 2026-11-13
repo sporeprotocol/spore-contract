@@ -1,6 +1,6 @@
 [package]
 name = "spore"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,6 +11,7 @@ molecule = { version = "0.7.5", default-features = false }
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
 spore-errors = { path = "../../lib/errors" }
+spore-mutant = { path = "../../lib/mutant" }
 kmp = { version = "0.1.1" }
 ckb-transaction-cobuild = { git = "https://github.com/cryptape/ckb-transaction-cobuild-poc", rev = "bdb0c74" }
 

@@ -15,15 +15,14 @@ use ckb_std::{
 };
 // Import CKB syscalls and structures
 // https://docs.rs/ckb-std/
-use ckb_std::high_level::{load_script, QueryIter};
+use ckb_std::high_level::QueryIter;
 use spore_errors::error::Error;
 use spore_types::generated::spore::ClusterDataV2 as ClusterData;
 use spore_utils::{
-    check_spore_address, extract_spore_action, find_position_by_type, find_position_by_type_args,
-    load_self_id, verify_type_id,
+    check_spore_address, extract_spore_action, find_position_by_type, load_self_id, verify_type_id,
 };
 
-use crate::hash::SPORE_EXTENSION_LUA;
+use crate::hash::SPORE_EXTENSION_RUST_TYPE_HASHES;
 
 fn load_cluster_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -42,12 +41,18 @@ fn process_creation(index: usize) -> Result<(), Error> {
     };
 
     // Verify if mutant is set
-    if cluster_data.mutant_id().is_some() {
-        let script = load_script().unwrap_or_default();
-        let filter_fn: fn(&[u8; 32]) -> bool = |x| -> bool { SPORE_EXTENSION_LUA.contains(x) };
-        let args: Vec<u8> = script.args().unpack();
-        find_position_by_type_args(&args, CellDep, Some(filter_fn))
-            .ok_or(Error::MutantNotInDeps)?;
+    if let Some(mutant_id) = cluster_data.mutant_id().to_opt() {
+        let found = QueryIter::new(load_cell_type, CellDep).any(|script| {
+            let Some(script) = script else { return false };
+            let hash: [u8; 32] = script.code_hash().unpack();
+            let args = script.args().raw_data();
+            let recognized = SPORE_EXTENSION_RUST_TYPE_HASHES.contains(&hash)
+                && script.hash_type() == spore_mutant::TYPE_CODE_HASH_TYPE.into();
+            recognized && matches!(args.len(), 32 | 40) && args[..32] == mutant_id.raw_data()[..]
+        });
+        if !found {
+            return Err(Error::MutantNotInDeps);
+        }
     }
 
     // check co-build action @lyk

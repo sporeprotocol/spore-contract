@@ -1,6 +1,7 @@
 mod cluster;
-mod mutant;
+mod mutant_rust;
 mod spore;
+mod type_binding;
 mod utils;
 
 #[cfg(test)]

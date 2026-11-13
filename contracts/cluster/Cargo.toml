@@ -1,6 +1,6 @@
 [package]
 name = "cluster"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,6 +10,8 @@ ckb-std = "0.14.3"
 spore-types = { path = "../../lib/types" }
 spore-utils = { path = "../../lib/utils" }
 spore-errors = { path = "../../lib/errors" }
+
+spore-mutant = { path = "../../lib/mutant" }
 
 [build-dependencies]
 ckb-hash = "0.112.1"

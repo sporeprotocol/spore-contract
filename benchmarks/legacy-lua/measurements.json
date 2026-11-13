@@ -1,0 +1,130 @@
+{
+  "testnet": {
+    "operations": {
+      "baseline": {
+        "mint": 100046,
+        "transfer": 87809,
+        "burn": 70708,
+        "deps": 2,
+        "tx_bytes": 679
+      },
+      "rust1": {
+        "mint": 259197,
+        "transfer": 263140,
+        "burn": 231425,
+        "deps": 3,
+        "tx_bytes": 790
+      },
+      "lua1": {
+        "mint": 1505694,
+        "transfer": 1514761,
+        "burn": 1474057,
+        "deps": 5,
+        "tx_bytes": 864
+      },
+      "rust2": {
+        "mint": 420056,
+        "transfer": 410419,
+        "burn": 382555,
+        "deps": 4,
+        "tx_bytes": 892
+      },
+      "lua2": {
+        "mint": 2915988,
+        "transfer": 2915717,
+        "burn": 2869395,
+        "deps": 6,
+        "tx_bytes": 966
+      },
+      "rust4": {
+        "mint": 756931,
+        "transfer": 731172,
+        "burn": 698454,
+        "deps": 6,
+        "tx_bytes": 1096
+      },
+      "lua4": {
+        "mint": 5761408,
+        "transfer": 5754837,
+        "burn": 5686195,
+        "deps": 8,
+        "tx_bytes": 1170
+      },
+      "mixed2": {
+        "mint": 1668122,
+        "transfer": 1663101,
+        "burn": 1626075,
+        "deps": 6,
+        "tx_bytes": 966
+      }
+    },
+    "creation": {
+      "rust": 163011,
+      "lua": 1278768
+    }
+  },
+  "mainnet": {
+    "operations": {
+      "baseline": {
+        "mint": 99926,
+        "transfer": 87689,
+        "burn": 70588,
+        "deps": 2,
+        "tx_bytes": 679
+      },
+      "rust1": {
+        "mint": 259077,
+        "transfer": 263020,
+        "burn": 231305,
+        "deps": 3,
+        "tx_bytes": 790
+      },
+      "lua1": {
+        "mint": 1505574,
+        "transfer": 1514641,
+        "burn": 1473937,
+        "deps": 5,
+        "tx_bytes": 864
+      },
+      "rust2": {
+        "mint": 419936,
+        "transfer": 410299,
+        "burn": 382435,
+        "deps": 4,
+        "tx_bytes": 892
+      },
+      "lua2": {
+        "mint": 2915868,
+        "transfer": 2915597,
+        "burn": 2869275,
+        "deps": 6,
+        "tx_bytes": 966
+      },
+      "rust4": {
+        "mint": 756811,
+        "transfer": 731052,
+        "burn": 698334,
+        "deps": 6,
+        "tx_bytes": 1096
+      },
+      "lua4": {
+        "mint": 5761288,
+        "transfer": 5754717,
+        "burn": 5686075,
+        "deps": 8,
+        "tx_bytes": 1170
+      },
+      "mixed2": {
+        "mint": 1668002,
+        "transfer": 1662981,
+        "burn": 1625955,
+        "deps": 6,
+        "tx_bytes": 966
+      }
+    },
+    "creation": {
+      "rust": 163011,
+      "lua": 1278768
+    }
+  }
+}

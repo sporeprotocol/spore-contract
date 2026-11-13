@@ -1,9 +1,20 @@
+> Current unreleased v3 code uses **Type ID binding** with deployment-supplied governance Locks. See [the deployment and VM boundary](docs/TYPE_BINDING.md). Earlier benchmark/capture evidence applies only to its recorded revision.
+
 # <p align="center"> Spore Protocol</p>
 <p align="center">
   A protocol for valuing on-chain contents, build on top of <a href="https://github.com/nervosnetwork/ckb">CKB</a>. Check <a href="https://docs.spore.pro">Spore Docs</a> for a quick start.
 </p>
 
 Developers are recommended to use the [Spore SDK](https://github.com/sporeprotocol/spore-sdk) for building applications with Spore, instead of directly interacting with the contracts. If you're interested in testing, extending the contracts, or deploying them on a local blockchain, feel free to explore the [Development](#⚙️-development) section for guidance.
+
+## Spore v3 candidate
+
+The proposed next generation is **Spore v3 / `0.3.0-alpha.1` (unreleased)**.
+Its release combines native-only Rust Mutants ([#75](https://github.com/sporeprotocol/spore-contract/pull/75))
+and optional core CoBuild intent ([#76](https://github.com/sporeprotocol/spore-contract/pull/76)).
+The PRs are separate review steps, not two independently deployable v3 releases.
+See the [version plan](./docs/VERSIONS.md#spore-v3--030-alpha1-unreleased)
+for the existing v2 naming, exact code-hash boundary, and combined verification.
 
 ## About
 
@@ -19,20 +30,25 @@ Before development, basic dependencies are required:
 - [Cross](https://github.com/cross-rs/cross)
 - [Capsule](https://github.com/nervosnetwork/capsule)
 
-To build contracts, please run one of below commands:
+Select a code Type ID plan explicitly, then build and stage the contracts:
 
-```bash
-$ capsule build # build in debug mode
-$ capsule build --release # build in release mode for testnet
-$ capsule build --release -- --features release_export # build in release mode for mainnet
+```sh
+# VM fixture only; real deployment needs its own reviewed plan.
+export SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml
+./scripts/build-contracts.sh                                  # debug
+./scripts/build-contracts.sh --release                        # testnet
+./scripts/build-contracts.sh --release --features release_export # mainnet
 ```
 
-To check native test cases, which are placed in [tests](./tests/), please run:
+Test the corresponding staged artifacts:
 
-```bash
-$ capsule test # test in debug mode
-$ capsule test --release # test in release mode
+```sh
+cargo test --locked --manifest-path tests/Cargo.toml
+CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml
 ```
+
+Cross is the default build runner. For direct Cargo/Clang builds and the
+required network/VM boundary, see [Type binding](./docs/TYPE_BINDING.md).
 
 ### Writing extra contracts
 
@@ -48,14 +64,22 @@ For method 1, the flow is:
 3. Implementing your contract rules in `entry.rs`
 4. Writing new tests in `tests/src/tests.rs`. See existed test cases for how-to
 
+For native Rust Mutants, see the [Rust Mutant guide](./examples/mutant-rust/README.md).
+The new Spore version executes rule ELFs directly using CKB-VM V2 spawn/wait,
+then continues all Spore checks. Native rules need no Lua bridge or receipt.
+Existing data-bound assets retain their original contracts and execution rules.
+
 ## Deployed Code Hashes
-The versioning philosophy is **"Using code_hash as version"** for Spore Protocol, which means the different code hash matches the different version.
+Historical data-bound deployments use **code data hashes as versions**. The unreleased v3 candidate instead references standard code Type IDs: a stable identity may resolve to an authorized code successor, so its executable hash and governance Lock must be reviewed separately. See [type-bound deployments](./docs/TYPE_BINDING.md).
 
 Make sure you are using the proper version you want, because there's no such an "upgrade/downgrade" method but we suggest to use "destroy/reconstruct" method instead, which requires no modification of any fields in Spore cell.
 
 Our `frozen` versions of contract, which are our prior versions, can be found in [directory](https://github.com/sporeprotocol/spore-contract/tree/master/deployment/frozen) `./deployment/frozen`. To describe more clearly, the `frozen` information contains each avaliable `code_hash` generated from Spore contracts. Historical version refers to [here](https://github.com/sporeprotocol/spore-contract/blob/master/docs/VERSIONS.md).
 
-In addition, using Mutant contract requires the binary of Lua library. Information are recorded [here](https://github.com/sporeprotocol/spore-contract/tree/master/contracts/spore_extension_lua/lua). For simplicity, it's already deployed in the Pudge Testnet:
+The new contracts support native Rust/RISC-V Mutants only. Existing assets using
+older data-hash-bound Spore contracts retain their original rules. The Lua source
+and the following deployment information are retained as historical records;
+they are not dependencies of the new contracts or the default build.
 
 #### Spore Lua Lib
 - tx_hash: `0x8fb7170a58d631250dabd0f323a833f4ad2cfdd0189f45497e62beb8409e7a0c`

@@ -6,6 +6,13 @@ on:
       - contracts/**
       - lib/**
       - tests/**
+      - deployment/**
+      - scripts/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain
+      - Cross.toml
+      - .github/workflows/capsule.yaml
 
 jobs:
   capsule-build-and-test:
@@ -16,32 +23,37 @@ jobs:
           - target: debug
             cargo-option: ""
             target-dir: "build/debug"
+            test-env: debug
           - target: testnet
             cargo-option: "--release"
             target-dir: "build/release"
+            test-env: release
           - target: mainnet
-            cargo-option: "--release -- --features release_export"
+            cargo-option: "--release --features release_export"
             target-dir: "build/release"
-    runs-on: ubuntu-20.04
+            test-env: release
+    env:
+      SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       
-      - name: Prepare capsule v0.10.2
-        run: |
-          if [ ! -f "/tmp/capsule.tar.gz" ]; then
-            curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.10.2/capsule_v0.10.2_x86_64-linux.tar.gz -o /tmp/capsule.tar.gz
-          fi
-          tar -zxf /tmp/capsule.tar.gz -C /tmp
-          echo "/tmp/capsule_v0.10.2_x86_64-linux" >> $GITHUB_PATH
-    
       - name: Install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo install cross --version 0.2.5 --locked
 
-      - name: Capsule build
-        run: capsule build ${{ matrix.cargo-option }}
+      - name: Build contracts in dependency order
+        run: ./scripts/build-contracts.sh ${{ matrix.cargo-option }}
 
-      - name: Capsule test
-        run: capsule test ${{ matrix.cargo-option }}
+      - name: VM integration tests
+        env:
+          CAPSULE_TEST_ENV: ${{ matrix.test-env }}
+        run: cargo test --locked --manifest-path tests/Cargo.toml
+
+      - name: Deployment plan tests
+        run: cargo test --locked -p spore-build-tools --lib
+
+      - name: Native invocation ABI tests
+        run: cargo test --locked -p spore-mutant --lib
 
       - name: List all the contract binaries of ${{ github.ref }}
         run: ls -l ${{ matrix.target-dir }}
@@ -61,27 +73,19 @@ jobs:
     strategy:
       matrix:
         target: [debug, testnet, mainnet]
-    runs-on: ubuntu-20.04
+    env:
+      SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
+    runs-on: ubuntu-24.04
     steps:
-      # TODO: add this codehash util into the `tests` directory
-      # or, simply use `ckb-cli util blake2b --binary-path ...` to get the codehash
-      - name: Checkout a code_hash tool
+      - name: Checkout repository code-hash tool
         uses: actions/checkout@v4
-        with:
-          repository: Flouse/spore-contract
-          ref: codehash-tool
 
       - uses: actions/download-artifact@v4
         with:
           name: contract-binaries-${{ matrix.target }}-${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}
           path: build
 
-      - name: Build codehash-tool
-        working-directory: build
-        run: cargo build
-
       - name: Record code_hash of contract binaries
-        working-directory: build
         run: |
           echo "spore-contract-commit: ${{ needs.capsule-build-and-test.outputs.spore-contract-ref }}\n"
-          ./target/debug/code_hash
+          python3 scripts/code-hashes.py build

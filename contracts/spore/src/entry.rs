@@ -1,13 +1,11 @@
 use alloc::collections::BTreeMap;
 use alloc::{format, vec, vec::Vec};
 use ckb_std::ckb_types::util::hash::blake2b_256;
-use core::ffi::CStr;
 use core::result::Result;
 
 use ckb_std::ckb_constants::Source::{CellDep, GroupInput, GroupOutput, Input, Output};
-use ckb_std::ckb_types::core::ScriptHashType;
 use ckb_std::ckb_types::packed::Script;
-use ckb_std::high_level::{load_cell_lock_hash, load_script};
+use ckb_std::high_level::{load_cell_capacity, load_cell_lock_hash, load_script};
 use ckb_std::{
     ckb_constants::Source,
     ckb_types::prelude::*,
@@ -19,9 +17,9 @@ use spore_errors::error::Error;
 use spore_types::generated::action;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
-    calc_capacity_sum, check_spore_address, compatible_load_cluster_data, extract_spore_action,
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+    check_spore_address, compatible_load_cluster_data, extract_spore_action,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args_matching,
+    load_self_id, verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -32,12 +30,20 @@ enum Operation {
     Burn,
 }
 
-fn check_cluster_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_CODE_HASHES.contains(code_hash)
+fn check_cluster_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_CODE_HASHES,
+        &crate::hash::CLUSTER_TYPE_HASHES,
+    )
 }
 
-fn check_agent_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_AGENT_CODE_HASHES.contains(code_hash)
+fn check_agent_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_AGENT_CODE_HASHES,
+        &crate::hash::CLUSTER_AGENT_TYPE_HASHES,
+    )
 }
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
@@ -69,7 +75,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
     // content_type validation
     let content_type = spore_data.content_type().raw_data();
     let mime = MIME::parse(&content_type)?;
-    verify_extension(&mime, Operation::Mint, vec![index as u8])?;
+    verify_extension(&mime, Operation::Mint, vec![index])?;
 
     // Spore supports [MIME-multipart](https://datatracker.ietf.org/doc/html/rfc1521#section-7.2).
     //
@@ -102,7 +108,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // check if cluster cell is in deps
         let cluster_id = cluster_id.raw_data();
         let cell_dep_index =
-            find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, CellDep, check_cluster_code_hash)
                 .ok_or(Error::ClusterCellNotInDep)?;
 
         // the cluster contract guarantees the cluster data will always be correct once created
@@ -123,23 +129,26 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
         // Condition 1: Check if cluster exists in Inputs & Outputs
         let cluster_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_cluster_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_cluster_code_hash)
+                .is_some();
         let cluster_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, Output, check_cluster_code_hash)
                 .is_some();
 
         // Condition 2: Check if cluster agent exists in Inputs & Outputs
         let agent_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_agent_code_hash)
+                .is_some();
         let agent_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Output, check_agent_code_hash)
+                .is_some();
 
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
             // Condition 3: Use cluster agent in Lock Proxy mode
             if let Some(agent_index) =
-                find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
+                find_position_by_type_args_matching(&cluster_id, CellDep, check_agent_code_hash)
             {
                 debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
@@ -186,7 +195,7 @@ fn process_destruction() -> Result<(), Error> {
     if !mime.mutants.is_empty() {
         let spore_type = load_script()?;
         let index = find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
-        verify_extension(&mime, Operation::Burn, vec![index as u8])?;
+        verify_extension(&mime, Operation::Burn, vec![index])?;
     }
 
     // check co-build action @lyk
@@ -219,11 +228,7 @@ fn process_transfer() -> Result<(), Error> {
             find_position_by_type(&spore_type, Input).ok_or(Error::IndexOutOfBound)?;
         let output_index =
             find_position_by_type(&spore_type, Output).ok_or(Error::IndexOutOfBound)?;
-        verify_extension(
-            &mime,
-            Operation::Transfer,
-            vec![input_index as u8, output_index as u8],
-        )?;
+        verify_extension(&mime, Operation::Transfer, vec![input_index, output_index])?;
     }
 
     // check co-build action @lyk
@@ -240,94 +245,89 @@ fn process_transfer() -> Result<(), Error> {
     Ok(())
 }
 
-fn verify_extension(mime: &MIME, op: Operation, argv: Vec<u8>) -> Result<(), Error> {
+fn verify_extension(mime: &MIME, op: Operation, argv: Vec<usize>) -> Result<(), Error> {
+    if mime.mutants.is_empty() {
+        return Ok(());
+    }
+    if load_script()?.hash_type() != spore_mutant::TYPE_CODE_HASH_TYPE.into() {
+        return Err(Error::NativeMutantRequiresVm2);
+    }
     let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
-    let mut extension_hash = [0u8; 32];
-    for mutant_id in mime.mutants.iter() {
-        let mutant_index =
-            QueryIter::new(load_cell_type, CellDep).position(|script| match script {
-                Some(script) => {
-                    extension_hash = script.code_hash().unpack();
-                    if crate::hash::MUTANT_CODE_HASHES.contains(&extension_hash) {
-                        return mutant_id[..] == script.args().raw_data()[..32];
-                    }
-                    false
-                }
-                None => false,
-            });
-        match mutant_index {
-            None => return Err(Error::ExtensionCellNotInDep),
-            Some(mutant_index) => {
-                // mint spore should pay if payment set
-                if let Operation::Mint = op {
-                    check_payment(mutant_index, &mut payment_map)?;
-                }
-
-                debug!("run mutant_id({mutant_index}): {mutant_id:?} <= {extension_hash:?}");
-                match op {
-                    Operation::Mint => {
-                        ckb_std::high_level::exec_cell(
-                            &extension_hash,
-                            ScriptHashType::Data1,
-                            &[
-                                CStr::from_bytes_with_nul([b'0', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                            ],
-                        )?;
-                    }
-                    Operation::Transfer => {
-                        ckb_std::high_level::exec_cell(
-                            &extension_hash,
-                            ScriptHashType::Data1,
-                            &[
-                                CStr::from_bytes_with_nul([b'1', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[1], 0].as_slice()) .unwrap_or_default(),
-                            ],
-                        )?;
-                    }
-                    Operation::Burn => {
-                        ckb_std::high_level::exec_cell(
-                            &extension_hash,
-                            ScriptHashType::Data1,
-                            &[
-                                CStr::from_bytes_with_nul([b'2', 0].as_slice()).unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + mutant_index as u8, 0].as_slice(),) .unwrap_or_default(),
-                                CStr::from_bytes_with_nul([b'0' + argv[0], 0].as_slice()) .unwrap_or_default(),
-                            ],
-                        )?;
-                    }
-                }
+    for mutant_id in &mime.mutants {
+        let mut selected = None;
+        for (index, script) in QueryIter::new(load_cell_type, CellDep).enumerate() {
+            let Some(script) = script else { continue };
+            let hash: [u8; 32] = script.code_hash().unpack();
+            let native = crate::hash::RUST_MUTANT_TYPE_HASHES.contains(&hash)
+                && script.hash_type() == spore_mutant::TYPE_CODE_HASH_TYPE.into();
+            let args = script.args().raw_data();
+            if native && matches!(args.len(), 32 | 40) && args[..32] == mutant_id[..] {
+                selected = Some(index);
+                break;
             }
         }
+        let mutant_index = selected.ok_or(Error::ExtensionCellNotInDep)?;
+        if let Operation::Mint = op {
+            check_payment(mutant_index, &mut payment_map)?;
+        }
+        use spore_mutant::{Invocation, Operation as NativeOperation};
+        let (operation, input_index, output_index) = match op {
+            Operation::Mint => (NativeOperation::Mint, None, Some(argv[0])),
+            Operation::Transfer => (NativeOperation::Transfer, Some(argv[0]), Some(argv[1])),
+            Operation::Burn => (NativeOperation::Burn, Some(argv[0]), None),
+        };
+        Invocation {
+            operation,
+            mutant_index,
+            input_index,
+            output_index,
+        }
+        .execute()
+        .map_err(|error| {
+            debug!("Mutant {mutant_index} failed: {error:?}");
+            match error {
+                spore_mutant::Error::Rejected(_) => Error::NativeMutantRejected,
+                _ => Error::NativeMutantSpawnFailed,
+            }
+        })?;
     }
     Ok(())
+}
+
+fn capacity_sum(lock_hash: &[u8; 32], source: Source) -> Result<u64, Error> {
+    let mut total = 0u64;
+    for (index, hash) in QueryIter::new(load_cell_lock_hash, source).enumerate() {
+        if hash == *lock_hash {
+            total = total
+                .checked_add(load_cell_capacity(index, source)?)
+                .ok_or(Error::ExtensionPaymentOverflow)?;
+        }
+    }
+    Ok(total)
 }
 
 fn check_payment(
     mutant_index: usize,
     payment_map: &mut BTreeMap<[u8; 32], u64>,
 ) -> Result<(), Error> {
-    let mutant_type = load_cell_type(mutant_index, CellDep)?.unwrap_or_default();
+    let mutant_type = load_cell_type(mutant_index, CellDep)?.ok_or(Error::ExtensionCellNotInDep)?;
     let args = mutant_type.args().raw_data();
-    // CAUTION: only check bytes in [32, 40) pattern, leave room for user customization
     if args.len() > MUTANT_ID_LEN {
-        if args.len() < MUTANT_ID_WITH_PAYMENT_LEN {
+        if args.len() != MUTANT_ID_WITH_PAYMENT_LEN {
             return Err(Error::InvalidExtensionPaymentFormat);
         }
-        let mutant_lock_hash = load_cell_lock_hash(mutant_index, CellDep)?;
-        let input_capacity = calc_capacity_sum(&mutant_lock_hash, Input);
-        let output_capacity = calc_capacity_sum(&mutant_lock_hash, Output);
-        let minimal_payment = {
-            let range = MUTANT_ID_LEN..MUTANT_ID_WITH_PAYMENT_LEN;
-            let threshold = u64::from_le_bytes(args[range].try_into().unwrap_or_default());
-            let payment_threshold = payment_map.entry(mutant_lock_hash).or_default();
-            *payment_threshold += threshold;
-            *payment_threshold
-        };
-        if input_capacity + minimal_payment > output_capacity {
+        let lock_hash = load_cell_lock_hash(mutant_index, CellDep)?;
+        let input_capacity = capacity_sum(&lock_hash, Input)?;
+        let output_capacity = capacity_sum(&lock_hash, Output)?;
+        let threshold = u64::from_le_bytes(args[32..40].try_into().unwrap());
+        let accumulated = payment_map.entry(lock_hash).or_default();
+        *accumulated = accumulated
+            .checked_add(threshold)
+            .ok_or(Error::ExtensionPaymentOverflow)?;
+        let required = input_capacity
+            .checked_add(*accumulated)
+            .ok_or(Error::ExtensionPaymentOverflow)?;
+        if required > output_capacity {
             return Err(Error::ExtensionPaymentNotEnough);
         }
     }

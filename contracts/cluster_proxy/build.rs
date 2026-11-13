@@ -1,21 +1,15 @@
-use ckb_hash::blake2b_256;
+use spore_build_tools::{concat_code_hashes, deployment::Deployment, load_frozen_toml};
 use std::{env, fs};
 
-use spore_build_tools::{concat_code_hashes, load_frozen_toml};
-
-pub fn main() {
-    let compile_mode = env::var("PROFILE").unwrap();
-    let cluster_path = env::current_dir()
-        .unwrap()
-        .join("../../build")
-        .join(&compile_mode)
-        .join("cluster");
-    let cluster = std::fs::read(cluster_path).expect("load cluster");
-    let code_hash = blake2b_256(cluster);
-
+fn main() {
+    let deployment = Deployment::load();
     let frozen = load_frozen_toml();
-    let cluster_code_hashes = [frozen.cluster_code_hashes(), vec![code_hash]].concat();
-
-    let content = concat_code_hashes("CLUSTER_CODE_HASHES", &cluster_code_hashes);
-    fs::write("./src/hash.rs", content).unwrap();
+    let mut content = String::new();
+    content += &concat_code_hashes("CLUSTER_CODE_HASHES", &frozen.cluster_code_hashes());
+    content += &concat_code_hashes("CLUSTER_TYPE_HASHES", &[deployment.type_hash("cluster")]);
+    fs::write(
+        std::path::PathBuf::from(env::var("OUT_DIR").unwrap()).join("hash.rs"),
+        content,
+    )
+    .unwrap();
 }
