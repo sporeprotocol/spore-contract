@@ -6,6 +6,7 @@ on:
       - contracts/**
       - lib/**
       - tests/**
+      - deployment/**
       - scripts/**
       - Cargo.toml
       - Cargo.lock
@@ -31,6 +32,8 @@ jobs:
             cargo-option: "--release --features release_export"
             target-dir: "build/release"
             test-env: release
+    env:
+      SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +48,9 @@ jobs:
         env:
           CAPSULE_TEST_ENV: ${{ matrix.test-env }}
         run: cargo test --locked --manifest-path tests/Cargo.toml
+
+      - name: Deployment plan tests
+        run: cargo test --locked -p spore-build-tools --lib
 
       - name: Native invocation ABI tests
         run: cargo test --locked -p spore-mutant --lib
@@ -67,6 +73,8 @@ jobs:
     strategy:
       matrix:
         target: [debug, testnet, mainnet]
+    env:
+      SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository code-hash tool

@@ -1,3 +1,5 @@
+> Historical data-bound measurements below do not validate the new Type ID-bound artifacts. See [current deployment and validation boundaries](../../docs/TYPE_BINDING.md).
+
 # Native Mutant performance
 
 The current contracts execute native Rust/RISC-V Mutants only. For this small
@@ -98,7 +100,7 @@ From the repository root, build one configuration at a time:
 rustup target add riscv64imac-unknown-none-elf
 SPORE_BUILD_RUNNER=cargo \
 CC_riscv64imac_unknown_none_elf="$PWD/scripts/clang-riscv.sh" \
-./scripts/build-contracts.sh --release
+SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml ./scripts/build-contracts.sh --release
 CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml \
   native_mutant_performance_report -- --ignored --nocapture
 ```

@@ -32,9 +32,11 @@ These version labels describe different things:
 | --- | --- |
 | Spore v3 | Proposed protocol/contract generation |
 | `0.3.0-alpha.1` | Unreleased source package version for current contracts and libraries; historical Lua package stays unchanged |
-| CKB-VM V2 / `data2` | VM/script hash-type requirement of the native execution path |
+| `hash_type: type` | Standard code Type ID reference; Meepo activation provides VM2 for native execution |
 | `spore-mutant-v1` | Native invocation ABI, unchanged by this release label |
 | `ClusterDataV2` | Existing cell schema name; no schema rename or reinterpretation is implied |
+
+The candidate now uses Type ID-bound code with deployment-supplied governance Locks. See [type binding and deployment plans](./TYPE_BINDING.md). Earlier data2 evidence remains attached to its recorded revision.
 
 The semantic version does not select a contract on chain. Clients must still
 bind the exact deployed code hash, hash type and dependency. Existing cells

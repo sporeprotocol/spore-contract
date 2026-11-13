@@ -4,7 +4,6 @@
 
 use ckb_std::{
     ckb_constants::Source::{GroupInput, GroupOutput, Output},
-    ckb_types::prelude::*,
     default_alloc,
     error::SysError,
     high_level::{load_cell_data_hash, load_cell_type, load_script, QueryIter},
@@ -19,7 +18,7 @@ default_alloc!();
 
 fn validate() -> Result<(), Error> {
     let script = load_script()?;
-    if script.hash_type() != spore_mutant::VM2_HASH_TYPE.into() {
+    if script.hash_type() != spore_mutant::TYPE_CODE_HASH_TYPE.into() {
         return Err(Error::NativeMutantRequiresVm2);
     }
     if !matches!(script.args().raw_data().len(), 32 | 40) {

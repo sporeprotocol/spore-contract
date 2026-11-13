@@ -1,8 +1,10 @@
+> Type-bound candidate update: see [code identity, governance and build plans](./TYPE_BINDING.md). Historical validation below is revision-specific.
+
 # Mutant
 
 The Spore v3 candidate (`0.3.0-alpha.1`, unreleased) native Rust implementation and versioned execution ABI are documented in
 the [Rust Mutant guide](../examples/mutant-rust/README.md). It requires new contract
-code hashes and VM V2 (`data2`), and preserves validation continuation with
+code hashes and Type ID binding on a Meepo-active VM2 chain, and preserves validation continuation with
 spawn/wait. Existing deployed Spore versions retain their original behavior.
 The new version accepts native Rust/RISC-V Mutants only. It does not recognize
 or execute Lua Mutants. Historical Lua source and deployment records remain in

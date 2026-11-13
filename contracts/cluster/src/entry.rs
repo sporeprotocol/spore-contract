@@ -22,7 +22,7 @@ use spore_utils::{
     check_spore_address, extract_spore_action, find_position_by_type, load_self_id, verify_type_id,
 };
 
-use crate::hash::SPORE_EXTENSION_RUST;
+use crate::hash::SPORE_EXTENSION_RUST_TYPE_HASHES;
 
 fn load_cluster_data(index: usize, source: Source) -> Result<ClusterData, Error> {
     let raw_data = load_cell_data(index, source)?;
@@ -46,8 +46,8 @@ fn process_creation(index: usize) -> Result<(), Error> {
             let Some(script) = script else { return false };
             let hash: [u8; 32] = script.code_hash().unpack();
             let args = script.args().raw_data();
-            let recognized = SPORE_EXTENSION_RUST.contains(&hash)
-                && script.hash_type() == spore_mutant::VM2_HASH_TYPE.into();
+            let recognized = SPORE_EXTENSION_RUST_TYPE_HASHES.contains(&hash)
+                && script.hash_type() == spore_mutant::TYPE_CODE_HASH_TYPE.into();
             recognized && matches!(args.len(), 32 | 40) && args[..32] == mutant_id.raw_data()[..]
         });
         if !found {

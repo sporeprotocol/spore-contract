@@ -7,8 +7,8 @@ use alloc::{ffi::CString, format, vec::Vec};
 use ckb_std::{ckb_constants::Source, syscalls};
 use core::ffi::CStr;
 
-/// Script hash_type=data2 selects CKB-VM V2 (including on the legacy SDK).
-pub const VM2_HASH_TYPE: u8 = 4;
+/// Stable code Type ID binding. Meepo activation is required for VM2 spawn/wait.
+pub const TYPE_CODE_HASH_TYPE: u8 = 1;
 
 pub const ABI: &str = "spore-mutant-v1";
 

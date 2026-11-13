@@ -39,7 +39,7 @@ fn creation(
         args.extend_from_slice(&payment.to_le_bytes());
     }
     let script = context
-        .build_script_with_hash_type(&contract, ScriptHashType::Data2, args.into())
+        .build_script_with_hash_type(&contract, ScriptHashType::Type, args.into())
         .unwrap();
     let lock_code = context.deploy_cell(ckb_testtool::builtin::ALWAYS_SUCCESS.clone());
     let lock = context
@@ -183,10 +183,11 @@ fn native_creation_rejects_invalid_elf_wrong_id_args_and_vm_version() {
     rejects(&context, &invalid, "error code 91");
     let valid = creation(&mut context, binary("mutant_equipment"), b"", None);
     for (args, hash_type, expected) in [
-        (vec![0; 32], ScriptHashType::Data2, "error code 19"),
-        (vec![0; 31], ScriptHashType::Data2, "error code 20"),
-        (vec![0; 41], ScriptHashType::Data2, "error code 20"),
+        (vec![0; 32], ScriptHashType::Type, "error code 19"),
+        (vec![0; 31], ScriptHashType::Type, "error code 20"),
+        (vec![0; 41], ScriptHashType::Type, "error code 20"),
         (vec![0; 32], ScriptHashType::Data1, "error code 90"),
+        (vec![0; 32], ScriptHashType::Data2, "error code 90"),
     ] {
         let output = valid.outputs().get(0).unwrap();
         let script = output
@@ -196,6 +197,11 @@ fn native_creation_rejects_invalid_elf_wrong_id_args_and_vm_version() {
             .as_builder()
             .args(args.pack())
             .hash_type(hash_type.into())
+            .code_hash(if hash_type == ScriptHashType::Type {
+                output.type_().to_opt().unwrap().code_hash()
+            } else {
+                calc_code_hash(binary("spore_extension_rust")).pack()
+            })
             .build();
         let tx = valid
             .as_advanced_builder()
@@ -396,7 +402,7 @@ fn native_dependency_type_hash_and_vm_binding_are_exact() {
 }
 
 #[test]
-fn native_mutants_require_spore_vm2() {
+fn native_mutants_require_type_bound_spore_code() {
     let mut context = Context::default();
     let rule = rule(&mut context, "mutant_equipment", b"", None);
     let tx = mint(&mut context, &[rule], &[3, 4, 7]);
@@ -407,6 +413,7 @@ fn native_mutants_require_spore_vm2() {
         .unwrap()
         .as_builder()
         .hash_type(ScriptHashType::Data1.into())
+        .code_hash(calc_code_hash(binary("spore")).pack())
         .build();
     let tx = tx
         .as_advanced_builder()

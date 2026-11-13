@@ -1,3 +1,5 @@
+> The current candidate uses [Type ID-bound code and explicit deployment plans](../../docs/TYPE_BINDING.md). Runtime and build examples must select the same plan.
+
 # Native Rust Mutants
 
 Spore now executes Rust-authored RISC-V ELF code directly from a Mutant cell's
@@ -6,7 +8,7 @@ receipt output or per-rule deployed interpreter is required for this path.
 
 This is the native-execution part of **Spore v3 / `0.3.0-alpha.1` (unreleased)**, identified by new code hashes. Deploy the
 new `spore_extension_rust`, `cluster`, and `spore` binaries and use `hash_type =
-data2` for new Spore and Rust Mutant scripts. Frozen hashes, deployment records,
+type` for new Spore and Rust Mutant scripts. Frozen hashes, deployment records,
 and the Molecule asset schemas are unchanged. Existing assets continue to use
 their original Spore binaries and rules; this does not upgrade them or make
 immutable content mutable. Build outputs are not claimed to match old binaries.
@@ -38,19 +40,20 @@ Use the pinned Rust toolchain and the Cross configuration:
 ```sh
 rustup target add riscv64imac-unknown-none-elf
 cargo install cross --version 0.2.5 --locked
+export SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml
 ./scripts/build-contracts.sh --release
 CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml
 cargo test --locked -p spore-mutant --lib
 ```
 
-Build order matters: `spore_extension_rust` must exist before cluster, and
-cluster/agent before Spore. The default build contains no Lua interpreter or library. `capsule.toml` records this
-order, as does the build script (which passes the target explicitly). The native
-example and test fixture are built last. Do not build the whole contracts workspace in parallel: build scripts pin prerequisite binaries'
-data hashes. Generated hash modules live in each build's `OUT_DIR`; prerequisite
-binaries and frozen lists are declared build inputs, so configuration switches
-recompute the appropriate pins. With a host RISC-V C compiler configured,
-`SPORE_BUILD_RUNNER=cargo` selects direct Cargo builds instead of Cross.
+The build helper stages lifecycle, Cluster, Proxy, Agent and Spore code, then
+native examples and test probes. It builds no Lua interpreter or library.
+Build scripts derive cross-contract references from the explicit Type ID plan
+and retain separate historical frozen data-hash lists. Generated modules live
+in `OUT_DIR`; plan/frozen-file changes trigger regeneration. With a host
+RISC-V C compiler configured, `SPORE_BUILD_RUNNER=cargo` selects direct Cargo.
+The fixture plan above is only for VM tests; real deployment requires a reviewed
+plan derived from the actual deployment transaction.
 Development ELFs strip symbols/DWARF to remain within the native code cell size limit; assertions and CKB debug output remain enabled.
 
 ### Build without Docker
@@ -61,6 +64,7 @@ Clang 22.1.8 and the pinned Rust 1.92.0 toolchain:
 
 ```sh
 rustup target add riscv64imac-unknown-none-elf
+export SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml
 SPORE_BUILD_RUNNER=cargo \
 CC_riscv64imac_unknown_none_elf="$PWD/scripts/clang-riscv.sh" \
 ./scripts/build-contracts.sh --release
@@ -75,7 +79,7 @@ GCC-specific flags from the C dependencies. It uses `clang` on `PATH`; set
 For debug, omit `--release` and set `CAPSULE_TEST_ENV=debug`. For mainnet,
 add `--features release_export` to the release build and keep
 `CAPSULE_TEST_ENV=release`. Build and test one configuration at a time so the
-staged binaries and embedded dependency hashes belong to the same build.
+staged binaries, Type ID plan and historical frozen lists belong to the same build.
 Clang and the Cross/GNU toolchain may produce different binaries and code hashes;
 deploy the exact binaries produced by your chosen build.
 
@@ -83,8 +87,8 @@ deploy the exact binaries produced by your chosen build.
 
 1. Deploy the new native Mutant lifecycle and Spore code cells (and new cluster
    code if using native Mutants in clusters). This PR does not deploy them.
-2. Create a Mutant cell with type `code_hash = spore_extension_rust data hash`,
-   `hash_type = data2`, and `args = mutant_id [32 bytes] || optional mint payment
+2. Create a Mutant cell with type `code_hash = hash of the lifecycle code Cell's standard Type ID script`,
+   `hash_type = type`, and `args = mutant_id [32 bytes] || optional mint payment
    [8-byte little-endian shannons]`. The ID is CKB-personalized Blake2b-256 of the
    transaction's first serialized input followed by the output index as a
    little-endian `u64`, as in existing Mutants. Store the built rule ELF in data.
@@ -97,7 +101,9 @@ deploy the exact binaries produced by your chosen build.
    cell's data. No separate rule code cell or Lua dependency is needed.
 4. Include the same Mutant dependency on transfer/burn. Code, ID, and payment
    remain immutable; the Mutant cell itself can transfer with unchanged data,
-   but cannot be destroyed or duplicated. Input locks authorize all spends.
+   but cannot be destroyed or duplicated. Input locks authorize all spends. These are the current lifecycle rules;
+   an authorized upgrade of lifecycle code can change future validation. See
+   the governance boundary in [Type binding](../../docs/TYPE_BINDING.md).
 
 Clusters declare the same Mutant ID in `ClusterDataV2.mutant_id`; creation finds
 that ID in a recognized dependency, including cells with the optional payment
@@ -129,8 +135,8 @@ The invocation parameters are validation context, not a new authorization grant.
 
 ## Execution and compatibility
 
-The parent matches the immutable Mutant ID only under pinned lifecycle code
-hashes and exact hash types. Mutant cells require data2. This version only
+The parent matches the immutable Mutant ID only under the configured lifecycle
+code Type ID hash and `hash_type: type`. Mutant lifecycle references require type binding on a Meepo-active chain. This version only
 executes native Rust/RISC-V rules; Lua dependencies are rejected by both Spore
 and cluster. No Lua dispatcher, interpreter hash list or invocation ABI is linked
 into the new execution path.
@@ -170,7 +176,7 @@ records are preserved, but Lua is excluded from the new workspace and default
 build/test path.
 
 New Spore and cluster contracts recognize only the new native Mutant lifecycle
-hash with `data2` and exactly 32 or 40 bytes of args. They reject old Lua Mutant
+Type ID hash with `type` and exactly 32 or 40 bytes of args. They reject old Lua Mutant
 dependencies; they do not reinterpret their source as Rust, ignore their rules,
 or automatically convert existing assets. A historical cluster that requires a
 Lua Mutant cannot be used to mint a new-version Spore: that required rule cannot

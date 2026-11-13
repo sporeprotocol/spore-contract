@@ -18,8 +18,8 @@ use spore_types::generated::action;
 use spore_types::generated::spore::SporeData;
 use spore_utils::{
     check_spore_address, compatible_load_cluster_data, extract_spore_action,
-    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args, load_self_id,
-    verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+    find_position_by_lock_hash, find_position_by_type, find_position_by_type_args_matching,
+    load_self_id, verify_type_id, MIME, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
 };
 
 use crate::hash::{CLUSTER_AGENT_CODE_HASHES, CLUSTER_CODE_HASHES};
@@ -30,12 +30,20 @@ enum Operation {
     Burn,
 }
 
-fn check_cluster_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_CODE_HASHES.contains(code_hash)
+fn check_cluster_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_CODE_HASHES,
+        &crate::hash::CLUSTER_TYPE_HASHES,
+    )
 }
 
-fn check_agent_code_hash(code_hash: &[u8; 32]) -> bool {
-    CLUSTER_AGENT_CODE_HASHES.contains(code_hash)
+fn check_agent_code_hash(script: &Script) -> bool {
+    spore_utils::matches_code_identity(
+        script,
+        &CLUSTER_AGENT_CODE_HASHES,
+        &crate::hash::CLUSTER_AGENT_TYPE_HASHES,
+    )
 }
 
 fn load_spore_data(index: usize, source: Source) -> Result<SporeData, Error> {
@@ -100,7 +108,7 @@ fn process_creation(index: usize) -> Result<(), Error> {
         // check if cluster cell is in deps
         let cluster_id = cluster_id.raw_data();
         let cell_dep_index =
-            find_position_by_type_args(&cluster_id, CellDep, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, CellDep, check_cluster_code_hash)
                 .ok_or(Error::ClusterCellNotInDep)?;
 
         // the cluster contract guarantees the cluster data will always be correct once created
@@ -121,23 +129,26 @@ fn process_creation(index: usize) -> Result<(), Error> {
 
         // Condition 1: Check if cluster exists in Inputs & Outputs
         let cluster_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_cluster_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_cluster_code_hash)
+                .is_some();
         let cluster_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_cluster_code_hash))
+            find_position_by_type_args_matching(&cluster_id, Output, check_cluster_code_hash)
                 .is_some();
 
         // Condition 2: Check if cluster agent exists in Inputs & Outputs
         let agent_cell_in_input =
-            find_position_by_type_args(&cluster_id, Input, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Input, check_agent_code_hash)
+                .is_some();
         let agent_cell_in_output =
-            find_position_by_type_args(&cluster_id, Output, Some(check_agent_code_hash)).is_some();
+            find_position_by_type_args_matching(&cluster_id, Output, check_agent_code_hash)
+                .is_some();
 
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
             // Condition 3: Use cluster agent in Lock Proxy mode
             if let Some(agent_index) =
-                find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
+                find_position_by_type_args_matching(&cluster_id, CellDep, check_agent_code_hash)
             {
                 debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
@@ -238,7 +249,7 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<usize>) -> Result<(), 
     if mime.mutants.is_empty() {
         return Ok(());
     }
-    if load_script()?.hash_type() != spore_mutant::VM2_HASH_TYPE.into() {
+    if load_script()?.hash_type() != spore_mutant::TYPE_CODE_HASH_TYPE.into() {
         return Err(Error::NativeMutantRequiresVm2);
     }
     let mut payment_map: BTreeMap<[u8; 32], u64> = BTreeMap::new();
@@ -247,8 +258,8 @@ fn verify_extension(mime: &MIME, op: Operation, argv: Vec<usize>) -> Result<(), 
         for (index, script) in QueryIter::new(load_cell_type, CellDep).enumerate() {
             let Some(script) = script else { continue };
             let hash: [u8; 32] = script.code_hash().unpack();
-            let native = crate::hash::RUST_MUTANT_CODE_HASHES.contains(&hash)
-                && script.hash_type() == spore_mutant::VM2_HASH_TYPE.into();
+            let native = crate::hash::RUST_MUTANT_TYPE_HASHES.contains(&hash)
+                && script.hash_type() == spore_mutant::TYPE_CODE_HASH_TYPE.into();
             let args = script.args().raw_data();
             if native && matches!(args.len(), 32 | 40) && args[..32] == mutant_id[..] {
                 selected = Some(index);

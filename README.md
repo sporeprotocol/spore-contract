@@ -1,3 +1,5 @@
+> Current unreleased v3 code uses **Type ID binding** with deployment-supplied governance Locks. See [the deployment and VM boundary](docs/TYPE_BINDING.md). Earlier benchmark/capture evidence applies only to its recorded revision.
+
 # <p align="center"> Spore Protocol</p>
 <p align="center">
   A protocol for valuing on-chain contents, build on top of <a href="https://github.com/nervosnetwork/ckb">CKB</a>. Check <a href="https://docs.spore.pro">Spore Docs</a> for a quick start.
@@ -28,20 +30,25 @@ Before development, basic dependencies are required:
 - [Cross](https://github.com/cross-rs/cross)
 - [Capsule](https://github.com/nervosnetwork/capsule)
 
-To build contracts, please run one of below commands:
+Select a code Type ID plan explicitly, then build and stage the contracts:
 
-```bash
-$ capsule build # build in debug mode
-$ capsule build --release # build in release mode for testnet
-$ capsule build --release -- --features release_export # build in release mode for mainnet
+```sh
+# VM fixture only; real deployment needs its own reviewed plan.
+export SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml
+./scripts/build-contracts.sh                                  # debug
+./scripts/build-contracts.sh --release                        # testnet
+./scripts/build-contracts.sh --release --features release_export # mainnet
 ```
 
-To check native test cases, which are placed in [tests](./tests/), please run:
+Test the corresponding staged artifacts:
 
-```bash
-$ capsule test # test in debug mode
-$ capsule test --release # test in release mode
+```sh
+cargo test --locked --manifest-path tests/Cargo.toml
+CAPSULE_TEST_ENV=release cargo test --locked --manifest-path tests/Cargo.toml
 ```
+
+Cross is the default build runner. For direct Cargo/Clang builds and the
+required network/VM boundary, see [Type binding](./docs/TYPE_BINDING.md).
 
 ### Writing extra contracts
 
@@ -60,10 +67,10 @@ For method 1, the flow is:
 For native Rust Mutants, see the [Rust Mutant guide](./examples/mutant-rust/README.md).
 The new Spore version executes rule ELFs directly using CKB-VM V2 spawn/wait,
 then continues all Spore checks. Native rules need no Lua bridge or receipt.
-Existing deployed assets retain their original contracts and execution rules.
+Existing data-bound assets retain their original contracts and execution rules.
 
 ## Deployed Code Hashes
-The versioning philosophy is **"Using code_hash as version"** for Spore Protocol, which means the different code hash matches the different version.
+Historical data-bound deployments use **code data hashes as versions**. The unreleased v3 candidate instead references standard code Type IDs: a stable identity may resolve to an authorized code successor, so its executable hash and governance Lock must be reviewed separately. See [type-bound deployments](./docs/TYPE_BINDING.md).
 
 Make sure you are using the proper version you want, because there's no such an "upgrade/downgrade" method but we suggest to use "destroy/reconstruct" method instead, which requires no modification of any fields in Spore cell.
 

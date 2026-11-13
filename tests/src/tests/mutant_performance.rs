@@ -33,7 +33,7 @@ fn perf_rule(context: &mut Context, ordinal: usize) -> (CellDep, [u8; 32], u64) 
     let input = perf_input(context, 1, ordinal);
     let id = build_type_id(&input, 0);
     let script = context
-        .build_script_with_hash_type(&code, ScriptHashType::Data2, id.to_vec().into())
+        .build_script_with_hash_type(&code, ScriptHashType::Type, id.to_vec().into())
         .unwrap();
     let output = build_normal_output_cell_with_type(context, Some(script));
     let data = binary("mutant_equipment");

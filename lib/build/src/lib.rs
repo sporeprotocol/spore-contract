@@ -1,3 +1,4 @@
+pub mod deployment;
 use faster_hex::hex_decode;
 use std::env;
 use std::fs;

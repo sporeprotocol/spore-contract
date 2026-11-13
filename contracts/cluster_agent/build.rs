@@ -1,26 +1,21 @@
-use ckb_hash::blake2b_256;
+use spore_build_tools::{concat_code_hashes, deployment::Deployment, load_frozen_toml};
 use std::{env, fs};
 
-use spore_build_tools::{concat_code_hashes, load_frozen_toml};
-
-pub fn main() {
-    let compile_mode = env::var("PROFILE").unwrap();
-    let cluster_proxy_path = env::current_dir()
-        .unwrap()
-        .join("../../build")
-        .join(compile_mode)
-        .join("cluster_proxy");
-    println!("cargo:rerun-if-changed={}", cluster_proxy_path.display());
-    let cluster_proxy = std::fs::read(cluster_proxy_path).expect("load cluster_proxy");
-    let code_hash = blake2b_256(cluster_proxy);
-
+fn main() {
+    let deployment = Deployment::load();
     let frozen = load_frozen_toml();
-    let code_hashes = [frozen.cluster_proxy_code_hashes(), vec![code_hash]].concat();
-
-    let file = concat_code_hashes("CLUSTER_PROXY_CODE_HASHES", &code_hashes);
+    let mut content = String::new();
+    content += &concat_code_hashes(
+        "CLUSTER_PROXY_CODE_HASHES",
+        &frozen.cluster_proxy_code_hashes(),
+    );
+    content += &concat_code_hashes(
+        "CLUSTER_PROXY_TYPE_HASHES",
+        &[deployment.type_hash("cluster_proxy")],
+    );
     fs::write(
         std::path::PathBuf::from(env::var("OUT_DIR").unwrap()).join("hash.rs"),
-        file,
+        content,
     )
     .unwrap();
 }

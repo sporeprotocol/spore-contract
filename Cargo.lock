@@ -298,6 +298,7 @@ dependencies = [
 name = "spore-build-tools"
 version = "0.3.0-alpha.1"
 dependencies = [
+ "ckb-hash",
  "faster-hex",
  "serde",
  "toml",
