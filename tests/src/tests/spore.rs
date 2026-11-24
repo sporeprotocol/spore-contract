@@ -288,6 +288,34 @@ mod spore_mint_from_cluster_lock_proxy {
         make_spore_mint_from_cluster_lock_proxy(true, &[]);
     }
 
+    #[test]
+    fn test_spore_mint_from_cluster_lock_proxy_with_owner_input_only() {
+        let mut context = Context::default();
+        let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
+        let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
+        let (cluster_id, _, _, _, cluster_dep) =
+            build_cluster_materials(&mut context, &cluster_out_point, cluster, 0, &[1]);
+        let tx = build_single_spore_mint_tx(
+            &mut context,
+            b"Hello Spore!".to_vec(),
+            "plain/text",
+            None,
+            Some(cluster_id),
+        );
+        // Mint output uses the default lock, not the referenced cluster's lock.
+        let owner = build_normal_input_with_lock_args(&mut context, &[1]);
+        let tx = tx
+            .as_advanced_builder()
+            .input(owner)
+            .cell_dep(cluster_dep)
+            .build();
+        let tx = context.complete_tx(tx);
+
+        context
+            .verify_tx(&tx, MAX_CYCLES)
+            .expect("owner input authorizes the mint");
+    }
+
     #[should_panic]
     #[test]
     fn test_spore_mint_from_cluster_lock_proxy_failed_without_cluster() {
@@ -408,7 +436,7 @@ mod spore_mint_from_agent_lock_proxy {
     use super::*;
     use ckb_testtool::ckb_hash::blake2b_256;
 
-    fn make_spore_mint_from_agent_lock_proxy(add_cluster_dep: bool) {
+    fn make_spore_mint_from_agent_lock_proxy(add_cluster_dep: bool, input_only: bool) {
         let mut context = Context::default();
         let (cluster_out_point, _) = build_spore_contract_materials(&mut context, "cluster");
         let (agent_out_point, _) = build_spore_contract_materials(&mut context, "cluster_agent");
@@ -420,11 +448,14 @@ mod spore_mint_from_agent_lock_proxy {
 
         // build cluster agent
         let proxy_type_hash = blake2b_256("12345678");
-        let (_, _, _, agent_dep) = build_agent_materials(
+        let agent_type =
+            build_spore_type_script(&mut context, &agent_out_point, cluster_id.to_vec().into());
+        let lock_args: &[u8] = if input_only { &[1] } else { &[] };
+        let agent_dep = build_normal_cell_dep_with_lock_args(
             &mut context,
-            &agent_out_point,
-            &cluster_id,
             &proxy_type_hash,
+            agent_type,
+            lock_args,
         );
 
         // build spore mint from cluster transfer tx
@@ -436,6 +467,10 @@ mod spore_mint_from_agent_lock_proxy {
             Some(cluster_id),
         );
         tx = tx.as_advanced_builder().cell_dep(agent_dep).build();
+        if input_only {
+            let agent_owner = build_normal_input_with_lock_args(&mut context, lock_args);
+            tx = tx.as_advanced_builder().input(agent_owner).build();
+        }
         if add_cluster_dep {
             tx = tx.as_advanced_builder().cell_dep(cluster_dep).build();
         }
@@ -448,13 +483,18 @@ mod spore_mint_from_agent_lock_proxy {
 
     #[test]
     fn test_spore_mint_from_agent_lock_proxy() {
-        make_spore_mint_from_agent_lock_proxy(true);
+        make_spore_mint_from_agent_lock_proxy(true, false);
+    }
+
+    #[test]
+    fn test_spore_mint_from_agent_lock_proxy_with_owner_input_only() {
+        make_spore_mint_from_agent_lock_proxy(true, true);
     }
 
     #[should_panic]
     #[test]
     fn test_spore_mint_from_agent_lock_proxy_failed_with_no_cluster_dep() {
-        make_spore_mint_from_agent_lock_proxy(false);
+        make_spore_mint_from_agent_lock_proxy(false, false);
     }
 }
 

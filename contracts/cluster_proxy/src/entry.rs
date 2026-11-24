@@ -46,10 +46,8 @@ fn process_creation(index: usize) -> Result<(), Error> {
         find_position_by_type_args(&cluster_id, Output, Some(is_valid_cluster_cell)).is_some();
 
     if !cluster_cell_in_input || !cluster_cell_in_output {
-        // Condition 2: Check if Lock Proxy exist in Inputs & Outputs
+        // Condition 2: Require the cluster lock on a transaction input.
         let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-        find_position_by_lock_hash(&cluster_lock_hash, Output)
-            .ok_or(Error::ClusterOwnershipVerifyFailed)?;
         find_position_by_lock_hash(&cluster_lock_hash, Input)
             .ok_or(Error::ClusterOwnershipVerifyFailed)?;
     }
