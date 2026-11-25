@@ -49,19 +49,37 @@
 
 ## tag 0.2.2-beta.2 (testnet)
 
-**spore**:
+### Current Spore and Cluster deployment
+
+The same 0.2.2-beta.2 binaries were redeployed on CKB Testnet (Pudge) on
+2026-11-25 with unchanged data hashes. Both cells were committed in block
+23176511 at 2026-11-25 13:39:27 Asia/Shanghai (UTC+8) and verified live.
+
+Both cells have no Type ID and use the official CKB genesis Burn lock with
+`code_hash` `0x0000000000000000000000000000000000000000000000000000000000000000`,
+`hash_type` `data`, and `args` `0x62e907b15cbf27d5425399ebf6f0fb50ebb88f18`.
+Clients use the data hash as `code_hash`, with script `hash_type` `data1` and
+cell dependency `dep_type` `code`.
+
+**spore** ([migration record](../deployment/migration/testnet/spore/2026-11-25-0.2.2-beta.2.json))
+
 | | |
 |-|-|
-|tx_hash|0x5e8d2a517d50fd4bb4d01737a7952a1f1d35c8afc77240695bb569cd7d9d5a1f|
+|tx_hash|0xe71e3d378ab589685cafb9ea7da6bd42c9b0b770016d32b727a1e4118ac8d680|
 |index|0|
 |code_hash|0x685a60219309029d01310311dba953d67029170ca4848a4ff638e57002130a0d|
+|occupied capacity|75853 CKB|
 
-**cluster**:
+**cluster** ([migration record](../deployment/migration/testnet/cluster/2026-11-25-0.2.2-beta.2.json))
+
 | | |
 |-|-|
-|tx_hash|0xcebb174d6e300e26074aea2f5dbd7f694bb4fe3de52b6dfe205e54f90164510a|
-|index|0|
+|tx_hash|0xe71e3d378ab589685cafb9ea7da6bd42c9b0b770016d32b727a1e4118ac8d680|
+|index|1|
 |code_hash|0x0bbe768b519d8ea7b96d58f1182eb7e6ef96c541fbd9526975077ee09f049058|
+|occupied capacity|46589 CKB|
+
+### Other Testnet contracts
 
 **cluster_agent**:
 | | |
