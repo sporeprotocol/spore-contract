@@ -16,7 +16,7 @@ v3 release: #75 alone still requires core CoBuild Actions, while #76 alone uses
 the upstream legacy executor. The combined candidate is **native-only with no
 mandatory core CoBuild Action**. Build and test that combined tree before
 recording deployment hashes. An integration branch is maintained at
-[`codex/spore-v3-integration`](https://github.com/a19q3/spore-contract/tree/codex/spore-v3-integration).
+[`feat/spore-v3-integration`](https://github.com/a19q3/spore-contract/tree/feat/spore-v3-integration).
 
 ### Why v3 rather than v2?
 
