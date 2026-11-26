@@ -38,10 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install cross
-        run: cargo install cross --version 0.2.5 --locked
+      - name: Install the RISC-V Rust target
+        run: rustup target add riscv64imac-unknown-none-elf
 
       - name: Build contracts in dependency order
+        env:
+          SPORE_BUILD_RUNNER: cargo
+          CC_riscv64imac_unknown_none_elf: ${{ github.workspace }}/scripts/clang-riscv.sh
         run: ./scripts/build-contracts.sh ${{ matrix.cargo-option }}
 
       - name: VM integration tests
@@ -51,6 +54,9 @@ jobs:
 
       - name: Deployment plan tests
         run: cargo test --locked -p spore-build-tools --lib
+
+      - name: Cluster Agent identity tests
+        run: cargo test --locked -p cluster_agent
 
       - name: Native invocation ABI tests
         run: cargo test --locked -p spore-mutant --lib
@@ -62,9 +68,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: contract-binaries-${{ matrix.target }}-${{ github.sha }}
-          path: |
-            build/debug
-            build/release
+          path: ${{ matrix.target-dir }}
+          if-no-files-found: error
     outputs:
       spore-contract-ref: ${{ github.sha }}
   

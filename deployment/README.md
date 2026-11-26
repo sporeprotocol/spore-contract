@@ -1,4 +1,7 @@
-# Deployment
+# Legacy deployment
+
+These recipes are for historical contracts. For V3 artifacts, follow the
+[Type ID deployment procedure](../docs/TYPE_BINDING.md#explicit-deployment-plan).
 
 usage:
 ```bash

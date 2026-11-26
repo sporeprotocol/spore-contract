@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+deployment_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd) || exit 1
+if [ -f "$deployment_dir/../build/release/code-type-ids.json" ]; then
+    echo "This helper deploys legacy recipes. Follow docs/TYPE_BINDING.md for the staged V3 contracts." >&2
+    exit 1
+fi
+
 export network=$4
 
 if [ -z $network ]

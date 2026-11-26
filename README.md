@@ -88,4 +88,6 @@ they are not dependencies of the new contracts or the default build.
 
 ## Deployment
 
-We provided a simple bash script to operate deployment through `ckb-cli` toolchain, details refer to [here](https://github.com/sporeprotocol/spore-contract/tree/master/deployment)
+Follow the [V3 Type ID deployment procedure](./docs/TYPE_BINDING.md#explicit-deployment-plan)
+for V3 contracts. The [legacy deployment helper](./deployment/README.md)
+supports the historical recipes.

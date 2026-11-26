@@ -6,6 +6,10 @@ fn main() {
     let frozen = load_frozen_toml();
     let mut content = String::new();
     content += &concat_code_hashes(
+        "HISTORICAL_AGENT_CODE_HASHES",
+        &frozen.cluster_agent_code_hashes(),
+    );
+    content += &concat_code_hashes(
         "CLUSTER_PROXY_CODE_HASHES",
         &frozen.cluster_proxy_code_hashes(),
     );

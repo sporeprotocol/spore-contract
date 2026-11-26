@@ -72,7 +72,9 @@ whitelists are retained, not broadened to every old Collection.
 `deployment/type-ids.fixture.toml` is **test-only**. Its IDs are not public
 mainnet/testnet records. Builds require an explicit plan; CI explicitly selects
 this fixture. `build/<profile>/code-type-ids.json` records the selected plan for
-the VM harness. Cross forwards the same environment variable into its build.
+the VM harness. The build copies the input plan into the checkout for runner
+visibility. It replaces the staged profile only after compiling and checking the
+complete ELF set. CI uses Cargo with the RISC-V Clang wrapper.
 
 For a local native/combined VM build:
 

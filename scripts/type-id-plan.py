@@ -23,3 +23,4 @@ ids = [bytes.fromhex(value.removeprefix("0x")) for value in values]
 if len(set(ids)) != len(ids):
     raise SystemExit("code Type IDs must be distinct")
 pathlib.Path(sys.argv[2]).write_text(json.dumps(plan, sort_keys=True, indent=2) + "\n")
+print(" ".join(role for role in ("cluster_proxy", "cluster_agent") if role in plan["type_ids"]))
