@@ -137,22 +137,18 @@ fn process_creation(index: usize) -> Result<(), Error> {
         if (!cluster_cell_in_input || !cluster_cell_in_output)
             && (!agent_cell_in_input || !agent_cell_in_output)
         {
-            // Condition 3: Use cluster agent in Lock Proxy mode
+            // Condition 3: Require the cluster agent lock on a transaction input.
             if let Some(agent_index) =
                 find_position_by_type_args(&cluster_id, CellDep, Some(check_agent_code_hash))
             {
                 debug!("check in agent mode");
                 let agent_lock_hash = load_cell_lock_hash(agent_index, CellDep)?;
-                find_position_by_lock_hash(&agent_lock_hash, Output)
-                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
                 find_position_by_lock_hash(&agent_lock_hash, Input)
                     .ok_or(Error::ClusterOwnershipVerifyFailed)?;
             } else {
                 debug!("check in lock proxy mode");
-                // Condition 4: Check if Lock Proxy exist in Inputs & Outputs
+                // Condition 4: Require the cluster lock on a transaction input.
                 let cluster_lock_hash = load_cell_lock_hash(cell_dep_index, CellDep)?;
-                find_position_by_lock_hash(&cluster_lock_hash, Output)
-                    .ok_or(Error::ClusterOwnershipVerifyFailed)?;
                 find_position_by_lock_hash(&cluster_lock_hash, Input)
                     .ok_or(Error::ClusterOwnershipVerifyFailed)?;
             }

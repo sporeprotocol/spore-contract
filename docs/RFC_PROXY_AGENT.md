@@ -73,7 +73,7 @@ Outputs:
             <user_defined> # for example, acp
 ```
 
-The other method is using an Input Cell with same Lock to the Cluster Cell to create a Cluster Proxy Cell.
+The other method is to spend an input cell with the same lock as the Cluster Cell. The input lock must pass validation; the transaction does not need to recreate a cell with that lock in its outputs.
 
 #### Method 2. Use Lock Proxy
 
@@ -239,6 +239,8 @@ Outputs:
 ```
 
 #### Method 2. Mint With Lock Proxy
+
+Spend an input cell with the same lock as the referenced Cluster Agent Cell. No output is required to use that lock.
 
 ```yaml
 CellDeps:

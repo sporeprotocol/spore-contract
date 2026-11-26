@@ -118,12 +118,16 @@ pub fn build_agent_proxy_input(
 }
 
 pub fn build_normal_input(context: &mut Context) -> CellInput {
+    build_normal_input_with_lock_args(context, &[])
+}
+
+pub fn build_normal_input_with_lock_args(context: &mut Context, lock_args: &[u8]) -> CellInput {
     internal::build_input(
         context,
         UNIFORM_CAPACITY,
         None,
         Bytes::new(),
-        Default::default(),
+        Bytes::copy_from_slice(lock_args),
     )
 }
 

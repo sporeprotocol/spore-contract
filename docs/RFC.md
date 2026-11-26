@@ -97,7 +97,7 @@ If `cluster_id` was set, then the referenced `Cluster Cell` should appear in `Ce
 - Rule 2: The referenced Cluster Cell should be exist in both Inputs and Outputs. If not, Rule 5 should be applied.
 - Rule 3: The input Cluster Cell should have a lock script that is unlock-able
 - Rule 4: Cluster Cell with same Type Script Args in Outputs should have a same lock pair with in Inputs.
-- Rule 5: If Rule 2~4 is not fit, at least one cell with a same lock of the referenced Cluster Cell should be exist in both Inputs and Outputs. We call these cell as “Lock Proxy Cell”. A Spore Cell can also be Lock Proxy Cell.
+- Rule 5: If Rules 2–4 are not met, at least one input cell must have the same lock script as the referenced Cluster Cell. This input is called a “Lock Proxy Cell”. The lock must pass its usual validation; no output with that lock is required. A Spore Cell can also be a Lock Proxy Cell.
 
 Below is an example showing the transaction when `cluster_id` is set using Cluster as Inputs:
 
@@ -183,10 +183,6 @@ Inputs:
       args: LOCK_ARGS_1
   <other ckb cells...>
 Outputs:
-  Cell 2: # Lock Proxy Cell
-    Lock:
-      code_hash: LOCK_HASH_1
-      args: LOCK_ARGS_1
   Spore Cell:
     Type:
       hash_type: "data1"

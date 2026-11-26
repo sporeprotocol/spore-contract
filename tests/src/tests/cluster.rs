@@ -326,11 +326,10 @@ fn test_cluster_agent_burn() {
     context.verify_tx(&tx, MAX_CYCLES).expect("test agent burn");
 }
 
-#[test]
-fn test_cluster_proxy_mint() {
+fn check_cluster_proxy_mint(input_lock_args: &[u8], owner_lock_args: &[u8], authorized: bool) {
     let mut context = Context::default();
 
-    let input_cell = build_normal_input(&mut context);
+    let input_cell = build_normal_input_with_lock_args(&mut context, input_lock_args);
 
     // cluster
     let cluster = build_serialized_cluster_data("Spore Cluster", "Test Cluster");
@@ -339,7 +338,12 @@ fn test_cluster_proxy_mint() {
     let cluster_id = build_type_id(&input_cell, 1);
     let cluster_type =
         build_spore_type_script(&mut context, &cluster_out_point, cluster_id.to_vec().into());
-    let cluster_dep = build_normal_cell_dep(&mut context, cluster.as_slice(), cluster_type);
+    let cluster_dep = build_normal_cell_dep_with_lock_args(
+        &mut context,
+        cluster.as_slice(),
+        cluster_type,
+        owner_lock_args,
+    );
 
     // proxy
     let (proxy_out_point, proxy_script_dep) =
@@ -361,9 +365,29 @@ fn test_cluster_proxy_mint() {
 
     let tx = context.complete_tx(tx);
 
-    context
-        .verify_tx(&tx, MAX_CYCLES)
-        .expect("test spore mint with lock proxy");
+    let result = context.verify_tx(&tx, MAX_CYCLES);
+    if authorized {
+        result.expect("cluster owner input authorizes proxy mint");
+    } else {
+        assert!(result.is_err(), "an output alone must not authorize proxy mint");
+    }
+}
+
+#[test]
+fn test_cluster_proxy_mint() {
+    check_cluster_proxy_mint(&[], &[], true);
+}
+
+#[test]
+fn test_cluster_proxy_mint_with_owner_input_only() {
+    // The proxy output's default lock differs from the cluster owner's lock.
+    check_cluster_proxy_mint(&[1], &[1], true);
+}
+
+#[test]
+fn test_cluster_proxy_mint_rejects_owner_output_only() {
+    // The output matches the cluster lock, but the input does not.
+    check_cluster_proxy_mint(&[1], &[], false);
 }
 
 mod cluster_proxy_transfer {
