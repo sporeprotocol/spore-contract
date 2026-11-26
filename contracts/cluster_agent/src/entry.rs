@@ -24,24 +24,28 @@ fn is_valid_cluster_proxy_cell(script: &Script) -> bool {
     )
 }
 
-fn has_conflict_agent(source: Source, cell_data: &[u8]) -> bool {
-    let script = load_script().unwrap_or_default();
-    let self_code_hash = script.code_hash();
-    let agents_count = QueryIter::new(load_cell_type, source)
-        .enumerate()
-        .filter(|(index, type_)| {
-            if let Some(type_) = type_ {
-                if type_.code_hash().as_slice() == self_code_hash.as_slice()
-                    && type_.hash_type() == script.hash_type()
-                {
-                    let data = load_cell_data(*index, source).unwrap();
-                    return cell_data == data;
-                }
-            }
-            false
-        })
-        .count();
-    agents_count > 1
+fn is_agent_identity(script: &Script, active: &Script, historical: &[[u8; 32]]) -> bool {
+    (script.code_hash().as_slice() == active.code_hash().as_slice()
+        && script.hash_type() == active.hash_type())
+        || spore_utils::matches_code_identity(script, historical, &[])
+}
+
+fn has_conflict_agent(source: Source, cell_data: &[u8]) -> Result<bool, Error> {
+    let active = load_script()?;
+    let mut found = false;
+    for (index, script) in QueryIter::new(load_cell_type, source).enumerate() {
+        let Some(script) = script else { continue };
+        if !is_agent_identity(&script, &active, &crate::hash::HISTORICAL_AGENT_CODE_HASHES)
+            || load_cell_data(index, source)? != cell_data
+        {
+            continue;
+        }
+        if found {
+            return Ok(true);
+        }
+        found = true;
+    }
+    Ok(false)
 }
 
 // Agent data is the proxy's full type-script hash, not an intent field.
@@ -94,13 +98,14 @@ fn process_creation(_index: usize) -> Result<(), Error> {
             let proxy_lock_hash = load_cell_lock_hash(proxy_index, CellDep)?;
             let input_capacity = calc_capacity_sum(&proxy_lock_hash, Input);
             let output_capacity = calc_capacity_sum(&proxy_lock_hash, Output);
-            if input_capacity + minimal_payment > output_capacity {
+            if output_capacity
+                .checked_sub(input_capacity)
+                .map_or(true, |paid| paid < minimal_payment)
+            {
                 return Err(Error::PaymentNotEnough);
-            } else {
-                // Condition 3: Check no same agent in creation
-                if has_conflict_agent(Source::Output, &proxy_type_hash) {
-                    return Err(Error::ConflictAgentCells);
-                }
+            }
+            if has_conflict_agent(Source::Output, &proxy_type_hash)? {
+                return Err(Error::ConflictAgentCells);
             }
         } else {
             if proxy_type_args.len() != CLUSTER_PROXY_ID_LEN {
@@ -161,4 +166,28 @@ pub fn main() -> Result<(), Error> {
         (1, 1) => process_transfer(),
         _ => unreachable!(),
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ckb_std::ckb_types::packed::Byte32;
+
+    #[test]
+    fn conflict_check_recognizes_historical_agent_identities() {
+        let active = Script::new_builder()
+            .code_hash(Byte32::from_slice(&[1; 32]).unwrap())
+            .hash_type(1u8.into())
+            .build();
+        let legacy_hash = [2; 32];
+        let legacy = Script::new_builder()
+            .code_hash(Byte32::from_slice(&legacy_hash).unwrap())
+            .hash_type(2u8.into())
+            .build();
+        assert!(is_agent_identity(&active, &active, &[legacy_hash]));
+        assert!(is_agent_identity(&legacy, &active, &[legacy_hash]));
+        assert!(!is_agent_identity(&legacy, &active, &[]));
+        let different_type = legacy.as_builder().hash_type(1u8.into()).build();
+        assert!(!is_agent_identity(&different_type, &active, &[legacy_hash]));
+    }
 }
