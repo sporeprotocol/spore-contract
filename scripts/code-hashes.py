@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Print CKB-personalized hashes for complete sets of staged contract ELFs."""
+import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 
 MANIFEST = "code-type-ids.json"
+PROFILE_NAMES = ("debug", "release")
 REQUIRED_ROLES = {"spore", "cluster", "mutant"}
 OPTIONAL_ROLES = {"cluster_agent", "cluster_proxy"}
 
@@ -35,12 +38,26 @@ def code_hash(path):
     return f"{path}: 0x{digest}"
 
 
-root = Path(sys.argv[1] if len(sys.argv) > 1 else "build")
-profiles = [root] if (root / MANIFEST).is_file() else [
-    root / name for name in ("debug", "release") if (root / name).is_dir()
-]
-if not profiles:
-    raise SystemExit(f"no staged contract profiles found in {root}")
+def collect_hashes(root):
+    # Published profiles can temporarily disappear. Lock their stable parent
+    # before checking for a manifest or enumerating the available profiles.
+    resolved = root.resolve()
+    build_dir = resolved.parent if resolved.name in PROFILE_NAMES else resolved
+    try:
+        lock = os.open(build_dir, os.O_RDONLY | os.O_DIRECTORY)
+    except (FileNotFoundError, NotADirectoryError):
+        raise SystemExit(f"no staged contract profiles found in {root}") from None
+    try:
+        fcntl.flock(lock, fcntl.LOCK_SH)
+        profiles = [root] if (root / MANIFEST).is_file() else [
+            root / name for name in PROFILE_NAMES if (root / name).is_dir()
+        ]
+        if not profiles:
+            raise SystemExit(f"no staged contract profiles found in {root}")
+        return [code_hash(path) for profile in profiles for path in contract_paths(profile)]
+    finally:
+        os.close(lock)
 
-hashes = [code_hash(path) for profile in profiles for path in contract_paths(profile)]
-print("\n".join(hashes))
+
+root = Path(sys.argv[1] if len(sys.argv) > 1 else "build")
+print("\n".join(collect_hashes(root)))

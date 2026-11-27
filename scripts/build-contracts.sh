@@ -63,11 +63,13 @@ python3 scripts/code-hashes.py "$stage/artifacts" >/dev/null
 
 python3 - "$stage" "build/$profile" <<'PY'
 import fcntl
+import os
 from pathlib import Path
 import sys
 
 stage, output = map(Path, sys.argv[1:])
-with (output.parent / ".publish.lock").open("a") as lock:
+lock = os.open(output.parent, os.O_RDONLY | os.O_DIRECTORY)
+try:
     fcntl.flock(lock, fcntl.LOCK_EX)
     previous = stage / "previous"
     if output.exists():
@@ -78,4 +80,6 @@ with (output.parent / ".publish.lock").open("a") as lock:
         if previous.exists():
             previous.rename(output)
         raise
+finally:
+    os.close(lock)
 PY
