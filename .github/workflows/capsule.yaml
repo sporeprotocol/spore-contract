@@ -58,6 +58,9 @@ jobs:
       - name: Deployment plan tests
         run: cargo test --locked -p spore-build-tools --lib
 
+      - name: Cluster Agent identity tests
+        run: cargo test --locked -p cluster_agent
+
       - name: Capsule test
         run: capsule test ${{ matrix.cargo-option }}
 
