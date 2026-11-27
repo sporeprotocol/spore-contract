@@ -23,12 +23,15 @@ jobs:
           - target: debug
             cargo-option: ""
             target-dir: "build/debug"
+            test-env: debug
           - target: testnet
             cargo-option: "--release"
             target-dir: "build/release"
+            test-env: release
           - target: mainnet
-            cargo-option: "--release -- --features release_export"
+            cargo-option: "--release --features release_export"
             target-dir: "build/release"
+            test-env: release
     env:
       SPORE_DEPLOYMENT_MANIFEST: deployment/type-ids.fixture.toml
     runs-on: ubuntu-24.04
@@ -38,22 +41,14 @@ jobs:
         with:
           python-version: "3.11"
       
-      - name: Prepare capsule v0.10.2
-        run: |
-          if [ ! -f "/tmp/capsule.tar.gz" ]; then
-            curl -L https://github.com/nervosnetwork/capsule/releases/download/v0.10.2/capsule_v0.10.2_x86_64-linux.tar.gz -o /tmp/capsule.tar.gz
-          fi
-          tar -zxf /tmp/capsule.tar.gz -C /tmp
-          echo "/tmp/capsule_v0.10.2_x86_64-linux" >> $GITHUB_PATH
-    
-      - name: Install cross
-        run: cargo install cross --version 0.2.5 --locked
+      - name: Install the RISC-V Rust target
+        run: rustup target add riscv64imac-unknown-none-elf
 
-      - name: Capsule build
-        run: capsule build ${{ matrix.cargo-option }}
-
-      - name: Stage code Type ID plan
-        run: python3 scripts/type-id-plan.py "$SPORE_DEPLOYMENT_MANIFEST" "${{ matrix.target-dir }}/code-type-ids.json"
+      - name: Build contracts in dependency order
+        env:
+          SPORE_BUILD_RUNNER: cargo
+          CC_riscv64imac_unknown_none_elf: ${{ github.workspace }}/scripts/clang-riscv.sh
+        run: ./scripts/build-contracts.sh ${{ matrix.cargo-option }}
 
       - name: Deployment plan tests
         run: cargo test --locked -p spore-build-tools --lib
@@ -61,8 +56,10 @@ jobs:
       - name: Cluster Agent identity tests
         run: cargo test --locked -p cluster_agent
 
-      - name: Capsule test
-        run: capsule test ${{ matrix.cargo-option }}
+      - name: VM integration tests
+        env:
+          CAPSULE_TEST_ENV: ${{ matrix.test-env }}
+        run: cargo test --locked --manifest-path tests/Cargo.toml
 
       - name: List all the contract binaries of ${{ github.ref }}
         run: ls -l ${{ matrix.target-dir }}
