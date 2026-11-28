@@ -47,13 +47,15 @@ fn test_simple_mutant_mint() {
 fn test_simple_mutant_spore_mint_without_cluster() {
     let mut context = Context::default();
 
-    let lua_code = "print('hello world')";
+    let lua_code = "print('hello world with spore_ext_mode = ' .. spore_ext_mode)";
     let (tx, mutant_id) = build_single_mutant_celldep_tx(&mut context, lua_code, 1);
+    let normal_input = build_normal_input(&mut context);
 
     println!("mutant_id: {mutant_id:?}");
-    let content_type = format!("plain/test;mutant[]={}", hex::encode(mutant_id));
-    let (output_data, normal_input, spore_output, spore_celldep) = build_spore_output_materials(
+    let content_type = format!("plain/text;mutant[]={}", hex::encode(mutant_id));
+    let (output_data, spore_output, spore_celldep) = build_spore_output_materials(
         &mut context,
+        &normal_input,
         "mutant spore".as_bytes().to_vec(),
         &content_type,
         0,
@@ -72,4 +74,72 @@ fn test_simple_mutant_spore_mint_without_cluster() {
     context
         .verify_tx(&tx, MAX_CYCLES)
         .expect("test mint mutant spore cell (no cluster)");
+}
+
+#[test]
+fn test_simple_mutant_spore_transfer() {
+    let mut context = Context::default();
+
+    let lua_code = "print('hello world with spore_ext_mode = ' .. spore_ext_mode)";
+    let (tx, mutant_id) = build_single_mutant_celldep_tx(&mut context, lua_code, 1);
+    let normal_input = &build_normal_input(&mut context);
+
+    let content_type = format!("plain/text;mutant[]={}", hex::encode(mutant_id));
+    let content = "mutant spore".as_bytes().to_vec();
+
+    // build spore in output
+    let (output_data, spore_output, spore_celldep) = build_spore_output_materials(
+        &mut context,
+        &normal_input,
+        content.clone(),
+        &content_type,
+        0,
+        None,
+    );
+
+    // build spore in input
+    let (_, spore_input, _) =
+        build_spore_input_materials(&mut context, &normal_input, content, &content_type, 0, None);
+
+    // build tx
+    let tx = tx
+        .as_advanced_builder()
+        .input(spore_input)
+        .output(spore_output)
+        .output_data(output_data.as_bytes().pack())
+        .cell_dep(spore_celldep)
+        .build();
+    let tx = context.complete_tx(tx);
+
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("test transfer mutant spore cell");
+}
+
+#[test]
+fn test_simple_mutant_spore_burn() {
+    let mut context = Context::default();
+
+    let lua_code = "print('hello world with spore_ext_mode = ' .. spore_ext_mode)";
+    let (tx, mutant_id) = build_single_mutant_celldep_tx(&mut context, lua_code, 1);
+    let normal_input = &build_normal_input(&mut context);
+
+    let content_type = format!("plain/text;mutant[]={}", hex::encode(mutant_id));
+    let content = "mutant spore".as_bytes().to_vec();
+
+    // build spore in input
+    let (_, spore_input, spore_celldep) =
+        build_spore_input_materials(&mut context, &normal_input, content, &content_type, 0, None);
+
+    // build tx
+    let tx = tx
+        .as_advanced_builder()
+        .input(spore_input)
+        .cell_dep(spore_celldep)
+        .build();
+    let tx = context.complete_tx(tx);
+
+    context
+        .verify_tx(&tx, MAX_CYCLES)
+        .expect("test burn mutant spore cell");
 }

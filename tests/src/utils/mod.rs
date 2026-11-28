@@ -211,21 +211,38 @@ pub fn build_agent_materials(
 
 pub fn build_spore_output_materials(
     context: &mut Context,
+    normal_input: &CellInput,
     content: Vec<u8>,
     content_type: &str,
     out_index: usize,
     cluster_id: Option<[u8; 32]>,
-) -> (SporeData, CellInput, CellOutput, CellDep) {
+) -> (SporeData, CellOutput, CellDep) {
     let (spore_out_point, spore_script_dep) = build_spore_contract_materials(context, "spore");
     let output_data =
         build_serialized_spore_data(content, content_type, cluster_id.map(|v| v.to_vec()));
 
-    let normal_input = build_normal_input(context);
-    let type_id = build_type_id(&normal_input, out_index);
+    let type_id = build_type_id(normal_input, out_index);
     let spore_type = build_spore_type_script(context, &spore_out_point, type_id.to_vec().into());
     let spore_output = build_normal_output_cell_with_type(context, spore_type.clone());
 
-    (output_data, normal_input, spore_output, spore_script_dep)
+    (output_data, spore_output, spore_script_dep)
+}
+
+pub fn build_spore_input_materials(
+    context: &mut Context,
+    normal_input: &CellInput,
+    content: Vec<u8>,
+    content_type: &str,
+    out_index: usize,
+    cluster_id: Option<[u8; 32]>,
+) -> (SporeData, CellInput, CellDep) {
+    let (spore_out_point, spore_script_dep) = build_spore_contract_materials(context, "spore");
+    let type_id = build_type_id(&normal_input, out_index);
+    let spore_data =
+        build_serialized_spore_data(content, &content_type, cluster_id.map(|v| v.to_vec()));
+    let spore_type = build_spore_type_script(context, &spore_out_point, type_id.to_vec().into());
+    let spore_input = build_spore_input(context, spore_type.clone(), spore_data.clone());
+    (spore_data, spore_input, spore_script_dep)
 }
 
 pub fn build_single_spore_mint_tx_with_extra_action(

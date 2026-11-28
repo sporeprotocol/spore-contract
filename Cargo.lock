@@ -26,12 +26,9 @@ checksum = "1f0d2da64a6a895d5a7e0724882825d50f83c13396b1b9f1878e19a024bab395"
 
 [[package]]
 name = "cc"
-version = "1.0.83"
+version = "1.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
-dependencies = [
- "libc",
-]
+checksum = "2678b2e3449475e95b0aa6f9b506a28e61b3dc8996592b983695e8ebb58a8b41"
 
 [[package]]
 name = "cfg-if"
@@ -84,7 +81,7 @@ dependencies = [
 [[package]]
 name = "ckb-transaction-cobuild"
 version = "0.1.0"
-source = "git+https://github.com/cryptape/ckb-transaction-cobuild-poc?rev=bdb0c74#bdb0c745a76c1aa349a0e881ad4ccdd4af286723"
+source = "git+https://github.com/cryptape/ckb-transaction-cobuild-poc?rev=e29514f#bdb0c745a76c1aa349a0e881ad4ccdd4af286723"
 dependencies = [
  "blake2b-ref",
  "ckb-gen-types",
@@ -174,12 +171,6 @@ name = "kmp"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "131bddab59a64213cc1e9f0c5be010d7eb485951358ab7e52017888dec482028"
-
-[[package]]
-name = "libc"
-version = "0.2.151"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
 
 [[package]]
 name = "memchr"
