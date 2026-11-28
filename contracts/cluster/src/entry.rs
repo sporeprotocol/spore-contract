@@ -16,7 +16,9 @@ use ckb_std::{
 use ckb_std::high_level::{load_script, QueryIter};
 use spore_errors::error::Error;
 use spore_types::generated::spore::ClusterDataV2 as ClusterData;
-use spore_utils::{find_position_by_type, find_position_by_type_args_matching, verify_type_id};
+use spore_utils::{
+    find_position_by_type, verify_type_id, MUTANT_ID_LEN, MUTANT_ID_WITH_PAYMENT_LEN,
+};
 
 use crate::hash::SPORE_EXTENSION_LUA;
 
@@ -35,18 +37,21 @@ fn process_creation(index: usize) -> Result<(), Error> {
     verify_type_id(index).ok_or(Error::InvalidClusterID)?;
 
     // Verify if mutant is set
-    if cluster_data.mutant_id().is_some() {
-        let script = load_script().unwrap_or_default();
-        let filter_fn: fn(&Script) -> bool = |script| {
-            spore_utils::matches_code_identity(
-                script,
-                &SPORE_EXTENSION_LUA,
-                &crate::hash::SPORE_EXTENSION_LUA_TYPE_HASHES,
-            )
-        };
-        let args: Vec<u8> = script.args().unpack();
-        find_position_by_type_args_matching(&args, CellDep, filter_fn)
-            .ok_or(Error::MutantNotInDeps)?;
+    if let Some(mutant_id) = cluster_data.mutant_id().to_opt() {
+        let found = QueryIter::new(load_cell_type, CellDep)
+            .flatten()
+            .any(|script| {
+                let args = script.args().raw_data();
+                spore_utils::matches_code_identity(
+                    &script,
+                    &SPORE_EXTENSION_LUA,
+                    &crate::hash::SPORE_EXTENSION_LUA_TYPE_HASHES,
+                ) && matches!(args.len(), MUTANT_ID_LEN | MUTANT_ID_WITH_PAYMENT_LEN)
+                    && args[..MUTANT_ID_LEN] == mutant_id.raw_data()[..]
+            });
+        if !found {
+            return Err(Error::MutantNotInDeps);
+        }
     }
 
     Ok(())

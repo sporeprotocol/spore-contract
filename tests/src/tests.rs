@@ -1,3 +1,4 @@
+mod agent_payments;
 mod cluster;
 mod cobuild_decoupling;
 mod mutant;

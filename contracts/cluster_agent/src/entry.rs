@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 use ckb_std::ckb_constants::Source::{self, CellDep, GroupInput, GroupOutput, Input, Output};
 use ckb_std::ckb_types::packed::Script;
 use ckb_std::high_level::{load_cell_data, load_cell_lock_hash, load_cell_type, QueryIter};
-use ckb_std::{ckb_types::prelude::*, debug, high_level::load_script};
+use ckb_std::{ckb_types::prelude::*, high_level::load_script};
 
 use spore_errors::error::Error;
 use spore_utils::{calc_capacity_sum, find_position_by_type, find_position_by_type_hash};
@@ -30,22 +30,66 @@ fn is_agent_identity(script: &Script, active: &Script, historical: &[[u8; 32]]) 
         || spore_utils::matches_code_identity(script, historical, &[])
 }
 
-fn has_conflict_agent(source: Source, cell_data: &[u8]) -> Result<bool, Error> {
-    let active = load_script()?;
-    let mut found = false;
-    for (index, script) in QueryIter::new(load_cell_type, source).enumerate() {
+fn consumes_and_recreates_proxy(proxy_hash: &[u8]) -> bool {
+    find_position_by_type_hash(proxy_hash, Input).is_some()
+        && find_position_by_type_hash(proxy_hash, Output).is_some()
+}
+
+fn minimum_payment(proxy_type: &Script) -> Result<Option<u64>, Error> {
+    let args = proxy_type.args().raw_data();
+    match args.len() {
+        CLUSTER_PROXY_ID_LEN => Ok(None),
+        CLUSTER_PROXY_ID_WITH_PAYMENT_LEN => Ok(Some(u64::from_le_bytes(
+            args[CLUSTER_PROXY_ID_LEN..].try_into().unwrap(),
+        ))),
+        _ => Err(Error::PaymentMethodNotSupport),
+    }
+}
+
+fn total_agent_payment(
+    output_index: usize,
+    active: &Script,
+    proxy_hash: &[u8],
+    beneficiary: &[u8; 32],
+    own_payment: u64,
+) -> Result<u64, Error> {
+    let mut total = own_payment;
+    for (index, script) in QueryIter::new(load_cell_type, Output).enumerate() {
         let Some(script) = script else { continue };
-        if !is_agent_identity(&script, &active, &crate::hash::HISTORICAL_AGENT_CODE_HASHES)
-            || load_cell_data(index, source)? != cell_data
+        if index == output_index
+            || !is_agent_identity(&script, active, &crate::hash::HISTORICAL_AGENT_CODE_HASHES)
         {
             continue;
         }
-        if found {
-            return Ok(true);
+        let other_hash = load_cell_data(index, Output)?;
+        // Preserve the existing one-output rule for agents of one paid Proxy.
+        if other_hash == proxy_hash {
+            return Err(Error::ConflictAgentCells);
         }
-        found = true;
+        // Transfers and creation via direct Proxy ownership owe no payment.
+        if other_hash.len() != 32
+            || find_position_by_type(&script, Input).is_some()
+            || consumes_and_recreates_proxy(&other_hash)
+        {
+            continue;
+        }
+        let Some(proxy_index) = find_position_by_type_hash(&other_hash, CellDep) else {
+            continue;
+        };
+        let Some(proxy) = load_cell_type(proxy_index, CellDep)? else {
+            continue;
+        };
+        if !is_valid_cluster_proxy_cell(&proxy)
+            || load_cell_lock_hash(proxy_index, CellDep)? != *beneficiary
+            || load_cell_data(proxy_index, CellDep)? != script.args().raw_data().as_ref()
+        {
+            continue;
+        }
+        if let Some(payment) = minimum_payment(&proxy)? {
+            total = total.checked_add(payment).ok_or(Error::PaymentNotEnough)?;
+        }
     }
-    Ok(false)
+    Ok(total)
 }
 
 // Agent data is the proxy's full type-script hash, not an intent field.
@@ -57,7 +101,7 @@ fn load_proxy_hash(source: Source) -> Result<Vec<u8>, Error> {
     Ok(data)
 }
 
-fn process_creation(_index: usize) -> Result<(), Error> {
+fn process_creation(index: usize) -> Result<(), Error> {
     let proxy_type_hash = load_proxy_hash(GroupOutput)?;
     // check cluster proxy in Deps
     let proxy_index = find_position_by_type_hash(proxy_type_hash.as_slice(), CellDep)
@@ -77,39 +121,17 @@ fn process_creation(_index: usize) -> Result<(), Error> {
         return Err(Error::InvalidAgentArgs);
     }
 
-    // Condition 1: Check if cluster proxy exist in Inputs & Outputs
-    let proxy_cell_in_input =
-        find_position_by_type_hash(proxy_type_hash.as_slice(), Input).is_some();
-    let proxy_cell_in_output =
-        find_position_by_type_hash(proxy_type_hash.as_slice(), Output).is_some();
-
-    if !proxy_cell_in_input || !proxy_cell_in_output {
-        // Condition 2: Check for minimal payment
-        let proxy_type_args = load_cell_type(proxy_index, CellDep)?
-            .unwrap_or_default()
-            .args()
-            .raw_data();
-        if proxy_type_args.len() == CLUSTER_PROXY_ID_WITH_PAYMENT_LEN {
-            let range = CLUSTER_PROXY_ID_LEN..CLUSTER_PROXY_ID_WITH_PAYMENT_LEN;
-            let minimal_payment =
-                u64::from_le_bytes(proxy_type_args[range].try_into().unwrap_or_default());
-            debug!("Minimal payment is: {}", minimal_payment);
-
-            let proxy_lock_hash = load_cell_lock_hash(proxy_index, CellDep)?;
-            let input_capacity = calc_capacity_sum(&proxy_lock_hash, Input);
-            let output_capacity = calc_capacity_sum(&proxy_lock_hash, Output);
-            if output_capacity
-                .checked_sub(input_capacity)
-                .map_or(true, |paid| paid < minimal_payment)
-            {
+    if !consumes_and_recreates_proxy(&proxy_type_hash) {
+        if let Some(payment) = minimum_payment(&proxy_type)? {
+            let beneficiary = load_cell_lock_hash(proxy_index, CellDep)?;
+            let paid = calc_capacity_sum(&beneficiary, Output)
+                .checked_sub(calc_capacity_sum(&beneficiary, Input))
+                .filter(|paid| *paid >= payment)
+                .ok_or(Error::PaymentNotEnough)?;
+            let required =
+                total_agent_payment(index, &script, &proxy_type_hash, &beneficiary, payment)?;
+            if paid < required {
                 return Err(Error::PaymentNotEnough);
-            }
-            if has_conflict_agent(Source::Output, &proxy_type_hash)? {
-                return Err(Error::ConflictAgentCells);
-            }
-        } else {
-            if proxy_type_args.len() != CLUSTER_PROXY_ID_LEN {
-                return Err(Error::PaymentMethodNotSupport);
             }
         }
     }

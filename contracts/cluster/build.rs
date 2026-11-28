@@ -1,10 +1,13 @@
-use spore_build_tools::{concat_code_hashes, deployment::Deployment};
+use spore_build_tools::{concat_code_hashes, deployment::Deployment, load_frozen_toml};
 use std::{env, fs};
 
 fn main() {
     let deployment = Deployment::load();
     let mut content = String::new();
-    content += &concat_code_hashes("SPORE_EXTENSION_LUA", &[]);
+    content += &concat_code_hashes(
+        "SPORE_EXTENSION_LUA",
+        &load_frozen_toml().mutant_code_hashes(),
+    );
     content += &concat_code_hashes(
         "SPORE_EXTENSION_LUA_TYPE_HASHES",
         &[deployment.type_hash("mutant")],

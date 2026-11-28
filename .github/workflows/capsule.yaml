@@ -59,6 +59,7 @@ jobs:
       - name: VM integration tests
         env:
           CAPSULE_TEST_ENV: ${{ matrix.test-env }}
+          SPORE_TEST_CLUSTER_NETWORK: ${{ matrix.target == 'mainnet' && 'mainnet' || 'testnet' }}
         run: cargo test --locked --manifest-path tests/Cargo.toml
 
       - name: List all the contract binaries of ${{ github.ref }}
