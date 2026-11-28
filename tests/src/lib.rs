@@ -3,9 +3,12 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::OnceLock;
 
 #[allow(dead_code)]
-const MAX_CYCLES: u64 = 10_000_000;
+// Allows the unoptimized contract fixtures to run under the Meepo verifier.
+// Individual budget-exhaustion tests use a smaller limit.
+const MAX_CYCLES: u64 = 50_000_000;
 
 #[cfg(test)]
 mod tests;
@@ -31,6 +34,7 @@ impl FromStr for TestEnv {
 }
 
 pub struct Loader(PathBuf);
+static BUILD_LOCK: OnceLock<fs::File> = OnceLock::new();
 
 impl Default for Loader {
     fn default() -> Self {
@@ -48,13 +52,30 @@ impl Loader {
             TestEnv::Debug => "debug",
             TestEnv::Release => "release",
         };
-        let dir = env::current_dir().unwrap();
-        let mut base_path = PathBuf::new();
-        base_path.push(dir);
-        base_path.push("..");
-        base_path.push("build");
-        base_path.push(load_prefix);
-        Loader(base_path)
+        let build = env::current_dir().unwrap().join("../build");
+        // All fixture reads in this test process must see one published build.
+        BUILD_LOCK.get_or_init(|| {
+            let lock = fs::File::open(&build).expect("build directory");
+            lock.lock_shared().expect("build directory shared lock");
+            lock
+        });
+        Loader(build.join(load_prefix))
+    }
+
+    #[cfg(test)]
+    fn is_testnet(&self) -> bool {
+        let network = fs::read_to_string(self.0.join("network"))
+            .expect("staged contract network; run scripts/build-contracts.sh first");
+        let network = network.trim();
+        // CI can assert which network it staged. The build selects the fixture.
+        if let Ok(expected) = env::var("SPORE_TEST_CLUSTER_NETWORK") {
+            assert_eq!(network, expected, "staged contract network mismatch");
+        }
+        match network {
+            "testnet" => true,
+            "mainnet" => false,
+            other => panic!("unknown staged contract network {other}"),
+        }
     }
 
     pub fn load_binary(&self, name: &str) -> Bytes {

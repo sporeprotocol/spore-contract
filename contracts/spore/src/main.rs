@@ -9,7 +9,9 @@
 
 // define modules
 mod entry;
-mod hash;
+mod hash {
+    include!(concat!(env!("OUT_DIR"), "/hash.rs"));
+}
 
 #[cfg(test)]
 extern crate alloc;

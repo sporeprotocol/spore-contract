@@ -1,0 +1,37 @@
+{
+  "cluster": {
+    "bytes": 44600,
+    "sha256": "756c5128782c503fa40521d059c43483523dce12835b2e46aa5c4351bd6dbbf3",
+    "code_hash": "aaf4a8a62123bb65305433adca446594646496651941b36c2c609e861cf4f676"
+  },
+  "cluster_agent": {
+    "bytes": 46384,
+    "sha256": "11b93b8f5ed2b2be285b854cead0ae36b980004d6882d238734564c98eaa076d",
+    "code_hash": "8dc4fab918181504877a2615967a00197002bd68c413af7c2122c685e609cfb8"
+  },
+  "cluster_proxy": {
+    "bytes": 44056,
+    "sha256": "de62d4e46ecbcca167523d01dc344264eac58cbada72f6e97a815e7b2ca83876",
+    "code_hash": "ab512cfbea892ab74b700e2f0ab6eb195b5abc3acc22ec77b137011291f934b7"
+  },
+  "mutant_equipment": {
+    "bytes": 9736,
+    "sha256": "efef0ecbd87e51ed18c7ec0a3bd9cd7dba5828fe8ee6d456ac7eae02bbb72846",
+    "code_hash": "c156dce5a697b70c076b26ca678d7dfa47f3d83a0c0e3a7f58b33f72e64a894b"
+  },
+  "mutant_probe": {
+    "bytes": 10600,
+    "sha256": "f5f4919bbfbb04e8e64c79dfd0703a4fef08c5c8aed2aae1692e6884c5646eb6",
+    "code_hash": "532c79cdebe4520ec42d03f23d6bd333584ac4111befa47405847c114ca9dc5c"
+  },
+  "spore": {
+    "bytes": 73008,
+    "sha256": "1c78c76e4ce5fa3bd80e79d54a744c92ae257934aa1e32a148ab8a21646e6291",
+    "code_hash": "5733bf67182850ea72ffcdbfcac48648527e10f555ba59ccd22c78df2355d40d"
+  },
+  "spore_extension_rust": {
+    "bytes": 26528,
+    "sha256": "edeb8f5e9b5584f4f3039e0f650831d6de8bb41e92e63252bf690ba38edc3ffe",
+    "code_hash": "f775130c7746a091ade2239d07f44805d0918087e521c7ba475de7e0ca261d19"
+  }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "spore_extension_rust"
+version.workspace = true
+edition = "2021"
+publish = false
+
+[dependencies]
+ckb-std = "0.14.3"
+spore-utils = { path = "../../lib/utils" }
+spore-errors = { path = "../../lib/errors" }
+spore-mutant = { path = "../../lib/mutant" }
+
+[features]
+default = []
+release_export = []

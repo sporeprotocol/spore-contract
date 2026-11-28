@@ -1,5 +1,7 @@
 use ckb_testtool::ckb_types::{core::TransactionBuilder, prelude::*};
 use ckb_testtool::context::Context;
+#[allow(unused_imports)]
+use molecule::prelude::{Builder as SporeBuilder, Entity as SporeEntity};
 
 use crate::utils::*;
 use crate::MAX_CYCLES;
@@ -17,7 +19,7 @@ fn test_simple_mutant_mint() {
 
     println!(
         "input cell hash: {:?}, out_index: {}",
-        input_cell.previous_output().tx_hash().unpack().to_string(),
+        hex::encode(input_cell.previous_output().tx_hash().as_slice()),
         0
     );
     let mutant_id = build_type_id(&input_cell, 0);
@@ -60,6 +62,10 @@ fn test_simple_mutant_spore_mint_without_cluster() {
         None,
     );
 
+    let script = spore_output.type_().to_opt().unwrap();
+    let id: [u8; 32] = script.args().raw_data().as_ref().try_into().unwrap();
+    let action = co_build::build_mint_spore_action(&mut context, id, output_data.as_slice());
+
     let tx = tx
         .as_advanced_builder()
         .input(normal_input)
@@ -67,6 +73,7 @@ fn test_simple_mutant_spore_mint_without_cluster() {
         .output_data(output_data.as_bytes().pack())
         .cell_dep(spore_celldep)
         .build();
+    let tx = co_build::complete_co_build_message_with_actions(tx, &[(Some(script), action)]);
     let tx = context.complete_tx(tx);
 
     context

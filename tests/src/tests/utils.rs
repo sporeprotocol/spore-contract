@@ -1,4 +1,5 @@
-use ckb_testtool::ckb_types::prelude::{Builder, Entity};
+#[allow(unused_imports)]
+use molecule::prelude::{Builder as SporeBuilder, Entity as SporeEntity};
 use spore_types::generated::spore;
 use spore_utils::{compatible_load_cluster_data, MIME};
 
