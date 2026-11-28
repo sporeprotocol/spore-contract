@@ -1,6 +1,9 @@
+mod agent_payments;
 mod cluster;
+mod cobuild_decoupling;
 mod mutant;
 mod spore;
+mod type_binding;
 mod utils;
 
 #[cfg(test)]

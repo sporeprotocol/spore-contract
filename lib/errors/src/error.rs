@@ -37,6 +37,7 @@ pub enum Error {
     ImmutableProxyFieldModification,
     InvalidProxyID,
     InvalidProxyArgs,
+    InvalidProxyData,
 
     // cluster_agent errors
     InvalidAgentOperation = 40,
@@ -47,6 +48,7 @@ pub enum Error {
     PaymentMethodNotSupport,
     RefCellNotClusterProxy,
     ConflictAgentCells,
+    InvalidAgentData,
 
     // cluster errors
     InvalidClusterOperation = 50,

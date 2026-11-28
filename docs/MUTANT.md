@@ -1,3 +1,5 @@
+> Type-bound candidate update: see [code identity, governance and build plans](./TYPE_BINDING.md). Historical validation below is revision-specific.
+
 # Mutant
 Mutant is a special extension cell in Spore eco. It stores Lua scripting code inside the data field, and will be executed & evaluated in every referenced transaction once applied. One can apply mutants to:
 
