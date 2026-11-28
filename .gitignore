@@ -9,6 +9,7 @@ contracts/c/build/*
 build/*
 !.gitkeep
 .tmp/
+scripts/__pycache__/
 
 .idea/
 

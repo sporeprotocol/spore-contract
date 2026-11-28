@@ -17,7 +17,7 @@ with `capsule build --release` for testnet and
 must match the data hash in the published migration record byte for byte.
 
 Set the intended output Lock in `toml/<network>/<contract>.toml` and supply the
-funding address for that network. With Git, Python 3.11+ and `ckb-cli` installed,
+funding address for that network. With Git, curl, Python 3.11+ and `ckb-cli` installed,
 run the helper from the root of the deployment checkout.
 
 ```bash
@@ -27,6 +27,7 @@ SPORE_LEGACY_CHECKOUT=/path/to/legacy-checkout \
 
 The helper defaults to testnet. It checks the legacy source revision, validates
 the recipe, and compares the executable's CKB data hash with the published
-record before invoking `ckb-cli`. The signing step uses a private copy of the
+record. The RPC must report the selected chain name and genesis hash before
+signing and again before submission. The signer reads a private copy of the
 verified recipe and executable. A failed submission reports the path to the
 retained signed transaction for recovery.

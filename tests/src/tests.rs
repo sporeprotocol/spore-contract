@@ -1,3 +1,4 @@
+mod agent_payments;
 mod cluster;
 mod mutant_rust;
 mod spore;

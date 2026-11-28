@@ -305,12 +305,22 @@ fn native_rules_can_reject_each_spore_operation() {
 #[test]
 fn every_native_mutant_runs_in_declared_order() {
     let mut context = Context::default();
-    let first = rule(&mut context, "mutant_probe", b"", None);
-    let second = rule(&mut context, "mutant_probe", b"mint", None);
-    let tx = mint(&mut context, &[first.clone(), second.clone()], &[3, 4, 7]);
+    let success = rule(&mut context, "mutant_probe", b"", None);
+    let rejects_mint = rule(&mut context, "mutant_probe", b"mint", None);
+    let loops = rule(&mut context, "mutant_probe", b"loop", None);
+    let tx = mint(&mut context, &[success, rejects_mint.clone()], &[3, 4, 7]);
     rejects(&context, &tx, "error code 93");
-    let tx = mint(&mut context, &[second, first], &[3, 4, 7]);
-    rejects(&context, &tx, "error code 93");
+
+    // An immediate rejection and cycle exhaustion are distinct in both
+    // debug and release builds, even though child exit codes are mapped.
+    for (rules, expected) in [
+        ([rejects_mint.clone(), loops.clone()], "error code 93"),
+        ([loops, rejects_mint], "ExceededMaximumCycles"),
+    ] {
+        let tx = mint(&mut context, &rules, &[3, 4, 7]);
+        let error = context.verify_tx(&tx, 10_000_000).unwrap_err();
+        assert!(format!("{error:?}").contains(expected), "{error:?}");
+    }
 }
 
 #[test]

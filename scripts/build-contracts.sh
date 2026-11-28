@@ -33,12 +33,7 @@ stage=$(mktemp -d "build/.$profile.XXXXXXXX")
 cargo_stage=
 cleanup() {
     if [ -n "$cargo_stage" ]; then rm -rf "$cargo_stage"; fi
-    # A failed rollback leaves the prior complete set available for recovery.
-    if [ ! -d "$stage/previous" ] || [ -d "build/$profile" ]; then
-        rm -rf "$stage"
-    else
-        echo "Previous build is retained at $stage/previous" >&2
-    fi
+    rm -rf "$stage"
 }
 trap cleanup EXIT
 trap 'exit 129' HUP
@@ -61,25 +56,37 @@ for contract in spore_extension_rust cluster $optional_contracts spore mutant_eq
 done
 python3 scripts/code-hashes.py "$stage/artifacts" >/dev/null
 
-python3 - "$stage" "build/$profile" <<'PY'
+python3 - "$stage/artifacts" "build/$profile" <<'PY'
+import ctypes
 import fcntl
 import os
 from pathlib import Path
 import sys
 
-stage, output = map(Path, sys.argv[1:])
+artifacts, output = map(Path, sys.argv[1:])
 lock = os.open(output.parent, os.O_RDONLY | os.O_DIRECTORY)
 try:
     fcntl.flock(lock, fcntl.LOCK_EX)
-    previous = stage / "previous"
-    if output.exists():
-        output.rename(previous)
-    try:
-        (stage / "artifacts").rename(output)
-    except BaseException:
-        if previous.exists():
-            previous.rename(output)
-        raise
+    if output.is_symlink() or (output.exists() and not output.is_dir()):
+        sys.exit(f"Expected a build profile directory at {output}")
+    if not output.exists():
+        artifacts.rename(output)
+    else:
+        # Exchange complete directories in one syscall. Until it succeeds,
+        # the existing profile remains in place, even if the process dies.
+        libc = ctypes.CDLL(None, use_errno=True)
+        if sys.platform.startswith("linux") and hasattr(libc, "renameat2"):
+            at_fdcwd = -100
+            result = libc.renameat2(
+                at_fdcwd, os.fsencode(artifacts), at_fdcwd, os.fsencode(output), 2
+            )
+        elif sys.platform == "darwin" and hasattr(libc, "renamex_np"):
+            result = libc.renamex_np(os.fsencode(artifacts), os.fsencode(output), 2)
+        else:
+            sys.exit("Replacing a build profile requires atomic directory exchange")
+        if result:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error), output)
 finally:
     os.close(lock)
 PY

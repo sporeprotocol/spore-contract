@@ -34,6 +34,7 @@ case "$network/$contract" in
     *) fail "No approved legacy artifact for $network/$contract" ;;
 esac
 
+python3 "$deployment_dir/verify-chain.py" "$network" "$rpc_url"
 legacy_checkout=$(cd "${SPORE_LEGACY_CHECKOUT:?set SPORE_LEGACY_CHECKOUT to the pinned legacy checkout}" && pwd -P)
 if [[ $(git -C "$legacy_checkout" rev-parse --show-toplevel) != "$legacy_checkout" ||
       $(git -C "$legacy_checkout" rev-parse --verify HEAD) != "$source_commit" ]] ||
@@ -100,6 +101,9 @@ ckb-cli --url "$rpc_url" deploy gen-txs --from-address "$address" --fee-rate 100
 
 # A failed submission can still require recovery from the signed transaction.
 trap - EXIT
+if ! python3 "$deployment_dir/verify-chain.py" "$network" "$rpc_url"; then
+    fail "Destination chain check failed. Signed transaction retained at $info_file"
+fi
 if ! ckb-cli --url "$rpc_url" deploy apply-txs --info-file "$info_file" --migration-dir "$migration_dir"; then
     fail "Deployment failed. Signed transaction retained at $info_file"
 fi

@@ -74,7 +74,9 @@ mainnet/testnet records. Builds require an explicit plan; CI explicitly selects
 this fixture. `build/<profile>/code-type-ids.json` records the selected plan for
 the VM harness. The build copies the input plan into the checkout for runner
 visibility. It replaces the staged profile only after compiling and checking the
-complete ELF set. CI uses Cargo with the RISC-V Clang wrapper.
+complete ELF set. Replacing an existing profile requires filesystem support for
+atomic directory exchange. The hash reporter and VM harness hold a shared build
+directory lock while reading the profile. CI uses Cargo with the RISC-V Clang wrapper.
 
 For a local native/combined VM build:
 

@@ -50,6 +50,7 @@ jobs:
       - name: VM integration tests
         env:
           CAPSULE_TEST_ENV: ${{ matrix.test-env }}
+          SPORE_TEST_CLUSTER_NETWORK: ${{ matrix.target == 'mainnet' && 'mainnet' || 'testnet' }}
         run: cargo test --locked --manifest-path tests/Cargo.toml
 
       - name: Deployment plan tests
@@ -57,6 +58,10 @@ jobs:
 
       - name: Cluster Agent identity tests
         run: cargo test --locked -p cluster_agent
+
+      - name: Legacy deployment network test
+        if: matrix.target == 'debug'
+        run: python3 deployment/test-verify-chain.py
 
       - name: Native invocation ABI tests
         run: cargo test --locked -p spore-mutant --lib

@@ -3,6 +3,7 @@ use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::OnceLock;
 
 #[allow(dead_code)]
 // Allows the unoptimized contract fixtures to run under the Meepo verifier.
@@ -33,6 +34,7 @@ impl FromStr for TestEnv {
 }
 
 pub struct Loader(PathBuf);
+static BUILD_LOCK: OnceLock<fs::File> = OnceLock::new();
 
 impl Default for Loader {
     fn default() -> Self {
@@ -50,13 +52,14 @@ impl Loader {
             TestEnv::Debug => "debug",
             TestEnv::Release => "release",
         };
-        let dir = env::current_dir().unwrap();
-        let mut base_path = PathBuf::new();
-        base_path.push(dir);
-        base_path.push("..");
-        base_path.push("build");
-        base_path.push(load_prefix);
-        Loader(base_path)
+        let build = env::current_dir().unwrap().join("../build");
+        // All fixture reads in this test process must see one published build.
+        BUILD_LOCK.get_or_init(|| {
+            let lock = fs::File::open(&build).expect("build directory");
+            lock.lock_shared().expect("build directory shared lock");
+            lock
+        });
+        Loader(build.join(load_prefix))
     }
 
     pub fn load_binary(&self, name: &str) -> Bytes {

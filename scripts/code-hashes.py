@@ -7,23 +7,21 @@ import os
 from pathlib import Path
 import sys
 
+from type_id_plan import validate
+
 MANIFEST = "code-type-ids.json"
 PROFILE_NAMES = ("debug", "release")
-REQUIRED_ROLES = {"spore", "cluster", "mutant"}
-OPTIONAL_ROLES = {"cluster_agent", "cluster_proxy"}
 
 
 def contract_paths(profile):
     try:
         plan = json.loads((profile / MANIFEST).read_text())
-        roles = set(plan["type_ids"])
-        if plan["format"] != 1 or not REQUIRED_ROLES <= roles <= REQUIRED_ROLES | OPTIONAL_ROLES:
-            raise ValueError("invalid code Type ID plan")
+        validate(plan)
     except (OSError, KeyError, TypeError, ValueError) as error:
         raise SystemExit(f"{profile}: {error}") from error
 
     names = {"spore", "cluster", "spore_extension_rust", "mutant_equipment", "mutant_probe"}
-    names.update(roles & OPTIONAL_ROLES)
+    names.update(plan["type_ids"].keys() & {"cluster_agent", "cluster_proxy"})
     return [profile / name for name in sorted(names)]
 
 
@@ -39,8 +37,7 @@ def code_hash(path):
 
 
 def collect_hashes(root):
-    # Published profiles can temporarily disappear. Lock their stable parent
-    # before checking for a manifest or enumerating the available profiles.
+    # Pin one generation from profile discovery through the last ELF read.
     resolved = root.resolve()
     build_dir = resolved.parent if resolved.name in PROFILE_NAMES else resolved
     try:
