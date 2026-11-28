@@ -11,8 +11,15 @@ target=riscv64imac-unknown-none-elf
 mkdir -p "build/$profile"
 : "${SPORE_DEPLOYMENT_MANIFEST:?set a reviewed code Type ID plan (VM tests use deployment/type-ids.fixture.toml)}"
 python3 scripts/type-id-plan.py "$SPORE_DEPLOYMENT_MANIFEST" "build/$profile/code-type-ids.json"
+rm -f "build/$profile/network"
 
 for contract in spore_extension_lua cluster cluster_proxy cluster_agent spore; do
-    "$runner" build --locked --target "$target" -p "$contract" "$@"
+    if [ "$contract" = spore ]; then
+        messages=$("$runner" build --locked --target "$target" -p "$contract" "$@" \
+            --message-format=json-render-diagnostics)
+    else
+        "$runner" build --locked --target "$target" -p "$contract" "$@"
+    fi
     cp "target/$target/$profile/$contract" "build/$profile/$contract"
 done
+printf '%s\n' "$messages" | python3 scripts/cargo-build-network.py > "build/$profile/network"

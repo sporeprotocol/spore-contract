@@ -41,7 +41,7 @@ fn cluster_mint_resolves_the_declared_lua_mutant() {
     let error = context.verify_tx(&tx, MAX_CYCLES).unwrap_err();
     assert!(format!("{error:?}").contains("error code 54"));
 
-    if std::env::var("SPORE_TEST_CLUSTER_NETWORK").as_deref() != Ok("mainnet") {
+    if crate::Loader::default().is_testnet() {
         let binary = include_bytes!("../../fixtures/published-testnet/spore_extension_lua.bin");
         let legacy_code = context.deploy_cell(Bytes::from_static(binary));
         let legacy = context.build_script_with_hash_type(
