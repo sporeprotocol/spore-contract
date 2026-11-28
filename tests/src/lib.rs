@@ -62,6 +62,22 @@ impl Loader {
         Loader(build.join(load_prefix))
     }
 
+    #[cfg(test)]
+    fn is_testnet(&self) -> bool {
+        let network = fs::read_to_string(self.0.join("network"))
+            .expect("staged contract network; run scripts/build-contracts.sh first");
+        let network = network.trim();
+        // CI can assert which network it staged. The build selects the fixture.
+        if let Ok(expected) = env::var("SPORE_TEST_CLUSTER_NETWORK") {
+            assert_eq!(network, expected, "staged contract network mismatch");
+        }
+        match network {
+            "testnet" => true,
+            "mainnet" => false,
+            other => panic!("unknown staged contract network {other}"),
+        }
+    }
+
     pub fn load_binary(&self, name: &str) -> Bytes {
         let mut path = self.0.clone();
         path.push(name);

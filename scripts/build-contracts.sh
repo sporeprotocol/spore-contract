@@ -51,7 +51,13 @@ mkdir -p "$target_root"
 cargo_stage=$(mktemp -d "$target_root/.spore-contracts.XXXXXXXX")
 export CARGO_TARGET_DIR="$cargo_stage"
 for contract in spore_extension_rust cluster $optional_contracts spore mutant_equipment mutant_probe; do
-    "$runner" build --locked --target "$target" -p "$contract" "$@"
+    if [ "$contract" = spore ]; then
+        "$runner" build --locked --target "$target" -p "$contract" "$@" \
+            --message-format=json-render-diagnostics > "$stage/spore-build.json"
+        python3 scripts/cargo-build-network.py < "$stage/spore-build.json" > "$stage/artifacts/network"
+    else
+        "$runner" build --locked --target "$target" -p "$contract" "$@"
+    fi
     cp "$cargo_stage/$target/$profile/$contract" "$stage/artifacts/$contract"
 done
 python3 scripts/code-hashes.py "$stage/artifacts" >/dev/null

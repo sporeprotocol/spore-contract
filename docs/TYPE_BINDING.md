@@ -89,7 +89,10 @@ cargo test --locked --manifest-path tests/Cargo.toml
 ```
 
 Use `--release` and then `--release --features release_export` with the matching
-`CAPSULE_TEST_ENV=release` to qualify each configuration. For actual deployment,
+`CAPSULE_TEST_ENV=release` to qualify each configuration. The VM suite selects
+historical fixtures using the network recorded by the build script. The testnet
+allowlist includes the published v0.2.2-beta.2 Cluster, Proxy and Agent data1
+identities. For actual deployment,
 use the real reviewed plan rather than the fixture. This change deploys no
 contracts and establishes no public governance policy.
 

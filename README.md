@@ -40,7 +40,8 @@ export SPORE_DEPLOYMENT_MANIFEST=deployment/type-ids.fixture.toml
 ./scripts/build-contracts.sh --release --features release_export # mainnet
 ```
 
-Test the corresponding staged artifacts:
+Run the VM suite after each build. The tests read the network from the staged
+artifacts, including when testnet and mainnet share the release directory.
 
 ```sh
 cargo test --locked --manifest-path tests/Cargo.toml

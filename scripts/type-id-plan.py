@@ -2,10 +2,11 @@
 """Stage the explicit code Type IDs used by a VM build, not public presets."""
 import json
 import pathlib
+from runpy import run_path
 import sys
 import tomllib
 
-from type_id_plan import validate
+validate = run_path(str(pathlib.Path(__file__).resolve().with_name("type_id_plan.py")))["validate"]
 
 plan = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
 try:

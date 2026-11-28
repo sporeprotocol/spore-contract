@@ -5,9 +5,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from runpy import run_path
 import sys
 
-from type_id_plan import validate
+validate = run_path(str(Path(__file__).resolve().with_name("type_id_plan.py")))["validate"]
 
 MANIFEST = "code-type-ids.json"
 PROFILE_NAMES = ("debug", "release")

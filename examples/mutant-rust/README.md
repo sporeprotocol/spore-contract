@@ -78,7 +78,8 @@ GCC-specific flags from the C dependencies. It uses `clang` on `PATH`; set
 `SPORE_CLANG` to a compiler executable path to select another installation.
 For debug, omit `--release` and set `CAPSULE_TEST_ENV=debug`. For mainnet,
 add `--features release_export` to the release build and keep
-`CAPSULE_TEST_ENV=release`. Build and test one configuration at a time so the
+`CAPSULE_TEST_ENV=release`. The VM suite reads the staged network. Build and test
+one configuration at a time so the
 staged binaries, Type ID plan and historical frozen lists belong to the same build.
 Clang and the Cross/GNU toolchain may produce different binaries and code hashes;
 deploy the exact binaries produced by your chosen build.
